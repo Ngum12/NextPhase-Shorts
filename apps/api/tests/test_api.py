@@ -53,3 +53,42 @@ def test_edl_guardrails():
         pass
     else:
         raise AssertionError("Duration guardrail did not reject 61 second video")
+
+
+def test_upload_rejection_boundaries(client, monkeypatch):
+    from app.main import settings
+    from unittest.mock import Mock
+
+    before = set(settings.storage_dir.rglob("input.*"))
+    token = new_user(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    def upload(content=b"test", filename="clip.mp4", **data):
+        return client.post("/api/v1/jobs", headers=headers,
+                           files={"file": (filename, io.BytesIO(content), "video/mp4")},
+                           data={"style": "vlog", "desired_seconds": "15", **data})
+
+    assert upload(b"").status_code == 422
+    assert upload(filename="clip.exe").status_code == 415
+    assert upload(style="unknown").status_code == 422
+    assert upload(title="   ").status_code == 422
+    monkeypatch.setattr(settings, "max_upload_bytes", 3)
+    assert upload(b"1234").status_code == 413
+    monkeypatch.setattr(settings, "max_upload_bytes", 314572800)
+    probe = Mock(return_value={"duration": 600.01, "width": 320, "height": 240})
+    monkeypatch.setattr("app.main.probe_video", probe)
+    assert upload().status_code == 422
+    probe.assert_called_once()
+    # Every rejected upload must leave no source media behind.
+    assert set(settings.storage_dir.rglob("input.*")) == before
+
+
+def test_login_and_invalid_sessions(client):
+    email = f"{uuid.uuid4()}@example.com"
+    password = "login-test-password"
+    assert client.post('/api/v1/auth/register', json={"email": email, "password": password}).status_code == 201
+    response = client.post('/api/v1/auth/login', json={"email": email, "password": password})
+    assert response.status_code == 200
+    headers = {"Authorization": "Bearer " + response.json()["access_token"]}
+    assert client.get('/api/v1/me', headers=headers).json()['email'] == email
+    assert client.post('/api/v1/auth/login', json={"email": email, "password": "wrong"}).status_code == 401
+    assert client.get('/api/v1/jobs', headers={"Authorization": "Bearer invalid"}).status_code == 401

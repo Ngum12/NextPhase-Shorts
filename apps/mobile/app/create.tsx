@@ -30,7 +30,7 @@ export default function Create() {
     finally{setBusy(false);}
   };
   return <Page><ScrollView contentContainerStyle={{gap:16,paddingBottom:50}}>
-    <Title>Create a Short</Title><Body>No phone-based video rendering. Your original file is sent securely to the API server.</Body>
+    <Title>Create a Short</Title><Body>No phone-based video rendering. Your original file is uploaded to the API server. Use only consented test footage in this development preview.</Body>
     <View style={s.card}><Text style={s.cardTitle}>1. Choose your video</Text>
       <Body>MP4, MOV, WebM or M4V · up to 10 minutes · up to 300 MiB</Body>
       <Button title={asset?`Selected: ${asset.name}`:'Choose from phone'} onPress={pick} secondary /></View>

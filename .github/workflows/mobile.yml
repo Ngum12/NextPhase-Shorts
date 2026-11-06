@@ -13,7 +13,13 @@ jobs:
         with: {node-version: '22'}
       - name: Install Expo SDK dependencies
         working-directory: apps/mobile
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Check mobile TypeScript
         working-directory: apps/mobile
         run: npm run typecheck
+      - name: Check Expo SDK versions
+        working-directory: apps/mobile
+        run: EXPO_OFFLINE=1 npx expo install --check
+      - name: Bundle Android JavaScript
+        working-directory: apps/mobile
+        run: EXPO_NO_TYPESCRIPT_SETUP=1 EXPO_OFFLINE=1 npx expo export --platform android --output-dir .expo/android-export --max-workers 2
