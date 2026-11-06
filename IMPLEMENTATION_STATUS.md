@@ -66,7 +66,10 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
   Forbidden. Existing HTTPS Git read access works. `api.github.com` was added to
   the environment configuration draft; saving the draft does not apply runtime
   access. Review/save the setting and publish as the environment UI requires.
-  PR creation remains unconfirmed until the API operation succeeds.
+  The development branch `dev/phase-0-1-validation` was committed and pushed successfully.
+  `gh pr create --draft` then failed with `Post https://api.github.com/graphql: Forbidden`;
+  no PR was created. A review description is prepared in `/tmp/nextphase-pr-body.md`.
+  Retry PR creation after API access is applied; Git push access alone is insufficient.
 - Python requirements remain version ranges; the inventory records this machine,
   while the mobile lockfile pins npm resolution. No production security
   certification or complete dependency vulnerability review is claimed.
