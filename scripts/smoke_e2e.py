@@ -107,6 +107,92 @@ def check_queued_cancellation(base_url, output_dir):
     print('Queued cancellation over HTTP: passed')
 
 
+def begin_resumable(base_url, output_dir):
+    import hashlib
+    import http.client
+    from urllib.parse import urlsplit
+    source = output_dir / 'resumable-source.mp4'
+    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-f', 'lavfi',
+        '-i', 'testsrc2=size=640x360:rate=30,noise=alls=30:allf=t', '-f', 'lavfi',
+        '-i', 'sine=frequency=440:sample_rate=48000', '-t', '5', '-c:v', 'libx264',
+        '-preset', 'ultrafast', '-crf', '0', '-pix_fmt', 'yuv420p', '-c:a', 'aac', str(source)],
+        check=True, timeout=30)
+    data = source.read_bytes()
+    descriptor = dict(file_name='source.mp4', total_bytes=len(data), title='Resumable smoke', style='vlog', desired_seconds=15)
+    with httpx.Client(base_url=base_url, trust_env=False, timeout=30) as client:
+        response = client.post('/api/v1/auth/register', json={
+            'email': f'{uuid.uuid4()}@example.com', 'password': secrets.token_urlsafe(24)})
+        assert response.status_code == 201
+        owner = {'Authorization': 'Bearer ' + response.json()['access_token']}
+        key = uuid.uuid4().hex
+        response = client.post('/api/v1/upload-sessions', headers={**owner, 'Idempotency-Key': key}, json=descriptor)
+        assert response.status_code == 201, response.text
+        session = response.json()
+        size = session['chunk_bytes']
+        assert len(data) > size*2, 'Synthetic source must span several chunks'
+        first = data[:size]
+        response = client.put(f"/api/v1/upload-sessions/{session['id']}/parts?offset=0",
+            headers={**owner, 'X-Chunk-SHA256': hashlib.sha256(first).hexdigest()}, content=first)
+        assert response.status_code == 200 and response.json()['received_bytes'] == size
+    # Deliberately disconnect halfway through the NEXT chunk. It must not advance
+    # the committed offset, even if the server dies before cleaning its staging file.
+    address = urlsplit(base_url)
+    connection_class = http.client.HTTPSConnection if address.scheme == 'https' else http.client.HTTPConnection
+    connection = connection_class(address.hostname, address.port, timeout=10)
+    next_chunk = data[size:size*2]
+    connection.putrequest('PUT', f"/api/v1/upload-sessions/{session['id']}/parts?offset={size}")
+    for name, value in {**owner, 'Content-Type': 'application/octet-stream', 'Content-Length': str(len(next_chunk)),
+                        'X-Chunk-SHA256': hashlib.sha256(next_chunk).hexdigest()}.items():
+        connection.putheader(name, value)
+    connection.endheaders()
+    connection.send(next_chunk[:len(next_chunk)//2])
+    connection.close()
+    return owner, key, descriptor, session, data
+
+
+def finish_resumable(base_url, output_dir, transfer, *, restarted):
+    import hashlib
+    owner, key, descriptor, session, data = transfer
+    path = '/api/v1/upload-sessions/' + session['id']
+    with httpx.Client(base_url=base_url, trust_env=False, timeout=60) as client:
+        status = client.get(path, headers=owner).json()
+        assert status['received_bytes'] == session['chunk_bytes'], status
+        replay = client.post('/api/v1/upload-sessions', headers={**owner, 'Idempotency-Key': key}, json=descriptor)
+        assert replay.status_code == 200 and replay.json()['id'] == session['id']
+        for offset in range(status['received_bytes'], len(data), session['chunk_bytes']):
+            chunk = data[offset:offset+session['chunk_bytes']]
+            response = client.put(path+f'/parts?offset={offset}',
+                headers={**owner, 'X-Chunk-SHA256': hashlib.sha256(chunk).hexdigest()}, content=chunk)
+            assert response.status_code == 200, response.text
+        response = client.post(path+'/complete', headers=owner)
+        assert response.status_code == 200, response.text
+        job_id = response.json()['id']
+        assert client.post(path+'/complete', headers=owner).json()['id'] == job_id
+        assert len(client.get('/api/v1/jobs', headers=owner).json()) == 1
+        assert client.get(path, headers=owner).json()['source_sha256'] == hashlib.sha256(data).hexdigest()
+        deadline = time.monotonic()+120
+        while time.monotonic()<deadline:
+            job = client.get('/api/v1/jobs/'+job_id, headers=owner).json()
+            if job['status'] in ('succeeded','failed'): break
+            time.sleep(.1)
+        assert job['status']=='succeeded', job
+        response = client.get('/api/v1/jobs/'+job_id+'/download', headers=owner)
+        assert response.status_code==200
+        output = output_dir/'resumable-output.mp4'
+        output.write_bytes(response.content)
+    metadata = json.loads(subprocess.check_output(['ffprobe','-v','error','-show_streams','-show_format','-of','json',str(output)]))
+    video = next(s for s in metadata['streams'] if s['codec_type']=='video')
+    assert (video['width'],video['height'],video['r_frame_rate'])==(1080,1920,'30/1')
+    assert video['codec_name']=='h264' and any(s['codec_name']=='aac' for s in metadata['streams'])
+    assert 0<float(metadata['format']['duration'])<=5
+    subprocess.run(['ffmpeg','-nostdin','-v','error','-i',str(output),'-f','null','-'],check=True,timeout=30)
+    report=dict(api_restarted=restarted, interrupted_part='not committed',
+        acknowledged_offset=session['chunk_bytes'], source_bytes=len(data),
+        chunk_bytes=session['chunk_bytes'], checksum='passed', repeated_complete='one job', render_download='passed')
+    (output_dir/'resumable-report.json').write_text(json.dumps(report,indent=2)+'\n')
+    print('Resumable upload:',json.dumps(report))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base-url', help='Use an already running API and worker (creates synthetic test accounts/jobs).')
@@ -115,6 +201,8 @@ def main():
     args.output_dir = args.output_dir.resolve()
     args.output_dir.mkdir(parents=True, exist_ok=False)
     if args.base_url:
+        transfer = begin_resumable(args.base_url, args.output_dir)
+        finish_resumable(args.base_url, args.output_dir, transfer, restarted=False)
         check_api(args.base_url, args.output_dir)
         return
     processes = []
@@ -147,8 +235,23 @@ def main():
                     else:
                         raise RuntimeError('API readiness timed out; inspect api.log')
                 check_queued_cancellation(base, args.output_dir)
+                transfer = begin_resumable(base, args.output_dir)
+                processes[0].kill()
+                processes[0].wait(timeout=10)
+                processes[0] = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'app.main:app',
+                    '--host', '127.0.0.1', '--port', str(port)], cwd=ROOT, env=env,
+                    stdout=api_log, stderr=subprocess.STDOUT)
+                with httpx.Client(trust_env=False, timeout=1) as client:
+                    for _ in range(100):
+                        if processes[0].poll() is not None: raise RuntimeError('Restarted API exited; inspect api.log')
+                        try:
+                            if client.get(base+'/health').status_code == 200: break
+                        except httpx.TransportError: pass
+                        time.sleep(.1)
+                    else: raise RuntimeError('Restarted API not ready')
                 processes.append(subprocess.Popen([sys.executable, '-m', 'app.worker'], cwd=ROOT, env=env,
                                                   stdout=worker_log, stderr=subprocess.STDOUT))
+                finish_resumable(base, args.output_dir, transfer, restarted=True)
                 check_api(base, args.output_dir)
             finally:
                 for process in reversed(processes):

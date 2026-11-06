@@ -21,3 +21,12 @@ These metadata licenses permit broad commercial use subject to their notice and
 license conditions; maintain the required notices in distributions. This records
 metadata review, not independent legal clearance or a full transitive audit.
 No reference ZIP code/assets or media were introduced.
+
+## Resumable upload dependency (metadata review)
+
+Expo Crypto 15.0.9 is SDK-matched and declares MIT; source:
+https://www.npmjs.com/package/expo-crypto/v/15.0.9 . Preserve the package's MIT
+license/notice with distributions. It supplies local native hashing/UUIDs, not a
+paid service. The regenerated inventory has 835 records. This is metadata review;
+commercial legal signoff and the remaining dependency advisories are not cleared.
+No proprietary reference kit code or assets were used.

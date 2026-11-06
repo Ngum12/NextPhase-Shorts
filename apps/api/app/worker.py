@@ -134,7 +134,12 @@ def main():
     signal.signal(signal.SIGTERM, request_stop)
     require_current_schema(engine)
     logger.info('NextPhase worker started (leased baseline FFmpeg, no AI)')
+    last_upload_cleanup = 0.0
     while not stop:
+        if time.monotonic() - last_upload_cleanup >= 60:
+            from .upload_cleanup import cleanup_uploads
+            cleanup_uploads()
+            last_upload_cleanup = time.monotonic()
         recover_stale_jobs()
         job = claim_job()
         if job:

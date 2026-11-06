@@ -3324,6 +3324,14 @@
     },
     {
       "ecosystem": "npm",
+      "name": "expo-crypto",
+      "version": "15.0.9",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-crypto/v/15.0.9",
+      "license_location": "apps/mobile/node_modules/expo-crypto/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
       "name": "expo-document-picker",
       "version": "14.0.8",
       "license": "MIT",

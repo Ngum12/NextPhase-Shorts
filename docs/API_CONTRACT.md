@@ -19,7 +19,7 @@ Upload accepted extensions `.mp4`, `.mov`, `.m4v`, `.webm` with content verified
 
 Job statuses: `queued`, `processing`, `succeeded`, `failed`, `cancelled`. Basic error codes: `RENDER_FAILED`, `INTERNAL_ERROR`, `MAX_RETRIES`.
 
-**Future changes (must be versioned):** upload sessions with resumable signed URLs, immutable render version IDs, stage/progress APIs, EDL endpoint, storyboard approval, revisions, billing events, entitlements, admin, audit, deletion and notifications.
+**Future changes (must be versioned):** cloud signed upload URLs, immutable render version IDs, stage/progress APIs, EDL endpoint, storyboard approval, revisions, billing events, entitlements, admin, audit, deletion and notifications.
 
 Queue controls: optional owner-scoped `Idempotency-Key` on uploads, fingerprinted
 against content/settings. Replay returns 200 with Idempotency-Replayed=true;
@@ -27,3 +27,9 @@ key conflict 409; full active queue 429 with Retry-After. Cancellation returns 2
 (repeated cancellation stays cancelled), terminal succeeded/failed returns 409.
 Default max active=3 and max processing=1 per user. See [queue controls](QUEUE_CONTROLS.md)
 for exact semantics, races and remaining resource limits.
+
+Durable sequential upload sessions are now available at `/api/v1/upload-sessions`
+(create/get/PUT parts/complete/abort), reserving the same active-job capacity as
+legacy uploads. See [resumable uploads](RESUMABLE_UPLOADS.md) for checksums, status,
+fixed-size part rules, expiry and restart behavior. Legacy multipart remains
+supported; the mobile Create Short flow now uses upload sessions.

@@ -8,11 +8,13 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:uploads": "node tests/uploads.test.cjs"
   },
   "dependencies": {
     "expo": "~54.0.0",
     "expo-constants": "~18.0.0",
+    "expo-crypto": "~15.0.9",
     "expo-document-picker": "~14.0.0",
     "expo-file-system": "~19.0.0",
     "expo-linking": "~8.0.0",
