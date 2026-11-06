@@ -4,6 +4,11 @@ This increment adds migration-managed schema and reliable DB-backed claims. It
 is not the complete Phase 2 roadmap. No external queue/storage service, paid API,
 billing or public deployment is enabled.
 
+This document describes the initial lease increment. The next additive revision
+`0003_submission_keys` and current queue/cancel behavior are documented in
+[queue controls](QUEUE_CONTROLS.md). For an already migrated database, run the
+normal upgrade command after backup; do not repeat legacy adoption unnecessarily.
+
 ## Existing Windows installation: preserve your accounts and completed videos
 
 Stop **both API and worker** with Ctrl+C before upgrading. Never run old and new

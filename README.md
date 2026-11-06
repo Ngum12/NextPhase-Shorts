@@ -8,7 +8,7 @@
 
 - Expo/React Native screens: sign in/register, home, Create Short, six future style choices, My Shorts, job polling and owner-authenticated download/share.
 - FastAPI: email/password login, signed bearer token, project listing, upload validation, 10-minute source/300-MiB cap, 60-second requested output hard limit, private download route.
-- Dedicated worker: basic FFmpeg 1080×1920 MP4, up to 30 fps, from the **first** requested seconds of footage; status queued/processing/succeeded/failed. The worker runs on a server or your dev PC; never on the phone.
+- Dedicated worker: basic FFmpeg 1080×1920 MP4, up to 30 fps, from the **first** requested seconds of footage; status queued/processing/succeeded/failed/cancelled. The worker runs on a server or your dev PC; never on the phone.
 - SQLite local development or Docker PostgreSQL, backend tests and GitHub Actions starter.
 
 ## Not yet built (don't mistake labels for finished features)
@@ -100,6 +100,14 @@ cd apps/mobile && npm run typecheck
 ```
 
 The included test suite generates a 2-second FFmpeg video pattern and checks a 1080x1920 MP4. No paid API needed.
+
+### Retry and queue controls
+
+Uploads from the mobile form reuse an owner-scoped submission key when retried.
+Queued/processing projects have a **Cancel render** action. By default an owner
+can have three active jobs and one processing job; full queues return a clear
+error. Cancellation stops publication even if it races a render. See
+[queue controls and upgrade instructions](docs/QUEUE_CONTROLS.md) for details.
 
 ### Reproducible server smoke demo
 

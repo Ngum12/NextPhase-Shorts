@@ -15,6 +15,10 @@ class Settings:
         self.max_source_seconds = int(os.getenv("MAX_SOURCE_SECONDS", "600"))
         self.render_timeout_seconds = int(os.getenv("RENDER_TIMEOUT_SECONDS", "1200"))
         self.worker_poll_seconds = float(os.getenv("WORKER_POLL_SECONDS", "2"))
+        self.max_active_jobs_per_user = int(os.getenv("MAX_ACTIVE_JOBS_PER_USER", "3"))
+        self.max_processing_jobs_per_user = int(os.getenv("MAX_PROCESSING_JOBS_PER_USER", "1"))
+        if not 1 <= self.max_processing_jobs_per_user <= self.max_active_jobs_per_user:
+            raise RuntimeError("Queue limits must be positive and processing must not exceed active jobs")
         self.cors_origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "http://localhost:8081").split(",") if x.strip()]
         if len(self.jwt_secret) < 32:
             raise RuntimeError("JWT_SECRET must have at least 32 characters")

@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — Phase 2 migrations and worker claims
+## Unreleased — Phase 2 queue controls
+
+- Add owner-scoped, fingerprinted upload idempotency keys and additive migration 0003.
+- Add owner-only queued/processing cancellation, cooperative FFmpeg termination and mobile cancel/retry controls.
+- Enforce configurable per-user active/processing limits under short owner-row locks; preserve replay at capacity.
+- Extend SQLite/PostgreSQL process-race tests and real HTTP cancellation/replay smoke checks. Phase 2 remains in progress.
+
+## Phase 2 migrations and worker claims
 
 - Add explicit Alembic baseline/lease migrations, checked legacy adoption and startup version checks; keep completed job downloads compatible.
 - Add atomic claims, UUID lease fencing, attempt-specific output files and bounded expired-attempt recovery.

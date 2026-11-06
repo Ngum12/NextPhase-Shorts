@@ -39,7 +39,7 @@ export async function getStyles(): Promise<ShortStyle[]> {
 }
 
 export async function uploadVideo(token: string, selected: { uri: string; name: string; mimeType?: string },
-                                  style: string, title: string, seconds: number): Promise<Job> {
+                                  style: string, title: string, seconds: number, idempotencyKey: string): Promise<Job> {
   const form = new FormData();
   form.append('file', { uri: selected.uri, name: selected.name, type: selected.mimeType || 'video/mp4' } as any);
   form.append('style', style);
@@ -47,8 +47,14 @@ export async function uploadVideo(token: string, selected: { uri: string; name: 
   form.append('desired_seconds', String(seconds));
   // Do not manually set multipart Content-Type; React Native supplies the boundary.
   return extract(await fetch(`${BASE}/api/v1/jobs`, {
-    method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form,
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Idempotency-Key': idempotencyKey }, body: form,
   })) as Promise<Job>;
 }
 
 export function downloadUrl(id: string) { return `${BASE}/api/v1/jobs/${encodeURIComponent(id)}/download`; }
+
+export async function cancelJob(id: string, token: string): Promise<Job> {
+  return extract(await fetch(`${BASE}/api/v1/jobs/${encodeURIComponent(id)}/cancel`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` },
+  })) as Promise<Job>;
+}

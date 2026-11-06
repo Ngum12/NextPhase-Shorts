@@ -36,3 +36,30 @@ def test_full_60_second_export_never_exceeds_cap(tmp_path):
     info = render_baseline(source, output, 60)
     assert (info['width'], info['height']) == (1080, 1920)
     assert 59 <= info['duration'] <= 60.0
+
+
+def test_cancellation_kills_ffmpeg_and_removes_partial_output(tmp_path, monkeypatch):
+    from app.media import MediaCancelled
+    source = tmp_path / 'cancel-source.mp4'
+    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-f', 'lavfi',
+                    '-i', 'color=c=navy:s=160x90:r=30', '-t', '60', '-c:v', 'libx264',
+                    '-pix_fmt', 'yuv420p', str(source)], check=True, timeout=30)
+    real_popen = subprocess.Popen
+    children = []
+    def record_popen(*args, **kwargs):
+        child = real_popen(*args, **kwargs)
+        children.append(child)
+        return child
+    monkeypatch.setattr('app.media.subprocess.Popen', record_popen)
+    checks = 0
+    def should_cancel():
+        nonlocal checks
+        checks += 1
+        return checks >= 3
+    output = tmp_path / 'cancelled.mp4'
+    with pytest.raises(MediaCancelled):
+        render_baseline(source, output, 60, should_cancel=should_cancel)
+    assert len(children) == 1
+    assert children[0].poll() is not None
+    assert not output.exists()
+    assert not output.with_name('cancelled.partial.mp4').exists()
