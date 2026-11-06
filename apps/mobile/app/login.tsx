@@ -17,8 +17,8 @@ export default function LoginScreen() {
   };
   return <Page><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1, justifyContent:'center', gap:18}}>
     <Text style={{color:colors.accent, fontSize:18, fontWeight:'800', letterSpacing:2}}>NEXTPHASE</Text>
-    <Title>Your personal AI Shorts editor.</Title>
-    <Body>Professional 9:16 videos. Cloud processing. No heavy editing on your phone.</Body>
+    <Title>Your Shorts editor preview.</Title>
+    <Body>Baseline 9:16 trimming on the server. AI editing is planned; no heavy editing runs on your phone.</Body>
     <TextInput style={s.input} placeholder="Email" placeholderTextColor={colors.muted} value={email} autoCapitalize="none"
       keyboardType="email-address" onChangeText={setEmail} accessibilityLabel="Email address" />
     <TextInput style={s.input} placeholder="Password (10+ characters)" placeholderTextColor={colors.muted} value={password}

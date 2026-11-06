@@ -69,8 +69,7 @@ Register via `/api/v1/auth/register` in `/docs` and use its bearer token for `/a
 ```bash
 cd apps/mobile
 cp .env.local.example .env.local
-npm install
-npx expo install --fix  # ensure versions match the Expo SDK, then commit generated package-lock
+npm ci  # installs the committed Expo-compatible dependency graph
 npm start
 ```
 
@@ -93,6 +92,29 @@ cd apps/mobile && npm run typecheck
 ```
 
 The included test suite generates a 2-second FFmpeg video pattern and checks a 1080x1920 MP4. No paid API needed.
+
+### Reproducible server smoke demo
+
+From the repository root with FFmpeg/ffprobe installed:
+
+```bash
+.venv/bin/python scripts/smoke_e2e.py
+# Or test an already running API + worker (creates synthetic test accounts/jobs):
+.venv/bin/python scripts/smoke_e2e.py --base-url http://localhost:8000
+```
+
+The default starts isolated API/worker subprocesses with a temporary SQLite DB,
+generates five seconds of video/audio, uploads, polls, downloads, checks owner
+isolation, probes H.264/AAC 1080x1920/30 fps and fully decodes the result. It stops
+only its own processes. Logs, output and report go to an ignored `.data/smoke-*`
+directory; no real footage or credentials are committed. This proves the server
+path, not Android UI behavior. Run without Python's `-O` option so assertions run.
+
+For local Metro in restricted networks, use
+`EXPO_NO_TYPESCRIPT_SETUP=1 EXPO_OFFLINE=1 npm start -- --localhost`.
+Run `npm run typecheck` separately; offline mode is not a compatibility check.
+For managed Docker builds behind a TLS-inspecting proxy, see
+[development validation](docs/DEVELOPMENT.md).
 
 ## Important boundaries
 
