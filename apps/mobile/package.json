@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test:uploads": "node tests/uploads.test.cjs"
+    "test:uploads": "node tests/uploads.test.cjs",
+    "test:auth": "node tests/auth.test.cjs"
   },
   "dependencies": {
     "expo": "~54.0.0",

@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { api, cancelJob, downloadUrl, Job } from '../../src/api';
+import { unauthorized } from '../../src/authEvents';
 import { useAuth } from '../../src/auth';
 import { colors as c } from '../../src/theme';
 import { Body, Button, Loading, Page, Title, s } from '../../src/ui';
@@ -41,6 +42,7 @@ export default function Project() {
     try {
       const dest=(FileSystem.cacheDirectory||FileSystem.documentDirectory)+`nextphase-${job.id}.mp4`;
       const result=await FileSystem.downloadAsync(downloadUrl(job.id),dest,{headers:{Authorization:`Bearer ${token}`}});
+      if(result.status===401)unauthorized(token);
       if(result.status!==200)throw new Error('Download not authorized or unavailable');
       if(await Sharing.isAvailableAsync()) await Sharing.shareAsync(result.uri,{mimeType:'video/mp4'});
       else Alert.alert('Saved','Video stored in app cache. Sharing is unavailable on this device.');

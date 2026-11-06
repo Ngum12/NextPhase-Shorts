@@ -106,3 +106,5 @@ isolation and legacy downloads. The live smoke now migrates its isolated databas
 before launching API and worker. It still validates real rendering and download.
 
 Revision `0004_upload_sessions` is covered by [resumable uploads](RESUMABLE_UPLOADS.md).
+
+Revision `0005_auth_sessions` is covered by [authentication upgrade instructions](AUTH_SESSIONS.md).

@@ -1,11 +1,19 @@
 # Changelog
 
-## Unreleased — durable resumable uploads
+## Unreleased — revocable authentication sessions
+
+- Add migration 0005 for persistent session revocation and shared atomic auth-rate windows.
+- Add current/all-session logout and authenticated password changes; retain existing accounts, jobs and pending uploads. Existing tokens require one new sign-in.
+- Add mobile account security controls, startup validation and stale-response-safe credential handling.
+- Disable implicit proxy-header trust in documented/container launches; test API-restart persistence and password/session races. Verified email/reset/refresh remain pending.
+- Record owner-reported Pixel acceptance of the previous resumable upload increment.
+
+## Phase 2 durable resumable uploads
 
 - Add migration 0004, owner-scoped session creation/progress/parts/completion/abort, per-part/full-source checksums and shared queue reservations.
 - Persist verified chunks across API restarts, make completion repeat-safe, bound chunk receive time and clean terminal/expired staging data.
 - Add mobile private-copy/journal recovery, acknowledged-byte progress, Pause/Resume/Discard and SDK-compatible Expo Crypto.
-- Test real partial disconnect/API kill/restart/resume/render, concurrent completions, and client recovery with simulated native adapters. Physical Pixel checks remain required.
+- Test real partial disconnect/API kill/restart/resume/render, concurrent completions, and client recovery with simulated native adapters. The owner later reported physical Pixel checks passed; new auth controls still require device acceptance.
 
 ## Phase 2 queue controls
 

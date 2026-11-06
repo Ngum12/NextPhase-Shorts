@@ -5,6 +5,60 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — revocable authentication sessions
+
+- Migration `0005_auth_sessions` adds persistent session records and shared auth
+  counters. Fresh/repeat upgrades and 0004→0005 preservation of users, completed
+  output paths, paused upload offsets and parts are tested on both databases.
+- Access tokens require issuer/audience/subject/issued-at/expiry/random session ID
+  plus an unexpired, unrevoked DB record. IDs are hashed at rest. Current-session
+  logout, logout-all and authenticated password change persist across API restarts.
+- Password change verifies the current scrypt password and atomically revokes all
+  sessions. Login/password operations serialize on the owner row; a revoked or
+  expired session is rechecked after the password-change lock. Existing password
+  hashes remain valid. New passwords require 12–128 characters.
+- Atomic fixed-window limits default to 5 login attempts/account, 30 login attempts
+  per peer, 10 registrations/peer and 5 password attempts/account per 900 seconds.
+  Successes count too. HMAC keys avoid plaintext rate-table IP/email storage;
+  denied requests return Retry-After. Dummy scrypt hides the unknown-account fast
+  path; registration's existing 409 enumeration behavior remains documented.
+- Docker/README/API upgrade launchers disable automatic forwarded-header trust.
+  Production proxy/TLS/edge configuration remains a separate reviewed boundary.
+  Expired sessions/counters are cleaned by worker maintenance between renders.
+- Mobile adds Change password, Sign out and Sign out all sessions, saved-session
+  validation and authenticated-401 handling (including chunk requests/download).
+  Serialized secure-storage writes and originating-token checks prevent delayed
+  responses from deleting a newer login. Offline logout retains the credential
+  until server revocation succeeds. Pending upload journals remain owner-scoped.
+- **68 backend tests passed on SQLite (25.20 s) and PostgreSQL (26.31 s)**, no skips,
+  with one existing Starlette/httpx deprecation warning each. Includes concurrent
+  counters, JWT claim rejection, revocation scope, expiry, password and race tests,
+  plus all previous queue/media/migration/upload regressions.
+- Clean npm ci, **6 upload + 7 auth client logic tests**, TypeScript, offline SDK
+  compatibility check and Android Hermes export passed (1,007 modules / 2.66 MB).
+  These use adapters for native storage/network and are not physical-device tests.
+  Pip check passed. No dependency was added; inventory remains 835 records. A fresh
+  npm audit still reports **17 unresolved** (4 high, 12 moderate, 1 low).
+- Isolated real HTTP smoke: killed/restarted API; revoked token remained rejected,
+  valid session stayed valid and exhausted login window still returned 429.
+  Password change/all-session logout passed. The same run resumed the approximately
+  51 MiB source at byte 1,048,576 after partial disconnect/restart, verified SHA-256,
+  completed as one job and rendered/downloaded/decoded valid 1080×1920, 30fps,
+  4.9 s MP4; baseline flow took 1.51 s. Evidence (ignored, synthetic only):
+  `.data/smoke-9333e84beac64e07a124d4d3af774d39/`.
+- Local Compose/PostgreSQL was backed up, migrated, rebuilt and passed auth plus
+  partial-disconnect/resume/one-job/render/download HTTP smoke (baseline 2.39 s);
+  the externally running API was not restarted by that smoke.
+- **Upgrade behavior:** old bearer tokens require one new sign-in; use the existing
+  account/password to recover the same projects/pending upload. See
+  [Windows upgrade and acceptance steps](docs/AUTH_SESSIONS.md).
+- **Remaining gates:** physical Pixel acceptance of these new account controls;
+  verified email delivery, forgot-password recovery, refresh rotation, notices,
+  admin MFA, edge abuse/body limits and production security/retention review.
+  No mail credentials are configured, so no unauthenticated recovery bypass or
+  simulated email verification is supplied. Phase 2 remains in progress. AI and
+  billing stay disabled; no paid service/infrastructure was enabled.
+
 ## Phase 2 increment — durable resumable uploads
 
 - Migration `0004_upload_sessions` adds owner/key-unique session records, verified
@@ -38,11 +92,10 @@ the reported Android baseline flow, not production readiness or AI functionality
   client tests use native/network adapters across JS runtime restarts, not a device.
 - Added SDK-compatible expo-crypto 15.0.9 (declared MIT) for bounded checksums/UUIDs;
   inventory has 835 records. Audit remains **17 unresolved** (4 high, 12 moderate, 1 low).
-- **Pixel validation remains required for this increment**, including native binary
-  chunk upload, pause, USB interruption, force-stop/reopen/resume and discard.
-  Prior queue controls were confirmed by the owner on Windows/Pixel: 33 tests passed,
-  live smoke passed (6.3 s), cancellation/queue-full/slot release and remaining jobs
-  worked. Those are prior-increment user-supplied results, not this new device check.
+- **Owner-reported Windows/Pixel validation passed after merge**: 47 backend tests
+  (110.87 s), six upload client tests, TypeScript, real restart/resume smoke
+  (baseline 3.91 s), upload/pause/resume, saved-upload recovery, discard and download.
+  These device results were supplied by the owner, not executed by the cloud agent.
 - Private filesystem/shared volume only: no cloud object store, signed storage URLs,
   OS background transfer guarantees, complete retention policy or production abuse
   controls. All intensive video processing remains server-side; paid APIs and billing

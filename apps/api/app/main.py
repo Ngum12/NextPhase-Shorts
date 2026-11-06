@@ -8,18 +8,17 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
 from sqlalchemy import select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from .auth import current_user, make_password_hash, make_token, verify_password
+from .auth import current_user
+from .auth_routes import router as auth_router
 from .config import get_settings
 from .db import engine, session_dep
 from .migrate import require_current_schema
 from .media import MediaError, probe_video
 from .models import RenderJob, User, utcnow
 from .queue import ACTIVE_STATUSES, admit_job, lock_owner
-from .schemas import JobResponse, RegisterRequest, StyleInfo, TokenResponse, UserResponse
+from .schemas import JobResponse, StyleInfo, UserResponse
 
 settings = get_settings()
 from .catalog import STYLES, STYLE_IDS
@@ -37,6 +36,7 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                    expose_headers=["Idempotency-Replayed", "Upload-Offset", "X-Chunk-SHA256"])
 
 app.include_router(uploads_router)
+app.include_router(auth_router)
 
 @app.get("/health")
 def health():
@@ -46,29 +46,6 @@ def health():
 def styles():
     # Visual styles are future presets; Stage 1 renderer treats them identically.
     return [StyleInfo(id=k, name=n, description=d, available=False) for k, n, d in STYLES]
-
-@app.post("/api/v1/auth/register", response_model=TokenResponse, status_code=201)
-def register(data: RegisterRequest, db: Session = Depends(session_dep)):
-    user = User(email=str(data.email).strip().lower(), password_hash=make_password_hash(data.password))
-    db.add(user)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(409, "An account with this email already exists")
-    db.refresh(user)
-    return TokenResponse(access_token=make_token(user.id))
-
-class LoginBody(BaseModel):
-    email: str
-    password: str
-
-@app.post("/api/v1/auth/login", response_model=TokenResponse)
-def login(data: LoginBody, db: Session = Depends(session_dep)):
-    user = db.scalar(select(User).where(User.email == data.email.strip().lower()))
-    if not user or not verify_password(data.password, user.password_hash):
-        raise HTTPException(401, "Incorrect email or password")
-    return TokenResponse(access_token=make_token(user.id))
 
 @app.get("/api/v1/me", response_model=UserResponse)
 def me(user: User = Depends(current_user)):

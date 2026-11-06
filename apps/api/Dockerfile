@@ -13,4 +13,4 @@ COPY app ./app
 RUN chmod -R a+rX /srv/app && useradd --create-home nextphase && mkdir -p /var/nextphase/media && chown -R nextphase:nextphase /var/nextphase
 USER nextphase
 EXPOSE 8000
-CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000"]
+CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8000","--no-proxy-headers"]

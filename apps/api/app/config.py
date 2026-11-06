@@ -26,6 +26,17 @@ class Settings:
         self.upload_session_hours = int(os.getenv("UPLOAD_SESSION_HOURS", "24"))
         if not 65536 <= self.upload_chunk_bytes <= 8388608 or not 1 <= self.upload_session_hours <= 168:
             raise RuntimeError("Upload chunks must be 64 KiB–8 MiB and session lifetime 1–168 hours")
+        self.auth_session_hours = int(os.getenv("AUTH_SESSION_HOURS", "24"))
+        self.auth_window_seconds = int(os.getenv("AUTH_WINDOW_SECONDS", "900"))
+        self.auth_login_account_limit = int(os.getenv("AUTH_LOGIN_ACCOUNT_LIMIT", "5"))
+        self.auth_login_ip_limit = int(os.getenv("AUTH_LOGIN_IP_LIMIT", "30"))
+        self.auth_register_ip_limit = int(os.getenv("AUTH_REGISTER_IP_LIMIT", "10"))
+        self.auth_password_limit = int(os.getenv("AUTH_PASSWORD_LIMIT", "5"))
+        if not 1 <= self.auth_session_hours <= 72 or not 10 <= self.auth_window_seconds <= 3600:
+            raise RuntimeError("Auth session hours must be 1–72 and rate windows 10–3600 seconds")
+        if min(self.auth_login_account_limit, self.auth_login_ip_limit,
+               self.auth_register_ip_limit, self.auth_password_limit) < 1:
+            raise RuntimeError("Authentication rate limits must be positive")
         self.cors_origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "http://localhost:8081").split(",") if x.strip()]
         if len(self.jwt_secret) < 32:
             raise RuntimeError("JWT_SECRET must have at least 32 characters")

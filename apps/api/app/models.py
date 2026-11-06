@@ -72,3 +72,19 @@ class UploadPart(Base):
     offset: Mapped[int] = mapped_column(Integer, primary_key=True)
     size: Mapped[int] = mapped_column(Integer)
     sha256: Mapped[str] = mapped_column(String(64))
+
+
+class AuthSession(Base):
+    __tablename__ = 'auth_sessions'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # SHA-256(jti), never the bearer token
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AuthRateBucket(Base):
+    __tablename__ = 'auth_rate_buckets'
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)  # HMAC identity; no plaintext IP/email
+    attempts: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

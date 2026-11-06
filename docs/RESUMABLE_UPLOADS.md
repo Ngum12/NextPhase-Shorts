@@ -127,7 +127,7 @@ original file is never deleted. An offline discard retains the saved state until
 server abort can be confirmed. Interrupted preparation may leave a local orphan
 copy; automatic local orphan retention cleanup is not included.
 
-## Required Pixel check (not yet executed for this increment)
+## Pixel check (owner reported passed after merge)
 
 1. Keep USB forwarding, API and Expo working as in DEVELOPMENT.md. Submit a video
    large enough to span multiple chunks; only consented/synthetic footage.
@@ -139,6 +139,10 @@ copy; automatic local orphan retention cleanup is not included.
    authenticated download and playback.
 5. Pause another upload and discard it. Verify its slot is freed and the original
    gallery file remains. Recheck old completed video downloads and job cancellation.
+
+The owner reported successful Windows/Pixel acceptance after merging: upload,
+pause/resume, saved-upload recovery, discard and render/download worked. These
+are user-reported results, not native tests run by the cloud agent.
 
 Backend tests and the actual API restart smoke cover server behavior. The six
 mobile recovery tests use simulated native/network adapters across JS runtime
