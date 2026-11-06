@@ -8,12 +8,13 @@ import time
 import uuid
 from datetime import timedelta
 from pathlib import Path
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
-from .media import MediaError, render_baseline
-from .models import RenderJob, utcnow
+from .media import MediaCancelled, MediaError, render_baseline
+from .models import RenderJob, User, utcnow
+from .queue import lock_owner
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("nextphase.worker")
@@ -29,12 +30,27 @@ def request_stop(*_):
 
 def claim_job():
     with SessionLocal.begin() as db:
-        statement = (select(RenderJob.id).where(RenderJob.status == 'queued',
-                     RenderJob.attempt_count < MAX_ATTEMPTS)
-                     .order_by(RenderJob.created_at, RenderJob.id).limit(1))
+        queued = select(func.min(RenderJob.created_at)).where(
+            RenderJob.user_id == User.id, RenderJob.status == 'queued',
+            RenderJob.attempt_count < MAX_ATTEMPTS).correlate(User).scalar_subquery()
+        running = select(func.count()).where(RenderJob.user_id == User.id,
+            RenderJob.status == 'processing').correlate(User).scalar_subquery()
+        owner_query = select(User.id).where(queued.is_not(None),
+            running < settings.max_processing_jobs_per_user).order_by(queued, User.id).limit(1)
         if engine.dialect.name == 'postgresql':
-            statement = statement.with_for_update(skip_locked=True)
-        job_id = db.scalar(statement)
+            owner_query = owner_query.with_for_update(skip_locked=True)
+        owner_id = db.scalar(owner_query)
+        if owner_id is None:
+            return None
+        lock_owner(db, owner_id)
+        # Recheck after acquiring the lock: another claimant may have won first.
+        count = db.scalar(select(func.count()).select_from(RenderJob).where(
+            RenderJob.user_id == owner_id, RenderJob.status == 'processing'))
+        if count >= settings.max_processing_jobs_per_user:
+            return None
+        job_id = db.scalar(select(RenderJob.id).where(RenderJob.user_id == owner_id,
+            RenderJob.status == 'queued', RenderJob.attempt_count < MAX_ATTEMPTS)
+            .order_by(RenderJob.created_at, RenderJob.id).limit(1))
         if job_id is None:
             return None
         now = utcnow()
@@ -68,18 +84,27 @@ def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duratio
         return result.rowcount == 1
 
 
+def owns_claim(job):
+    with SessionLocal() as db:
+        return db.scalar(select(RenderJob.id).where(
+            RenderJob.id == job['id'], RenderJob.status == 'processing',
+            RenderJob.claim_token == job['claim_token'], RenderJob.lease_expires_at > utcnow())) is not None
+
+
 def process(job):
     token = job['claim_token']
     output = settings.storage_dir / job['user_id'] / job['id'] / token / 'output.mp4'
     try:
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
-        info = render_baseline(Path(job['source']), output, duration)
+        info = render_baseline(Path(job['source']), output, duration, should_cancel=lambda: not owns_claim(job))
         if mark_done(job['id'], token, output_path=output.resolve(), output_duration=info['duration']):
             logger.info('render completed job_id=%s seconds=%.2f', job['id'], info['duration'])
         else:
             # A recovered attempt can never replace or remove the winner's artifact.
             output.unlink(missing_ok=True)
             logger.warning('discarded stale render job_id=%s', job['id'])
+    except MediaCancelled:
+        logger.info('render cancelled or lease lost job_id=%s', job['id'])
     except MediaError:
         logger.warning('media error job_id=%s', job['id'])
         mark_done(job['id'], token, error_code='RENDER_FAILED')

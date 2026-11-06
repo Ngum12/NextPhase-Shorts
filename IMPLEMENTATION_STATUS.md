@@ -5,7 +5,41 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
-## Phase 2 increment — migrations and worker reliability
+## Phase 2 increment — upload replay, cancellation and queue controls
+
+- Added migration `0003_submission_keys`, retaining prior rows/downloads. Optional
+  owner-scoped Idempotency-Key plus server-side source/settings fingerprint prevents
+  duplicate accepted jobs on replay; changed requests under a key return 409.
+- Added owner-only queued/processing cancellation, terminal cancelled status,
+  repeated-cancel safety, lease revocation and cooperative FFmpeg kill/reaping.
+  Completed/failed jobs cannot be cancelled. No cancelled output is downloadable.
+- Configurable defaults: max three active jobs and one processing job per owner.
+  Short owner-row transactions protect admission and claimant capacity checks.
+  Replay is checked before queue capacity; full queue returns 429/Retry-After.
+- Mobile preserves the current form's submission key across network failures,
+  guards double taps, adds a confirmation/cancel action and stops terminal polling.
+  Native interaction recheck remains outstanding for these new controls.
+- **33 tests passed on SQLite** (18.33 s) and **33 on PostgreSQL** (17.84 s), no skips,
+  one existing Starlette/httpx deprecation warning each. Includes simultaneous
+  same-key/different-key submissions and same-owner worker races, cleanup/conflicts,
+  cross-owner/terminal cancellation, fencing, a real FFmpeg termination test and
+  preserving/replaying an accepted upload after a lost commit acknowledgement.
+- Live isolated SQLite smoke passed queued cancellation, upload replay, full render,
+  owner-only download and decode (4.9 s, 1080x1920/30 fps H.264/AAC, 1.92 s workflow).
+  Rebuilt/migrated Compose PostgreSQL passed queued cancellation with worker paused,
+  then the replay/render/download smoke with worker restarted (1.88 s workflow).
+- Mobile TypeScript and Android Hermes export passed (992 modules / 2.59 MB).
+  Remote CI and physical Pixel testing of these new interactions remain unverified.
+- No new dependencies; 17 mobile audit findings remain unresolved. No paid services,
+  billing or AI processing activated. This is still a Phase 2 increment, not full
+  production queueing/security: no broker, heartbeat, persistent upload session,
+  resumable transfer, global upload reservation, auth hardening or retention janitor.
+  See `docs/QUEUE_CONTROLS.md` for protocol, limits and migration instructions.
+- Owner reports the prior Windows migration passed, all 22 prior tests and the
+  migrated smoke passed (2.39 s), and both old/new Pixel downloads worked afterward.
+  Those are user-supplied prior-increment results, not tests of this new increment.
+
+## Prior Phase 2 increment — migrations and worker reliability
 
 - Explicit Alembic `0001_baseline` / `0002_job_leases` upgrades. API/worker startup
   checks the version and never creates tables. Checked legacy adoption preserves
@@ -27,8 +61,8 @@ the reported Android baseline flow, not production readiness or AI functionality
   one-shot migration, repeated startup and PostgreSQL live smoke also passed.
 - Mobile TypeScript passed; no mobile source/dependency changes in this increment.
 - CI now defines SQLite and PostgreSQL test variants; remote CI remains unobserved.
-- **Phase 2 remains in progress**: no broker, submission idempotency, heartbeat,
-  cancellation, fairness, quotas, object storage/resumable uploads, auth hardening,
+- **At that increment**, submission idempotency/cancellation were still pending;
+  broker, heartbeat, full fairness, billing quotas, storage/resumable uploads, auth hardening,
   full telemetry or retention janitor yet. Claims have bounded leases, not
   exactly-once execution; hard-killed attempts can leave orphan files.
 
@@ -125,7 +159,7 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
 
 AI highlights/director integration, ASR/captions, intelligent reframing, motion/3D,
 B-roll and six style engines; hardened auth/account lifecycle;
-full durable broker/submission idempotency, private cloud storage, resumable upload,
+full durable broker, private cloud storage, resumable upload,
 retention/deletion, production observability; payments, Mobile Money, entitlements,
 quotas, legal/store signoffs and commercial production hosting.
 
@@ -135,8 +169,8 @@ quotas, legal/store signoffs and commercial production hosting.
    DB before the documented checked migration, then repeat the Pixel workflow.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
-4. Next Phase 2 increment: submission idempotency, cancellation and per-user queue
-   controls, followed by storage/upload reliability and auth hardening.
+4. Next Phase 2 work: durable upload sessions/resumability and auth hardening,
+   then retention/telemetry and further queue fairness, according to the master gates.
    See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were

@@ -1,11 +1,43 @@
 """Minimal safe ffprobe/FFmpeg operations; no shell, no user-controlled filters."""
 import json
 import subprocess
+import time
+from typing import Callable
 from pathlib import Path
 from .config import get_settings
 
 class MediaError(Exception):
     pass
+
+class MediaCancelled(MediaError):
+    pass
+
+
+def run_render(cmd, timeout, should_cancel):
+    if should_cancel():
+        raise MediaCancelled('Render cancelled')
+    started = time.monotonic()
+    with subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE) as process:
+        try:
+            while True:
+                if should_cancel():
+                    raise MediaCancelled('Render cancelled or lease lost')
+                remaining = timeout - (time.monotonic() - started)
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(cmd, timeout)
+                try:
+                    _, stderr = process.communicate(timeout=min(0.25, remaining))
+                    if process.returncode:
+                        raise subprocess.CalledProcessError(process.returncode, cmd, stderr=stderr)
+                    return
+                except subprocess.TimeoutExpired:
+                    if time.monotonic() - started >= timeout:
+                        raise
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
+
 
 def probe_video(path: Path) -> dict:
     try:
@@ -27,7 +59,7 @@ def probe_video(path: Path) -> dict:
     except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         raise MediaError("Could not inspect the uploaded media") from exc
 
-def render_baseline(source: Path, dest: Path, seconds: int) -> dict:
+def render_baseline(source: Path, dest: Path, seconds: int, *, should_cancel: Callable[[], bool] | None = None) -> dict:
     """Stage 1 baseline only: first seconds, centered letterbox, safe AAC/H.264, vertical 30fps.
 
     This is NOT AI editing. Phase 2+ adds a structured timeline and professional effects.
@@ -50,10 +82,15 @@ def render_baseline(source: Path, dest: Path, seconds: int) -> dict:
         "-max_muxing_queue_size", "1024", str(tmp),
     ]
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=get_settings().render_timeout_seconds)
+        if should_cancel is None:
+            subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=get_settings().render_timeout_seconds)
+        else:
+            run_render(cmd, get_settings().render_timeout_seconds, should_cancel)
         info = probe_video(tmp)
         if info["width"] != 1080 or info["height"] != 1920 or info["duration"] > float(seconds) or info["duration"] > 60.0:
             raise MediaError("Rendered video failed aspect ratio or duration check")
+        if should_cancel is not None and should_cancel():
+            raise MediaCancelled('Render cancelled before publication')
         tmp.replace(dest)
         return info
     except subprocess.TimeoutExpired as exc:

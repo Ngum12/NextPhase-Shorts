@@ -34,14 +34,22 @@ def check_api(base_url, output_dir):
             assert response.status_code == 201, response.status_code
             return {'Authorization': 'Bearer ' + response.json()['access_token']}
         owner, other = register(), register()
+        key = uuid.uuid4().hex
         with source.open('rb') as handle:
-            response = client.post('/api/v1/jobs', headers=owner,
+            response = client.post('/api/v1/jobs', headers={**owner, 'Idempotency-Key': key},
                                    files={'file': ('source.mp4', handle, 'video/mp4')},
                                    data={'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})
         assert response.status_code == 201, response.status_code
         job = response.json()
         assert job['status'] == 'queued'
         path = '/api/v1/jobs/' + job['id']
+        with source.open('rb') as handle:
+            replay = client.post('/api/v1/jobs', headers={**owner, 'Idempotency-Key': key},
+                files={'file': ('source.mp4', handle, 'video/mp4')},
+                data={'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})
+        assert replay.status_code == 200 and replay.json()['id'] == job['id']
+        assert replay.headers['Idempotency-Replayed'] == 'true'
+        assert len(client.get('/api/v1/jobs', headers=owner).json()) == 1
         assert client.get(path, headers=other).status_code == 404
         assert client.get(path + '/download', headers=other).status_code == 404
         states = ['queued']
@@ -55,6 +63,7 @@ def check_api(base_url, output_dir):
             time.sleep(0.1)
         assert job['status'] == 'succeeded', job.get('error_code', job['status'])
         assert client.get(path + '/download', headers=other).status_code == 404
+        assert client.post(path + '/cancel', headers=owner).status_code == 409
         response = client.get(path + '/download', headers=owner)
         assert response.status_code == 200
         assert response.headers['content-type'].startswith('video/mp4')
@@ -71,9 +80,31 @@ def check_api(base_url, output_dir):
                    check=True, timeout=30)
     report = {'states_observed': states, 'width': 1080, 'height': 1920, 'fps': 30,
               'duration': float(metadata['format']['duration']),
-              'elapsed_seconds': round(time.monotonic() - started, 2), 'owner_isolation': 'passed'}
+              'elapsed_seconds': round(time.monotonic() - started, 2), 'owner_isolation': 'passed', 'upload_replay': 'passed'}
     (output_dir / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))
+
+
+def check_queued_cancellation(base_url, output_dir):
+    source = output_dir / 'cancel-source.mp4'
+    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-f', 'lavfi',
+                    '-i', 'color=c=navy:s=160x90:r=15', '-t', '1', '-c:v', 'libx264',
+                    '-pix_fmt', 'yuv420p', str(source)], check=True, timeout=30)
+    with httpx.Client(base_url=base_url, trust_env=False, timeout=30) as client:
+        registration = client.post('/api/v1/auth/register', json={
+            'email': f'{uuid.uuid4()}@example.com', 'password': secrets.token_urlsafe(24)})
+        assert registration.status_code == 201
+        headers = {'Authorization': 'Bearer ' + registration.json()['access_token']}
+        with source.open('rb') as handle:
+            result = client.post('/api/v1/jobs', headers=headers,
+                                 files={'file': ('source.mp4', handle, 'video/mp4')})
+        assert result.status_code == 201
+        path = '/api/v1/jobs/' + result.json()['id']
+        cancelled = client.post(path + '/cancel', headers=headers)
+        assert cancelled.status_code == 200 and cancelled.json()['status'] == 'cancelled'
+        assert client.post(path + '/cancel', headers=headers).json()['status'] == 'cancelled'
+        assert client.get(path + '/download', headers=headers).status_code == 409
+    print('Queued cancellation over HTTP: passed')
 
 
 def main():
@@ -115,6 +146,7 @@ def main():
                         time.sleep(0.1)
                     else:
                         raise RuntimeError('API readiness timed out; inspect api.log')
+                check_queued_cancellation(base, args.output_dir)
                 processes.append(subprocess.Popen([sys.executable, '-m', 'app.worker'], cwd=ROOT, env=env,
                                                   stdout=worker_log, stderr=subprocess.STDOUT))
                 check_api(base, args.output_dir)

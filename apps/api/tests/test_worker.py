@@ -117,7 +117,7 @@ def test_crashed_claim_can_retry_but_old_attempt_cannot_publish(client, monkeypa
     output.write_bytes(b'winner')
     assert mark_done(job_id, retry['claim_token'], output_path=output, output_duration=1)
     assert not mark_done(job_id, old['claim_token'], error_code='LATE_FAILURE')
-    def late_render(source, destination, duration):
+    def late_render(source, destination, duration, **kwargs):
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(b'loser')
         return {'duration': 1}
