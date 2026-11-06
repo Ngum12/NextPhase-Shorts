@@ -52,6 +52,11 @@ the reported Android baseline flow, not production readiness or AI functionality
 - **Upgrade behavior:** old bearer tokens require one new sign-in; use the existing
   account/password to recover the same projects/pending upload. See
   [Windows upgrade and acceptance steps](docs/AUTH_SESSIONS.md).
+- Review delivery: implementation commit `8482277` pushed to
+  `dev/phase-2-auth-sessions`. Automatic PR creation is blocked by GitHub API
+  access returning `Forbidden`; the owner can create it from
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-auth-sessions .
+  No merge or deployment was performed.
 - **Remaining gates:** physical Pixel acceptance of these new account controls;
   verified email delivery, forgot-password recovery, refresh rotation, notices,
   admin MFA, edge abuse/body limits and production security/retention review.
