@@ -1,8 +1,9 @@
 # Implementation Status — 2026-11-06
 
 This is a **developer prototype**, not a production AI editor. Phase 0 engineering
-validation and the server portion of Phase 1 are verified below. **Phase 1 is not
-fully accepted until native Android upload/download/share is tested.**
+validation and the server portion of Phase 1 are verified below. The owner has now
+reported a successful physical Pixel upload/render/download test. This establishes
+the reported Android baseline flow, not production readiness or AI functionality.
 
 ## Implemented and verified
 
@@ -51,12 +52,31 @@ local runs, source generation excluded, and are not production benchmarks or SLA
 Byte/source-limit tests exercise the configured handler boundary using a small
 limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred.
 
+## Follow-up validation after Pixel report
+
+- Clean npm ci, mobile TypeScript and offline SDK compatibility check: passed.
+- Android Hermes export: passed, 992 modules / 2.59 MB; does not verify safe-area appearance on hardware.
+- Backend regression suite: 14 passed in 10.01 s, one existing Starlette/httpx deprecation warning.
+- Live isolated API/worker smoke: queued → processing → succeeded, 1080x1920/30 fps,
+  4.9-second H.264/AAC output, full decode and owner isolation passed (1.54 s measured).
+- Dependency inventory regenerated for the targeted PostCSS update; current audit
+  reports 17 remaining findings. No blanket override, forced resolution or Expo SDK change.
+- Owner's Windows results: 14 tests passed in 81.51 s and live smoke passed in 2.69 s,
+  followed by successful TypeScript/Android bundle checks and physical Pixel download.
+  These are user-supplied results, not remotely executed by this agent.
+
 ## Remaining blockers and acceptance limits
 
-- **Android native UI not tested:** no `adb`, emulator binary or attached phone
-  is available. Follow `docs/DEVELOPMENT.md` to record native login, selection,
-  upload, queue display, download/share/playback on a compatible device. iOS also
-  remains untested. JavaScript export does not establish native UX correctness.
+- **Android evidence and limits:** owner-reported Pixel test passed using Expo Go
+  for SDK 54 on Windows with USB `adb reverse` (ports 8000 and 8081). The supplied
+  result screenshot shows documentary, requested 15 s, actual 11.7 s, SUCCEEDED;
+  the owner confirmed download worked. Home/style-list screenshots were supplied.
+  Exact Pixel model, Android build, media provenance and independent probe of that
+  downloaded file were not captured. iOS remains untested. Status-bar overlap was
+  visible on headerless home screens; the safe-area change needs Pixel recheck.
+- **Dependency findings:** current audit reproduced 18 findings (5 high). A targeted
+  PostCSS 8.5.32 override reduces this to 17 (4 high, 12 moderate, 1 low), preserving
+  Expo SDK 54. Remaining findings are unresolved; see `docs/DEPENDENCY_SECURITY.md`.
 - **Commercial license clearance is pending:** `docs/dependency-inventory.json`
   records 831 exact installed/locked dependency records and metadata, not legal
   approval, complete OS/container SBOM or an attribution bundle. Reference ZIPs
@@ -84,11 +104,13 @@ quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review the Phase 0/1 engineering change and run the documented Android acceptance
-   flow; keep Phase 1 incomplete until real device evidence is recorded.
+1. Review the Android safe-area/security follow-up and recheck home, login, library,
+   account and headered screens on the Pixel. Preserve the successful owner-reported
+   baseline evidence separately from this new visual regression check.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
-4. Begin Phase 2 reliability/security work only after the Phase 1 gates are accepted.
+4. Next Phase 2 increment: migration-managed PostgreSQL schema and reliable worker
+   claiming/recovery, with concurrency and restart tests before expanding services.
    See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were

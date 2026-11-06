@@ -15,7 +15,7 @@ export default function LoginScreen() {
     catch (err: any) { Alert.alert('Could not continue', err.message || 'Try again'); }
     finally { setBusy(false); }
   };
-  return <Page><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1, justifyContent:'center', gap:18}}>
+  return <Page safeTop><KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={{flex:1, justifyContent:'center', gap:18}}>
     <Text style={{color:colors.accent, fontSize:18, fontWeight:'800', letterSpacing:2}}>NEXTPHASE</Text>
     <Title>Your Shorts editor preview.</Title>
     <Body>Baseline 9:16 trimming on the server. AI editing is planned; no heavy editing runs on your phone.</Body>

@@ -7,7 +7,7 @@ import { Body, Button, Page, Title, s } from '../../src/ui';
 export default function Home() {
   const [styles, setStyles] = useState<ShortStyle[]>([]);
   useEffect(()=>{getStyles().then(setStyles).catch(()=>{});},[]);
-  return <Page><ScrollView contentContainerStyle={{gap:18, paddingTop:24, paddingBottom:45}}>
+  return <Page safeTop><ScrollView contentContainerStyle={{gap:18, paddingTop:24, paddingBottom:45}}>
     <Text style={{color:c.accent,fontWeight:'800',letterSpacing:3}}>NEXTPHASE SHORTS</Text>
     <Title>Your story. A better Short.</Title>
     <Body>Upload a recording. We handle rendering on the server — up to 60 seconds, always vertical.</Body>
