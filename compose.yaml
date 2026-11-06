@@ -1,0 +1,48 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
+      STORAGE_DIR: /var/nextphase/media
+    ports:
+      - "8000:8000"
+    volumes:
+      - media:/var/nextphase/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  worker:
+    build:
+      context: ./apps/api
+    command: python -m app.worker
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
+      STORAGE_DIR: /var/nextphase/media
+    volumes:
+      - media:/var/nextphase/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nextphase
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: nextphase
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextphase"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+volumes:
+  pgdata:
+  media:

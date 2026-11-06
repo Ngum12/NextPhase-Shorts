@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "NextPhase Shorts",
+    "slug": "nextphase-shorts",
+    "scheme": "nextphaseshorts",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": { "supportsTablet": false },
+    "android": { "package": "com.nextphase.shorts", "adaptiveIcon": { "backgroundColor": "#0C1220" } },
+    "plugins": ["expo-router", "expo-document-picker", "expo-secure-store"],
+    "experiments": { "typedRoutes": false }
+  }
+}
