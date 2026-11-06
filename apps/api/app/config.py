@@ -20,8 +20,8 @@ class Settings:
             raise RuntimeError("JWT_SECRET must have at least 32 characters")
         if self.env == "production" and "dev-only" in self.jwt_secret.lower():
             raise RuntimeError("Set a strong random JWT_SECRET before production")
-        if self.env == "production" and self.database_url.startswith("sqlite"):
-            raise RuntimeError("Production requires PostgreSQL and migrations")
+        if self.env in {"staging", "production"} and not self.database_url.startswith(("postgresql://", "postgresql+psycopg://")):
+            raise RuntimeError("Staging and production require PostgreSQL and migrations")
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
 @lru_cache(maxsize=1)

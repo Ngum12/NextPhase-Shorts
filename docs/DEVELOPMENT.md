@@ -9,6 +9,8 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r apps/api/requirements-dev.txt
 # Create ignored .env from .env.example; use a fresh random JWT_SECRET (>=32 chars).
 mkdir -p .data
+# For a fresh local app DB (tests use their own migrated DB):
+PYTHONPATH=apps/api .venv/bin/python -m app.migrate
 PYTHONPATH=apps/api .venv/bin/python -m pytest apps/api/tests -q
 .venv/bin/python scripts/smoke_e2e.py
 cd apps/mobile
@@ -43,6 +45,9 @@ services:
     ports: !override
       - "127.0.0.1:8002:8000"
   worker:
+    build:
+      secrets: [proxy_ca]
+  migrate:
     build:
       secrets: [proxy_ca]
 secrets:
@@ -106,3 +111,5 @@ is needed for this development flow.
    upload, observe queue completion, download/share and play the result.
 5. Confirm 9:16, <=requested/source/60 seconds, clear failure states, and owner
    isolation. Record actual evidence; do not mark passed based on JS bundling.
+
+For existing data and the worker lease/recovery contract, see [Phase 2 migration instructions](PHASE_2_MIGRATIONS.md).

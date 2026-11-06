@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — Pixel validation follow-up
+## Unreleased — Phase 2 migrations and worker claims
+
+- Add explicit Alembic baseline/lease migrations, checked legacy adoption and startup version checks; keep completed job downloads compatible.
+- Add atomic claims, UUID lease fencing, attempt-specific output files and bounded expired-attempt recovery.
+- Require PostgreSQL for staging/production; run one-shot migrations before Compose API/worker startup.
+- Test migration preservation, concurrent claimant processes, crashes/stale attempts and both SQLite/PostgreSQL; Phase 2 remains in progress.
+
+## Pixel validation follow-up
 
 - Record owner-reported Pixel upload/render/download success over USB and document SDK 54 Expo Go setup.
 - Apply top safe-area insets to headerless screens and use light status-bar icons; keep stack-header insets separate.

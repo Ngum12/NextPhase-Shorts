@@ -13,7 +13,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .auth import current_user, make_password_hash, make_token, verify_password
 from .config import get_settings
-from .db import Base, engine, session_dep
+from .db import engine, session_dep
+from .migrate import require_current_schema
 from .media import MediaError, probe_video
 from .models import RenderJob, User
 from .schemas import JobResponse, RegisterRequest, StyleInfo, TokenResponse, UserResponse
@@ -31,8 +32,7 @@ STYLE_IDS = {s[0] for s in STYLES}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # MVP convenience. Replace with Alembic migrations before production.
-    Base.metadata.create_all(bind=engine)
+    require_current_schema(engine)
     yield
 
 app = FastAPI(title="NextPhase Shorts API", version="0.1.0", lifespan=lifespan)
@@ -95,7 +95,9 @@ def download(job_id: str, user: User = Depends(current_user), db: Session = Depe
         raise HTTPException(404, "Project not found")
     if job.status != "succeeded" or not job.output_path:
         raise HTTPException(409, "Video is not ready")
-    output = settings.storage_dir / user.id / job.id / "output.mp4"
+    directory = settings.storage_dir / user.id / job.id
+    # Legacy successes keep their original path; new attempts are fenced by token.
+    output = directory / job.claim_token / "output.mp4" if job.claim_token else directory / "output.mp4"
     if str(output.resolve()) != str(Path(job.output_path).resolve()) or not output.is_file():
         raise HTTPException(404, "Video file is unavailable")
     return FileResponse(output, media_type="video/mp4", filename="nextphase-short.mp4")

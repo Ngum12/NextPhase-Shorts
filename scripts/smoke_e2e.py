@@ -93,6 +93,7 @@ def main():
                    DATABASE_URL='sqlite:///' + temporary + '/db.sqlite3', STORAGE_DIR=temporary + '/media',
                    JWT_SECRET=secrets.token_urlsafe(48), AI_PROVIDER='disabled', BILLING_PROVIDER='disabled',
                    WORKER_POLL_SECONDS='0.1')
+        subprocess.run([sys.executable, '-m', 'app.migrate'], cwd=ROOT, env=env, check=True, timeout=30)
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
             port = sock.getsockname()[1]

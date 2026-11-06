@@ -48,12 +48,20 @@ python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r apps/api/requirements-dev.txt
+mkdir -p .data
+PYTHONPATH=apps/api python -m app.migrate
 PYTHONPATH=apps/api uvicorn app.main:app --reload --port 8000
 # Separate terminal, from same repo root and same venv:
 PYTHONPATH=apps/api python -m app.worker
 ```
 
 On Windows, in PowerShell replace the `PYTHONPATH=apps/api COMMAND` syntax with `$env:PYTHONPATH='apps/api'; COMMAND`, or use WSL.
+
+Existing installations: stop API/worker and back up first. An unversioned Stage 1
+database requires a checked `python -m app.migrate --adopt-legacy` upgrade; see
+[Phase 2 migration instructions](docs/PHASE_2_MIGRATIONS.md), including Windows commands.
+Fresh Compose stacks run migrations automatically before API startup; existing
+unversioned Compose volumes need explicit adoption first.
 
 ### Quick API check
 

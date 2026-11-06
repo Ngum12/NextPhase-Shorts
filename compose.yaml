@@ -12,14 +12,28 @@ services:
     volumes:
       - media:/var/nextphase/media
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
       interval: 3s
       timeout: 3s
       retries: 20
     restart: unless-stopped
+  migrate:
+    build:
+      context: ./apps/api
+    command: python -m app.migrate
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
+      STORAGE_DIR: /var/nextphase/media
+    volumes:
+      - media:/var/nextphase/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
   worker:
     build:
       context: ./apps/api

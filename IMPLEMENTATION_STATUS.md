@@ -5,6 +5,33 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — migrations and worker reliability
+
+- Explicit Alembic `0001_baseline` / `0002_job_leases` upgrades. API/worker startup
+  checks the version and never creates tables. Checked legacy adoption preserves
+  users/completed job paths and rejects unknown schemas. Existing deployments must
+  stop services and back up before running the migration; see `docs/PHASE_2_MIGRATIONS.md`.
+- Atomic queued → processing compare-and-set claims; PostgreSQL SKIP LOCKED;
+  UUID tokens and expiry fence completion and keep each attempt's artifacts separate.
+- Expired first attempt requeues; expired second attempt fails with MAX_RETRIES.
+  A stale worker cannot publish over a retry or delete the winner's output.
+- PostgreSQL required for staging/production. Compose runs a one-shot migration
+  before API readiness and worker startup. SQLite remains local development only.
+- **22 tests passed on SQLite** (10.61 s) and **22 passed on PostgreSQL** (11.16 s),
+  no skips; one existing Starlette/httpx deprecation warning on each run. Tests
+  include four claimant processes / 12 jobs, a process crash immediately after
+  claiming, stale-token/output rejection, bounded retries, legacy downloads,
+  fresh/repeat migration, model/schema equivalence and data preservation.
+- Migration-aware live SQLite smoke passed (4.9 s export, 1080x1920/30 fps,
+  H.264/AAC, full decode and owner isolation; 1.50 s workflow time). Compose build,
+  one-shot migration, repeated startup and PostgreSQL live smoke also passed.
+- Mobile TypeScript passed; no mobile source/dependency changes in this increment.
+- CI now defines SQLite and PostgreSQL test variants; remote CI remains unobserved.
+- **Phase 2 remains in progress**: no broker, submission idempotency, heartbeat,
+  cancellation, fairness, quotas, object storage/resumable uploads, auth hardening,
+  full telemetry or retention janitor yet. Claims have bounded leases, not
+  exactly-once execution; hard-killed attempts can leave orphan files.
+
 ## Implemented and verified
 
 - FastAPI registration/login and signed bearer sessions, scrypt password hashes.
@@ -72,13 +99,13 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
   result screenshot shows documentary, requested 15 s, actual 11.7 s, SUCCEEDED;
   the owner confirmed download worked. Home/style-list screenshots were supplied.
   Exact Pixel model, Android build, media provenance and independent probe of that
-  downloaded file were not captured. iOS remains untested. Status-bar overlap was
-  visible on headerless home screens; the safe-area change needs Pixel recheck.
+  downloaded file were not captured. iOS remains untested. The owner subsequently confirmed the safe-area fix and
+  a repeated upload/render/download check all worked on the Pixel.
 - **Dependency findings:** current audit reproduced 18 findings (5 high). A targeted
   PostCSS 8.5.32 override reduces this to 17 (4 high, 12 moderate, 1 low), preserving
   Expo SDK 54. Remaining findings are unresolved; see `docs/DEPENDENCY_SECURITY.md`.
 - **Commercial license clearance is pending:** `docs/dependency-inventory.json`
-  records 831 exact installed/locked dependency records and metadata, not legal
+  records 834 exact installed/locked dependency records and metadata, not legal
   approval, complete OS/container SBOM or an attribution bundle. Reference ZIPs
   are absent; their original licenses were not independently reinspected. No code
   or assets from them were imported. See `docs/LICENSE_AUDIT.md` and Phase 0 audit.
@@ -97,20 +124,19 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
 ## Not implemented
 
 AI highlights/director integration, ASR/captions, intelligent reframing, motion/3D,
-B-roll and six style engines; hardened auth/account lifecycle; DB migrations,
-durable queue/idempotent leases, private cloud storage, resumable upload,
+B-roll and six style engines; hardened auth/account lifecycle;
+full durable broker/submission idempotency, private cloud storage, resumable upload,
 retention/deletion, production observability; payments, Mobile Money, entitlements,
 quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review the Android safe-area/security follow-up and recheck home, login, library,
-   account and headered screens on the Pixel. Preserve the successful owner-reported
-   baseline evidence separately from this new visual regression check.
+1. Review/merge this Phase 2 increment; stop services and back up the actual Windows
+   DB before the documented checked migration, then repeat the Pixel workflow.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
-4. Next Phase 2 increment: migration-managed PostgreSQL schema and reliable worker
-   claiming/recovery, with concurrency and restart tests before expanding services.
+4. Next Phase 2 increment: submission idempotency, cancellation and per-user queue
+   controls, followed by storage/upload reliability and auth hardening.
    See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
