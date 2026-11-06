@@ -1,15 +1,17 @@
-"""Single-job worker for Phase 1. PostgreSQL SKIP LOCKED coordinates workers.
+"""DB-backed queue with bounded leases and fenced, attempt-specific artifacts.
 
-Future: dedicated queue, backpressure, region routing, quotas, cancellation and retries.
+This remains a polling queue, not a full durable broker or exactly-once execution.
 """
 import logging
 import signal
 import time
-from datetime import datetime, timedelta, timezone
+import uuid
+from datetime import timedelta
 from pathlib import Path
 from sqlalchemy import select, update
 from .config import get_settings
-from .db import Base, SessionLocal, engine
+from .db import SessionLocal, engine
+from .migrate import require_current_schema
 from .media import MediaError, render_baseline
 from .models import RenderJob, utcnow
 
@@ -17,75 +19,96 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("nextphase.worker")
 stop = False
 settings = get_settings()
+MAX_ATTEMPTS = 2
+
 
 def request_stop(*_):
     global stop
     stop = True
 
+
 def claim_job():
     with SessionLocal.begin() as db:
-        statement = select(RenderJob).where(RenderJob.status == "queued").order_by(RenderJob.created_at.asc())
-        if engine.dialect.name == "postgresql":
+        statement = (select(RenderJob.id).where(RenderJob.status == 'queued',
+                     RenderJob.attempt_count < MAX_ATTEMPTS)
+                     .order_by(RenderJob.created_at, RenderJob.id).limit(1))
+        if engine.dialect.name == 'postgresql':
             statement = statement.with_for_update(skip_locked=True)
-        job = db.scalars(statement.limit(1)).first()
+        job_id = db.scalar(statement)
+        if job_id is None:
+            return None
+        now = utcnow()
+        token = str(uuid.uuid4())
+        # Compare-and-set also protects SQLite, which has no SKIP LOCKED.
+        job = db.execute(update(RenderJob).where(
+            RenderJob.id == job_id, RenderJob.status == 'queued',
+            RenderJob.attempt_count < MAX_ATTEMPTS).values(
+                status='processing', attempt_count=RenderJob.attempt_count + 1,
+                started_at=now, finished_at=None, error_code=None,
+                output_path=None, output_duration_seconds=None, claim_token=token,
+                lease_expires_at=now + timedelta(seconds=settings.render_timeout_seconds + 90))
+            .returning(RenderJob)).scalar_one_or_none()
         if job is None:
             return None
-        job.status = "processing"
-        job.attempt_count += 1
-        job.started_at = utcnow()
-        return {"id": job.id, "user_id": job.user_id, "source": job.source_path,
-                "desired_seconds": job.desired_seconds, "source_duration": job.source_duration_seconds}
+        return {'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
+                'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
+                'claim_token': token}
 
-def mark_done(job_id: str, *, output_path=None, output_duration=None, error_code=None):
+
+def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None):
+    now = utcnow()
+    values = dict(finished_at=now, lease_expires_at=None,
+                  status='failed' if error_code else 'succeeded', error_code=error_code,
+                  output_path=None if error_code else str(output_path),
+                  output_duration_seconds=None if error_code else output_duration)
     with SessionLocal.begin() as db:
-        job = db.get(RenderJob, job_id)
-        if not job:
-            return
-        job.finished_at = utcnow()
-        if error_code:
-            job.status = "failed"
-            job.error_code = error_code
-        else:
-            job.status = "succeeded"
-            job.output_path = str(output_path)
-            job.output_duration_seconds = output_duration
+        result = db.execute(update(RenderJob).where(
+            RenderJob.id == job_id, RenderJob.status == 'processing',
+            RenderJob.claim_token == claim_token, RenderJob.lease_expires_at > now).values(**values))
+        return result.rowcount == 1
+
 
 def process(job):
-    job_id = job["id"]
-    output = settings.storage_dir / job["user_id"] / job_id / "output.mp4"
+    token = job['claim_token']
+    output = settings.storage_dir / job['user_id'] / job['id'] / token / 'output.mp4'
     try:
-        duration = max(1, min(60, job["desired_seconds"], int(job["source_duration"] + 0.5)))
-        info = render_baseline(Path(job["source"]), output, duration)
-        mark_done(job_id, output_path=output.resolve(), output_duration=info["duration"])
-        logger.info("render completed job_id=%s seconds=%.2f", job_id, info["duration"])
+        duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
+        info = render_baseline(Path(job['source']), output, duration)
+        if mark_done(job['id'], token, output_path=output.resolve(), output_duration=info['duration']):
+            logger.info('render completed job_id=%s seconds=%.2f', job['id'], info['duration'])
+        else:
+            # A recovered attempt can never replace or remove the winner's artifact.
+            output.unlink(missing_ok=True)
+            logger.warning('discarded stale render job_id=%s', job['id'])
     except MediaError:
-        logger.exception("media error job_id=%s", job_id)
-        mark_done(job_id, error_code="RENDER_FAILED")
+        logger.warning('media error job_id=%s', job['id'])
+        mark_done(job['id'], token, error_code='RENDER_FAILED')
     except Exception:
-        logger.exception("unexpected error job_id=%s", job_id)
-        mark_done(job_id, error_code="INTERNAL_ERROR")
+        logger.exception('unexpected error job_id=%s', job['id'])
+        mark_done(job['id'], token, error_code='INTERNAL_ERROR')
+
 
 def recover_stale_jobs():
-    # A crashed worker should not leave jobs in processing forever. Maximum 2 attempts.
-    cutoff = utcnow() - timedelta(seconds=settings.render_timeout_seconds + 90)
+    now = utcnow()
+    expired = (RenderJob.status == 'processing', RenderJob.lease_expires_at <= now)
     with SessionLocal.begin() as db:
-        stale = db.scalars(select(RenderJob).where(RenderJob.status == "processing",
-                             RenderJob.started_at < cutoff)).all()
-        for job in stale:
-            if job.attempt_count >= 2:
-                job.status = "failed"
-                job.error_code = "MAX_RETRIES"
-                job.finished_at = utcnow()
-            else:
-                job.status = "queued"
-                job.started_at = None
-                job.error_code = None
+        # Atomic updates, rather than loading rows which can change before commit.
+        failed = db.execute(update(RenderJob).where(*expired,
+            RenderJob.attempt_count >= MAX_ATTEMPTS).values(
+                status='failed', error_code='MAX_RETRIES', finished_at=now,
+                claim_token=None, lease_expires_at=None))
+        requeued = db.execute(update(RenderJob).where(*expired,
+            RenderJob.attempt_count < MAX_ATTEMPTS).values(
+                status='queued', started_at=None, error_code=None,
+                claim_token=None, lease_expires_at=None))
+        return requeued.rowcount, failed.rowcount
+
 
 def main():
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
-    Base.metadata.create_all(bind=engine)
-    logger.info("NextPhase worker started (baseline FFmpeg, no AI)")
+    require_current_schema(engine)
+    logger.info('NextPhase worker started (leased baseline FFmpeg, no AI)')
     while not stop:
         recover_stale_jobs()
         job = claim_job()
@@ -94,5 +117,6 @@ def main():
         else:
             time.sleep(settings.worker_poll_seconds)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()

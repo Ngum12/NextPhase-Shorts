@@ -6364,6 +6364,22 @@
     },
     {
       "ecosystem": "pypi",
+      "name": "Mako",
+      "version": "1.4.3",
+      "license": "MIT",
+      "source": "https://pypi.org/project/Mako/1.4.3/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "MarkupSafe",
+      "version": "3.0.4",
+      "license": "BSD-3-Clause",
+      "source": "https://pypi.org/project/MarkupSafe/3.0.4/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
       "name": "PyJWT",
       "version": "2.15.1",
       "license": "MIT",
@@ -6392,6 +6408,14 @@
       "version": "2.1.8",
       "license": "MIT",
       "source": "https://pypi.org/project/SQLAlchemy/2.1.8/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "alembic",
+      "version": "1.20.1",
+      "license": "MIT",
+      "source": "https://pypi.org/project/alembic/1.20.1/",
       "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
     },
     {

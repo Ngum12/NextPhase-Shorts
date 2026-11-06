@@ -11,3 +11,13 @@ Three uploaded reference materials reviewed, not included here:
 Third-party audit before every merge: name, source URL, exact version, license URL, distribution/hosting conditions, commercial SaaS rights, transitive dependencies, sample media rights, attribution, data license, any copyleft constraints, maintainer approval. Store machine-readable SBOM/license inventory.
 
 Never imply public footage/images are automatically licensed because they are searchable. Require a license manifest per B-roll asset: source, owner, license, attribution, expiry, consent, approved usage, cache retention.
+
+## Migration dependency additions (metadata review)
+
+This increment adds Alembic 1.20.1 (declared MIT), Mako 1.4.3 (declared MIT) and
+MarkupSafe 3.0.4 (declared BSD-3-Clause) in the tested environment. Sources and
+installed license locations are in `dependency-inventory.json` (834 records).
+These metadata licenses permit broad commercial use subject to their notice and
+license conditions; maintain the required notices in distributions. This records
+metadata review, not independent legal clearance or a full transitive audit.
+No reference ZIP code/assets or media were introduced.

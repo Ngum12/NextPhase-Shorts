@@ -7,6 +7,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        database: [sqlite, postgres]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: nextphase
+          POSTGRES_PASSWORD: localdev
+          POSTGRES_DB: nextphase_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nextphase -d nextphase_test"
+          --health-interval 3s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -16,5 +31,6 @@ jobs:
       - run: python -m pytest apps/api/tests -q
         env:
           PYTHONPATH: apps/api
+          NEXTPHASE_TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql+psycopg://nextphase:localdev@127.0.0.1:5432/nextphase_test' || '' }}
       - name: Real HTTP and separate worker smoke
         run: python scripts/smoke_e2e.py
