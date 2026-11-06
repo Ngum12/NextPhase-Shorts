@@ -62,7 +62,39 @@ port 8000 available. The public CA bundle is mounted only during pip installatio
 not copied into image layers; package/TLS verification stays enabled. Do not save
 secret values in overrides. Never remove pre-existing volumes to rerun a test.
 
-## Android manual acceptance (outstanding)
+## Android over USB (verified by owner)
+
+On Windows, install Google Android Platform Tools and enable USB debugging on the
+Pixel. With the phone connected, unlocked and authorized:
+
+```powershell
+# From the extracted platform-tools directory:
+.\adb.exe devices
+.\adb.exe reverse tcp:8000 tcp:8000
+.\adb.exe reverse tcp:8081 tcp:8081
+```
+
+Keep API and worker running. The phone browser should load
+`http://127.0.0.1:8000/health`. Set ignored `apps/mobile/.env.local` to
+`EXPO_PUBLIC_API_URL=http://127.0.0.1:8000`, then from **apps/mobile** run:
+
+```powershell
+$env:EXPO_NO_TYPESCRIPT_SETUP = "1"
+$env:EXPO_OFFLINE = "1"
+npx expo start --localhost --clear
+```
+
+Use the official SDK 54 Android Expo Go download from
+https://expo.dev/go?sdkVersion=54&platform=android&device=true . The latest store
+Expo Go may target another SDK and will reject this project. Do not upgrade the
+project by running npx outside its mobile directory. USB mappings must be recreated
+after disconnects/restarts as needed. They avoid the LAN connectivity blocker;
+LAN access itself was not verified. After testing, remove temporary Windows
+firewall rules named `NextPhase local API test` / `NextPhase connectivity test`
+if you created them, and stop any temporary Python file server. No public tunnel
+is needed for this development flow.
+
+## Android manual acceptance
 
 1. Use a compatible Expo Go/development client and record device model, OS and SDK.
 2. Configure `EXPO_PUBLIC_API_URL` for the emulator (`10.0.2.2:8000`) or a reachable

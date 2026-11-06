@@ -4973,9 +4973,9 @@
     {
       "ecosystem": "npm",
       "name": "postcss",
-      "version": "8.4.49",
+      "version": "8.5.32",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/postcss/v/8.4.49",
+      "source": "https://www.npmjs.com/package/postcss/v/8.5.32",
       "license_location": "apps/mobile/node_modules/postcss/LICENSE*"
     },
     {

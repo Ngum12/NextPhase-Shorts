@@ -1,9 +1,11 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors as c } from './theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export function Page({ children }: { children: React.ReactNode }) {
-  return <View style={s.page}>{children}</View>;
+export function Page({ children, safeTop = false }: { children: React.ReactNode; safeTop?: boolean }) {
+  // Stack headers and the tab bar handle their own top/bottom insets.
+  return <SafeAreaView edges={safeTop ? ['top', 'left', 'right'] : ['left', 'right']} style={s.page}>{children}</SafeAreaView>;
 }
 export function Title({ children }: { children: React.ReactNode }) {
   return <Text style={s.title}>{children}</Text>;

@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased — Phase 0/1 validation
+## Unreleased — Pixel validation follow-up
+
+- Record owner-reported Pixel upload/render/download success over USB and document SDK 54 Expo Go setup.
+- Apply top safe-area insets to headerless screens and use light status-bar icons; keep stack-header insets separate.
+- Pin PostCSS 8.5.32 via npm override; reduce audit findings from 18 to 17 while preserving Expo SDK 54. Remaining 17 findings are unresolved.
+
+## Phase 0/1 validation
 
 - Align React Native with Expo SDK 54, pin matching React DOM, commit npm lockfile and use npm ci in mobile CI.
 - Add isolated live HTTP/worker/render/download smoke command and regression coverage for upload boundaries, auth, worker errors/retries and the full 60-second cap.

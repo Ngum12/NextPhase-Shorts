@@ -15,7 +15,7 @@ export default function Projects() {
     finally{setLoading(false);}
   },[token]);
   useFocusEffect(useCallback(()=>{refresh();},[refresh]));
-  return <Page><ScrollView refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} tintColor={c.accent}/>}
+  return <Page safeTop><ScrollView refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} tintColor={c.accent}/>}
     contentContainerStyle={{paddingTop:24,gap:16,paddingBottom:40}}>
     <Title>My Shorts</Title><Body>Your videos are processed in the cloud. Pull down to refresh.</Body>
     {loading && <ActivityIndicator color={c.accent}/>}

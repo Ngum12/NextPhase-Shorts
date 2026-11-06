@@ -5,7 +5,7 @@ import { useAuth } from '../../src/auth';
 import { Body, Button, Page, Title, s } from '../../src/ui';
 export default function Account() {
   const {signOut}=useAuth();
-  return <Page><View style={{paddingTop:28,gap:18}}>
+  return <Page safeTop><View style={{paddingTop:28,gap:18}}>
     <Title>Account</Title>
     <View style={s.card}><Text style={s.cardTitle}>Preview access</Text>
       <Body>Monthly Mobile Money subscriptions, quotas and invoices are planned, but no payments are currently collected.</Body></View>
