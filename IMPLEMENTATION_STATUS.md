@@ -5,7 +5,50 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
-## Phase 2 increment — upload replay, cancellation and queue controls
+## Phase 2 increment — durable resumable uploads
+
+- Migration `0004_upload_sessions` adds owner/key-unique session records, verified
+  part metadata, expiry and cleanup state. Existing jobs/download paths are retained.
+- Authenticated create/get/parts/complete/abort routes provide fixed-size sequential
+  SHA-256 verified chunks and authoritative DB offsets. Exact part/complete retries
+  are repeat-safe; changed bytes, gaps, invalid media and cross-owner access fail.
+- Unexpired uploads reserve queue capacity, shared with legacy submissions.
+  Completion exchanges an existing reservation for one job, including after a
+  configured limit reduction. Abort/expiry releases the slot. Legacy upload still works.
+- Parts are fsynced and atomically published before their offsets commit. Completion
+  rehashes every part and source, verifies size/FFprobe limits, then persists one job.
+  Chunk receive deadlines bound slow requests; aborted/expired/complete staging data
+  is cleaned in bounded worker maintenance batches or via `python -m app.upload_cleanup`.
+- Mobile now saves a private copy plus a per-account two-slot pending journal,
+  reads/hashes one bounded chunk at a time, shows acknowledged-byte progress and
+  offers Pause/Resume/Discard. It rechecks server offsets after interruption/restart.
+  Transfers are foreground only; app data and the saved file must remain intact.
+- **47 backend tests passed on SQLite** (17.57 s) and **47 on PostgreSQL** (19.09 s),
+  no skips; one existing Starlette/httpx warning each. Coverage includes concurrent
+  create/parts/complete, checksum and ownership failures, request timeouts, lost
+  commit acknowledgements, expiry/cleanup, invalid media and shared reservations.
+- Real HTTP smoke transferred an approximately 51 MiB synthetic source in 1 MiB
+  chunks, disconnected halfway through a part, forcibly killed/restarted its API,
+  resumed at the last acknowledged 1,048,576 bytes, completed twice as one job,
+  verified whole-source SHA-256, rendered/downloaded and decoded valid MP4 output.
+  Live Compose/PostgreSQL also passed interrupted-part resume and completion/render;
+  that externally running stack was not restarted by the smoke command.
+- Clean npm ci, **6 mobile recovery-logic tests**, TypeScript, offline SDK check,
+  Android Hermes bundle (1,004 modules / 2.65 MB) and pip check passed. The six
+  client tests use native/network adapters across JS runtime restarts, not a device.
+- Added SDK-compatible expo-crypto 15.0.9 (declared MIT) for bounded checksums/UUIDs;
+  inventory has 835 records. Audit remains **17 unresolved** (4 high, 12 moderate, 1 low).
+- **Pixel validation remains required for this increment**, including native binary
+  chunk upload, pause, USB interruption, force-stop/reopen/resume and discard.
+  Prior queue controls were confirmed by the owner on Windows/Pixel: 33 tests passed,
+  live smoke passed (6.3 s), cancellation/queue-full/slot release and remaining jobs
+  worked. Those are prior-increment user-supplied results, not this new device check.
+- Private filesystem/shared volume only: no cloud object store, signed storage URLs,
+  OS background transfer guarantees, complete retention policy or production abuse
+  controls. All intensive video processing remains server-side; paid APIs and billing
+  remain disabled. See `docs/RESUMABLE_UPLOADS.md` for migration/protocol/limitations.
+
+## Prior Phase 2 increment — upload replay, cancellation and queue controls
 
 - Added migration `0003_submission_keys`, retaining prior rows/downloads. Optional
   owner-scoped Idempotency-Key plus server-side source/settings fingerprint prevents
@@ -30,10 +73,10 @@ the reported Android baseline flow, not production readiness or AI functionality
   then the replay/render/download smoke with worker restarted (1.88 s workflow).
 - Mobile TypeScript and Android Hermes export passed (992 modules / 2.59 MB).
   Remote CI and physical Pixel testing of these new interactions remain unverified.
-- No new dependencies; 17 mobile audit findings remain unresolved. No paid services,
-  billing or AI processing activated. This is still a Phase 2 increment, not full
-  production queueing/security: no broker, heartbeat, persistent upload session,
-  resumable transfer, global upload reservation, auth hardening or retention janitor.
+- At that prior increment there were no new dependencies; the resumable-session
+  work above supersedes its upload limitations. Broker, heartbeat, complete abuse
+  controls, auth hardening and full retention remain outstanding. No paid services,
+  billing or AI processing were activated.
   See `docs/QUEUE_CONTROLS.md` for protocol, limits and migration instructions.
 - Owner reports the prior Windows migration passed, all 22 prior tests and the
   migrated smoke passed (2.39 s), and both old/new Pixel downloads worked afterward.
@@ -139,7 +182,7 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
   PostCSS 8.5.32 override reduces this to 17 (4 high, 12 moderate, 1 low), preserving
   Expo SDK 54. Remaining findings are unresolved; see `docs/DEPENDENCY_SECURITY.md`.
 - **Commercial license clearance is pending:** `docs/dependency-inventory.json`
-  records 834 exact installed/locked dependency records and metadata, not legal
+  records 835 exact installed/locked dependency records and metadata, not legal
   approval, complete OS/container SBOM or an attribution bundle. Reference ZIPs
   are absent; their original licenses were not independently reinspected. No code
   or assets from them were imported. See `docs/LICENSE_AUDIT.md` and Phase 0 audit.
@@ -159,18 +202,19 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
 
 AI highlights/director integration, ASR/captions, intelligent reframing, motion/3D,
 B-roll and six style engines; hardened auth/account lifecycle;
-full durable broker, private cloud storage, resumable upload,
+full durable broker, private cloud object storage, OS background transfers,
 retention/deletion, production observability; payments, Mobile Money, entitlements,
 quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
 1. Review/merge this Phase 2 increment; stop services and back up the actual Windows
-   DB before the documented checked migration, then repeat the Pixel workflow.
+   DB before the documented migration, install mobile dependencies and run the
+   interrupted-upload/force-stop/resume Pixel workflow in RESUMABLE_UPLOADS.md.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
-4. Next Phase 2 work: durable upload sessions/resumability and auth hardening,
-   then retention/telemetry and further queue fairness, according to the master gates.
+4. Next Phase 2 work: auth hardening, complete retention/telemetry, private object
+   storage adapters and further queue fairness, according to the master gates.
    See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were

@@ -1,4 +1,4 @@
-const BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8000').replace(/\/$/, '');
+export const BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8000').replace(/\/$/, '');
 
 export type ShortStyle = { id: string; name: string; description: string; available: boolean };
 export type Job = {
@@ -12,7 +12,7 @@ export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-async function extract(res: Response) {
+export async function extract(res: Response) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message = typeof json.detail === 'string' ? json.detail : 'Request failed. Please retry.';

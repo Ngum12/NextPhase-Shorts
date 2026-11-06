@@ -19,6 +19,13 @@ class Settings:
         self.max_processing_jobs_per_user = int(os.getenv("MAX_PROCESSING_JOBS_PER_USER", "1"))
         if not 1 <= self.max_processing_jobs_per_user <= self.max_active_jobs_per_user:
             raise RuntimeError("Queue limits must be positive and processing must not exceed active jobs")
+        self.upload_chunk_bytes = int(os.getenv("UPLOAD_CHUNK_BYTES", "1048576"))
+        self.upload_part_timeout_seconds = int(os.getenv("UPLOAD_PART_TIMEOUT_SECONDS", "120"))
+        if not 5 <= self.upload_part_timeout_seconds <= 600:
+            raise RuntimeError("Upload part timeout must be 5–600 seconds")
+        self.upload_session_hours = int(os.getenv("UPLOAD_SESSION_HOURS", "24"))
+        if not 65536 <= self.upload_chunk_bytes <= 8388608 or not 1 <= self.upload_session_hours <= 168:
+            raise RuntimeError("Upload chunks must be 64 KiB–8 MiB and session lifetime 1–168 hours")
         self.cors_origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "http://localhost:8081").split(",") if x.strip()]
         if len(self.jwt_secret) < 32:
             raise RuntimeError("JWT_SECRET must have at least 32 characters")

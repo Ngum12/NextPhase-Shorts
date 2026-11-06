@@ -22,15 +22,8 @@ from .queue import ACTIVE_STATUSES, admit_job, lock_owner
 from .schemas import JobResponse, RegisterRequest, StyleInfo, TokenResponse, UserResponse
 
 settings = get_settings()
-STYLES = [
-    ("documentary", "Cinematic Documentary", "Editorial storytelling, B-roll and evidence"),
-    ("vlog", "Professional Vlog", "Clean cuts, tone and pacing"),
-    ("reels", "Viral Shorts & Reels", "Dynamic hooks and captions"),
-    ("ads", "Product & Business Ads", "Branded promotional short videos"),
-    ("education", "Education & Explainers", "Clear concepts and animated diagrams"),
-    ("interviews", "Interviews & Podcasts", "Speaker-focused editing and highlights"),
-]
-STYLE_IDS = {s[0] for s in STYLES}
+from .catalog import STYLES, STYLE_IDS
+from .uploads import router as uploads_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,9 +32,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="NextPhase Shorts API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
-                   allow_credentials=False, allow_methods=["GET", "POST"],
-                   allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
-                   expose_headers=["Idempotency-Replayed"])
+                   allow_credentials=False, allow_methods=["GET", "POST", "PUT"],
+                   allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Chunk-SHA256"],
+                   expose_headers=["Idempotency-Replayed", "Upload-Offset", "X-Chunk-SHA256"])
+
+app.include_router(uploads_router)
 
 @app.get("/health")
 def health():

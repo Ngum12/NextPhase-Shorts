@@ -5,7 +5,7 @@ is not the complete Phase 2 roadmap. No external queue/storage service, paid API
 billing or public deployment is enabled.
 
 This document describes the initial lease increment. The next additive revision
-`0003_submission_keys` and current queue/cancel behavior are documented in
+`0003_submission_keys` and queue/cancel behavior are documented in
 [queue controls](QUEUE_CONTROLS.md). For an already migrated database, run the
 normal upgrade command after backup; do not repeat legacy adoption unnecessarily.
 
@@ -104,3 +104,5 @@ SQLite rejection, four simultaneous claimant processes / 12 jobs, bounded retry,
 a process exiting immediately after claim, expired-token rejection, stale output
 isolation and legacy downloads. The live smoke now migrates its isolated database
 before launching API and worker. It still validates real rendering and download.
+
+Revision `0004_upload_sessions` is covered by [resumable uploads](RESUMABLE_UPLOADS.md).

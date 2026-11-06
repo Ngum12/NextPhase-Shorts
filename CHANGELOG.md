@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — Phase 2 queue controls
+## Unreleased — durable resumable uploads
+
+- Add migration 0004, owner-scoped session creation/progress/parts/completion/abort, per-part/full-source checksums and shared queue reservations.
+- Persist verified chunks across API restarts, make completion repeat-safe, bound chunk receive time and clean terminal/expired staging data.
+- Add mobile private-copy/journal recovery, acknowledged-byte progress, Pause/Resume/Discard and SDK-compatible Expo Crypto.
+- Test real partial disconnect/API kill/restart/resume/render, concurrent completions, and client recovery with simulated native adapters. Physical Pixel checks remain required.
+
+## Phase 2 queue controls
 
 - Add owner-scoped, fingerprinted upload idempotency keys and additive migration 0003.
 - Add owner-only queued/processing cancellation, cooperative FFmpeg termination and mobile cancel/retry controls.

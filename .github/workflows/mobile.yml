@@ -17,6 +17,9 @@ jobs:
       - name: Check mobile TypeScript
         working-directory: apps/mobile
         run: npm run typecheck
+      - name: Test resumable upload recovery logic
+        working-directory: apps/mobile
+        run: npm run test:uploads
       - name: Check Expo SDK versions
         working-directory: apps/mobile
         run: EXPO_OFFLINE=1 npx expo install --check

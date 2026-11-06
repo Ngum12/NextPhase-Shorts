@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, Index
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, Index, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -41,3 +41,34 @@ class RenderJob(Base):
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     request_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class UploadSession(Base):
+    __tablename__ = 'upload_sessions'
+    __table_args__ = (Index('uq_upload_sessions_owner_key', 'user_id', 'client_key', unique=True),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), index=True)
+    client_key: Mapped[str] = mapped_column(String(128))
+    descriptor_hash: Mapped[str] = mapped_column(String(64))
+    file_name: Mapped[str] = mapped_column(String(255))
+    extension: Mapped[str] = mapped_column(String(8))
+    title: Mapped[str] = mapped_column(String(120))
+    style: Mapped[str] = mapped_column(String(48))
+    desired_seconds: Mapped[int] = mapped_column(Integer)
+    total_bytes: Mapped[int] = mapped_column(Integer)
+    received_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    chunk_bytes: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default='uploading')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    job_id: Mapped[str | None] = mapped_column(ForeignKey('render_jobs.id'), nullable=True)
+    source_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    parts_cleaned: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class UploadPart(Base):
+    __tablename__ = 'upload_parts'
+    session_id: Mapped[str] = mapped_column(ForeignKey('upload_sessions.id'), primary_key=True)
+    offset: Mapped[int] = mapped_column(Integer, primary_key=True)
+    size: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))

@@ -13,7 +13,7 @@
 
 ## Not yet built (don't mistake labels for finished features)
 
-**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, quotas, production hardened auth, cloud object storage or resumable uploads yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
+**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, quotas, production hardened auth, cloud object storage yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
 
 ## Step 1 — Run local or Docker backend
 
@@ -101,9 +101,17 @@ cd apps/mobile && npm run typecheck
 
 The included test suite generates a 2-second FFmpeg video pattern and checks a 1080x1920 MP4. No paid API needed.
 
+### Resumable uploads
+
+Create Short now saves a private copy and uploads checksum-verified chunks. Pause
+and Resume preserve committed progress; reopening New Short can recover the saved
+intent after an app restart. Discard releases a partial upload's reserved slot.
+This requires app data/the saved file to remain intact and does not provide OS
+background transfers. See [resumable upload setup and checks](docs/RESUMABLE_UPLOADS.md).
+
 ### Retry and queue controls
 
-Uploads from the mobile form reuse an owner-scoped submission key when retried.
+Upload sessions from the mobile form reuse an owner-scoped submission key when retried.
 Queued/processing projects have a **Cancel render** action. By default an owner
 can have three active jobs and one processing job; full queues return a clear
 error. Cancellation stops publication even if it races a render. See

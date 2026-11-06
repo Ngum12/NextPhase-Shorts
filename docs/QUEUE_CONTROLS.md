@@ -1,5 +1,9 @@
 # Phase 2 increment: retry-safe uploads, cancellation and queue limits
 
+Current mobile uploads now use durable sessions and shared reservations. See
+[resumable uploads](RESUMABLE_UPLOADS.md) for revision 0004 and recovery semantics.
+The legacy submission-key protocol below remains supported for compatibility.
+
 ## Upgrade and manual device check
 
 Stop API and worker, back up the actual database/media, pull the merged branch,
