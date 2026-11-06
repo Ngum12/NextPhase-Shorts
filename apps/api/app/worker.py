@@ -139,6 +139,8 @@ def main():
         if time.monotonic() - last_upload_cleanup >= 60:
             from .upload_cleanup import cleanup_uploads
             cleanup_uploads()
+            from .auth_limits import cleanup_auth
+            cleanup_auth()
             last_upload_cleanup = time.monotonic()
         recover_stale_jobs()
         job = claim_job()

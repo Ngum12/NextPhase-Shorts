@@ -5,6 +5,10 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+# Regression suites create many isolated accounts behind one test-client IP.
+# Auth-specific tests set small limits explicitly and exercise enforcement.
+for key in ('AUTH_LOGIN_ACCOUNT_LIMIT', 'AUTH_LOGIN_IP_LIMIT', 'AUTH_REGISTER_IP_LIMIT', 'AUTH_PASSWORD_LIMIT'):
+    os.environ[key] = '10000'
 test_database_url = os.getenv("NEXTPHASE_TEST_DATABASE_URL")
 if test_database_url:
     from sqlalchemy.engine import make_url

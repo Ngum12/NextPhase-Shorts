@@ -21,9 +21,10 @@ export default function LoginScreen() {
     <Body>Baseline 9:16 trimming on the server. AI editing is planned; no heavy editing runs on your phone.</Body>
     <TextInput style={s.input} placeholder="Email" placeholderTextColor={colors.muted} value={email} autoCapitalize="none"
       keyboardType="email-address" onChangeText={setEmail} accessibilityLabel="Email address" />
-    <TextInput style={s.input} placeholder="Password (10+ characters)" placeholderTextColor={colors.muted} value={password}
-      secureTextEntry onChangeText={setPassword} accessibilityLabel="Password" />
-    <Button title={busy ? 'Please wait…' : isNew ? 'Create account' : 'Sign in'} onPress={submit} disabled={busy || !email || password.length<10}/>
+    <TextInput style={s.input} placeholder="Password" placeholderTextColor={colors.muted} value={password}
+      secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} onChangeText={setPassword} accessibilityLabel="Password" />
+    {isNew&&<Body>Use at least 12 characters for your new password.</Body>}
+    <Button title={busy ? 'Please wait…' : isNew ? 'Create account' : 'Sign in'} onPress={submit} disabled={busy || !email || password.length<(isNew?12:1)}/>
     <Button title={isNew ? 'Already have an account? Sign in' : 'New here? Create an account'} onPress={()=>setIsNew(!isNew)} secondary />
     <Body>Preview build: cloud trimming is functional; AI style effects and subscriptions will be added in later stages.</Body>
   </KeyboardAvoidingView></Page>;

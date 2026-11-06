@@ -80,7 +80,7 @@ function fixture() {
         const result=crypto.createHash('sha256').update(bytes).digest();
         return result.buffer.slice(result.byteOffset,result.byteOffset+result.length);
       }},
-      './api':{BASE:'http://localhost',ApiError,extract,api:async endpoint=>extract(await fetch('http://localhost'+endpoint))},
+      './api':{BASE:'http://localhost',ApiError,extract,authenticatedFetch:async(token,url,options)=>fetch(url,options),api:async endpoint=>extract(await fetch('http://localhost'+endpoint))},
     };
     vm.runInNewContext(javascript,{exports,require:name=>{assert(adapters[name],name);return adapters[name];},
       fetch,AbortController,console,Uint8Array,ArrayBuffer});

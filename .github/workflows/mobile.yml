@@ -20,6 +20,9 @@ jobs:
       - name: Test resumable upload recovery logic
         working-directory: apps/mobile
         run: npm run test:uploads
+      - name: Test session recovery and revocation handling
+        working-directory: apps/mobile
+        run: npm run test:auth
       - name: Check Expo SDK versions
         working-directory: apps/mobile
         run: EXPO_OFFLINE=1 npx expo install --check

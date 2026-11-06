@@ -1,7 +1,7 @@
 import { File } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
-import { api, ApiError, Job, BASE, extract } from './api';
+import { api, ApiError, Job, BASE, extract, authenticatedFetch } from './api';
 
 export type PendingUpload = {
   version: 1; revision: number; ownerId: string; key: string; localName: string;
@@ -81,7 +81,7 @@ async function prepareUploadImpl(ownerId:string, selected:{uri:string;name:strin
   }
 }
 async function requestSession(record:PendingUpload,token:string,signal?:AbortSignal):Promise<Session> {
-  return extract(await fetch(`${BASE}/api/v1/upload-sessions`,{
+  return extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions`,{
     method:'POST',signal,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','Idempotency-Key':record.key},
     body:JSON.stringify({file_name:record.fileName,total_bytes:record.totalBytes,title:record.title,
       style:record.style,desired_seconds:record.seconds}),
@@ -97,7 +97,7 @@ async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(se
     const created=await requestSession(record,token,signal);
     record=await savePending({...record,sessionId:created.id});
   }
-  let session=await extract(await fetch(`${BASE}/api/v1/upload-sessions/${record.sessionId}`,{
+  let session=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}`,{
     signal,headers:{Authorization:`Bearer ${token}`},
   })) as Session;
   if(session.status==='completed'&&session.job_id) {
@@ -121,7 +121,7 @@ async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(se
       const digest=await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256,bytes);
       const checksum=Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('');
       paused(signal);
-      session=await extract(await fetch(`${BASE}/api/v1/upload-sessions/${record.sessionId}/parts?offset=${offset}`,{
+      session=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}/parts?offset=${offset}`,{
         method:'PUT',signal,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/octet-stream','X-Chunk-SHA256':checksum},
         body:bytes.slice().buffer,
       })) as Session;
@@ -131,7 +131,7 @@ async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(se
     }
   } finally {handle.close();}
   paused(signal);
-  const job=await extract(await fetch(`${BASE}/api/v1/upload-sessions/${record.sessionId}/complete`,{
+  const job=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}/complete`,{
     method:'POST',signal,headers:{Authorization:`Bearer ${token}`},
   })) as Job;
   await clearPending(record);
@@ -143,7 +143,7 @@ async function discardUploadImpl(record:PendingUpload,token:string):Promise<Job|
     : await requestSession(record,token);
   let job:Job|null=null;
   if(session.status==='completed'&&session.job_id)job=await api<Job>(`/api/v1/jobs/${session.job_id}`,token);
-  else await extract(await fetch(`${BASE}/api/v1/upload-sessions/${session.id}/abort`,{
+  else await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${session.id}/abort`,{
     method:'POST',headers:{Authorization:`Bearer ${token}`},
   }));
   await clearPending(record);

@@ -2,16 +2,20 @@
 
 ### What Stage 1 already does
 
-- JWT bearer authentication; password salted scrypt (not plain text); user-owned job/download filtering.
+- Revocable, DB-backed JWT bearer sessions with required issuer/audience/expiry, current/all-session logout and authenticated password change; salted scrypt passwords; user-owned job/download filtering.
+- Shared atomic auth attempt windows with HMAC identity keys, generic failed-login responses and strict socket-peer selection. See [auth limits and remaining risks](AUTH_SESSIONS.md).
 - UUID-based storage paths; fixed command arguments (no `shell=True`); FFprobe media validation.
 - FFmpeg runs in a separate worker process / Docker service; production Docker worker uses unprivileged user.
 - Upload size and format checks, output <= 60 seconds, env-based private JWT secret.
 - Billing disabled, AI model disabled, no secret keys in app.
 
+Migration-managed PostgreSQL, private-volume resumable uploads and shared auth
+limits are implemented; they do not satisfy the remaining production controls.
+
 ### MUST implement before accepting real public traffic
 
-- HTTPS/TLS, WAF/reverse proxy upload body limit, user/email verification, login throttling, abuse controls, optional MFA, rate limits, secure account recovery.
-- Database migrations, secret manager, signed short-lived object URLs, private object storage, multipart resumable uploads, virus/decompression defenses, media fingerprint checks and limits on codecs, resolution and upload duration.
+- HTTPS/TLS, WAF/reverse proxy upload body limit, user/email verification, broader abuse/edge rate controls, optional MFA, verified account recovery and session refresh.
+- Secret manager, signed short-lived object URLs, private cloud object storage, virus/decompression defenses, media fingerprint checks and limits on codecs, resolution and upload duration.
 - Defense-in-depth resource limits (workers CPU/RAM/process time, quotas and isolation), SSRF/network egress restriction, sandbox no arbitrary execution from AI outputs.
 - Media ownership/consent, rights verification, lawful content/misinformation handling, moderation, appeals and reporting mechanisms; do not build misleading impersonation/voice clones without permission.
 - Data deletion, retention transparency, GDPR/other local privacy review, opt-in third-party AI sending, privacy policy, terms of service, backups and incident playbook.

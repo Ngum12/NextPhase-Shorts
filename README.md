@@ -7,7 +7,7 @@
 ## What works right now
 
 - Expo/React Native screens: sign in/register, home, Create Short, six future style choices, My Shorts, job polling and owner-authenticated download/share.
-- FastAPI: email/password login, signed bearer token, project listing, upload validation, 10-minute source/300-MiB cap, 60-second requested output hard limit, private download route.
+- FastAPI: email/password login, revocable bearer sessions, current/all-session sign-out, password change and shared auth limits, project listing, upload validation, 10-minute source/300-MiB cap, 60-second requested output hard limit, private download route.
 - Dedicated worker: basic FFmpeg 1080×1920 MP4, up to 30 fps, from the **first** requested seconds of footage; status queued/processing/succeeded/failed/cancelled. The worker runs on a server or your dev PC; never on the phone.
 - SQLite local development or Docker PostgreSQL, backend tests and GitHub Actions starter.
 
@@ -50,7 +50,7 @@ python -m venv .venv
 pip install -r apps/api/requirements-dev.txt
 mkdir -p .data
 PYTHONPATH=apps/api python -m app.migrate
-PYTHONPATH=apps/api uvicorn app.main:app --reload --port 8000
+PYTHONPATH=apps/api uvicorn app.main:app --reload --port 8000 --no-proxy-headers
 # Separate terminal, from same repo root and same venv:
 PYTHONPATH=apps/api python -m app.worker
 ```
@@ -162,3 +162,7 @@ For managed Docker builds behind a TLS-inspecting proxy, see
 - [What costs money / API options](docs/COSTS_AND_KEYS.md)
 - [License audit](docs/LICENSE_AUDIT.md)
 - [Security gates](docs/SECURITY.md)
+
+For migration 0005, one-time re-login, authentication limits and physical-device
+acceptance, see [auth sessions](docs/AUTH_SESSIONS.md). Email verification, secure
+recovery and session refresh remain pending; no email service is enabled.

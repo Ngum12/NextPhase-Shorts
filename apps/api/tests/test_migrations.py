@@ -103,3 +103,27 @@ def test_staging_rejects_sqlite(monkeypatch, tmp_path):
     monkeypatch.setenv('DATABASE_URL', 'sqlite:///' + str(tmp_path / 'no-staging.db'))
     with pytest.raises(RuntimeError, match='PostgreSQL'):
         Settings()
+
+
+def test_auth_upgrade_preserves_pending_uploads_and_completed_jobs(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import User, RenderJob, UploadSession, UploadPart, utcnow
+    from datetime import timedelta
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection), '0004_upload_sessions')
+        connection.execute(User.__table__.insert().values(id='owner',email='keep@example.com',password_hash='unchanged'))
+        connection.execute(RenderJob.__table__.insert().values(id='done',user_id='owner',title='Keep',style='vlog',
+            desired_seconds=15,source_duration_seconds=5,source_path='old/source.mp4',output_path='old/output.mp4',status='succeeded'))
+        connection.execute(UploadSession.__table__.insert().values(id='pending',user_id='owner',client_key='same-key',
+            descriptor_hash='a'*64,file_name='source.mp4',extension='.mp4',title='Keep upload',style='vlog',
+            desired_seconds=15,total_bytes=2000000,received_bytes=1048576,chunk_bytes=1048576,expires_at=utcnow()+timedelta(hours=1)))
+        connection.execute(UploadPart.__table__.insert().values(session_id='pending',offset=0,size=1048576,sha256='b'*64))
+    upgrade_schema(migration_engine)
+    upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        assert connection.scalar(sa.text("SELECT password_hash FROM users WHERE id='owner'"))=='unchanged'
+        assert connection.scalar(sa.text("SELECT output_path FROM render_jobs WHERE id='done'"))=='old/output.mp4'
+        assert connection.scalar(sa.text("SELECT received_bytes FROM upload_sessions WHERE id='pending'"))==1048576
+        assert connection.scalar(sa.text("SELECT count(*) FROM upload_parts"))==1
+        assert connection.scalar(sa.text("SELECT count(*) FROM auth_sessions"))==0
