@@ -12,6 +12,9 @@
   See [deletion boundaries](PROJECT_DELETION.md).
 - Conservative per-account source/render reservations and bounded accepted output
   files; global physical disk, spooling/orphan and production quota controls remain.
+- Explicit versioned uploader attestation (not verified rights), restricted media
+  profiles and file-only FFprobe/FFmpeg input protocols. Full antivirus/sandbox,
+  rights verification and legal/privacy review remain open.
 - Billing disabled, AI model disabled, no secret keys in app.
 
 Migration-managed PostgreSQL, private-volume resumable uploads and shared auth

@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased — Save/Share and server storage budgets
+## Unreleased — upload acknowledgement and media input hardening
+
+- Add migration 0009 with nullable rights-version/time records; require new upload acknowledgement and copy it from sessions to jobs without inventing historical consent.
+- Gate durable mobile preparation/transfer with an explicit per-file acknowledgement; reconfirm older saved intents without changing keys/offsets. Keep discard available without a rights assertion.
+- Add owner-only session lookup by key and stale-intent guards for confirmation/resume/discard.
+- Restrict FFprobe/FFmpeg protocols, demuxers/decoders, source metadata and selected resource paths; revalidate legacy queued sources before rendering.
+- Test real supported codecs and a live network canary; record the owner's prior Pixel Save/Share acceptance.
+
+## Phase 2 Save/Share and server storage budgets
 
 - Separate native Save video to phone from Share video, with write-only permissions where required, explicit native save confirmation and no broad Android 13+ library read request.
 - Add SDK-compatible MIT-declared Expo Media Library 18.2.1 and preserve its upstream notice.

@@ -84,7 +84,7 @@ npm start
 For Android emulator use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. For iOS simulator use `http://localhost:8000`. For a **physical phone** use your computer's LAN IP and allow the firewall, e.g. `http://192.168.x.x:8000`. **Only for development on a trusted network.** Real production must use HTTPS + domain and reverse proxy. Verify Expo Go/SDK compatibility or build an Expo development client when needed.
 
 1. Create account / sign in.
-2. Create Short -> choose your own short sample video -> choose a style (future marker) -> 15, 30, 45 or 60 s maximum -> upload.
+2. Create Short -> choose your own short sample video -> acknowledge upload rights/server processing -> choose a style (future marker) -> 15, 30, 45 or 60 s maximum -> upload.
 3. Observe queued/processing status; refresh or see auto-poll.
 4. Tap Save video to phone for the media library, or Share video for the share sheet; both use authenticated server download.
 
@@ -178,3 +178,8 @@ active renders deferred past their old lease. See [deletion scope and upgrade](d
 Save and Share are now separate native actions. Per-account server storage
 admission budgets require migration 0008 and an offline inventory for existing
 media. See [upgrade, native permissions and budget definitions](docs/SAVE_AND_STORAGE.md).
+
+New uploads now require a recorded rights/server-processing acknowledgement.
+Server container/codec/pixel/frame-rate checks and file-only FFmpeg input protocols
+are restricted; old paused uploads can reconfirm without losing progress. See
+[consent/media profile and migration 0009](docs/UPLOAD_CONSENT_AND_MEDIA.md).

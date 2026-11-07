@@ -18,3 +18,7 @@ features or present planned styles as implemented.
 Save/Share separation and conservative per-account retained-media admission
 budgets are implemented; physical OS save acceptance and production disk/global
 capacity/retention controls remain. See SAVE_AND_STORAGE.md.
+
+Upload self-attestation records and restricted baseline media processing are
+implemented. Verified rights/moderation, production sandbox/antivirus and broader
+phone/HDR/VFR normalization remain. See UPLOAD_CONSENT_AND_MEDIA.md.

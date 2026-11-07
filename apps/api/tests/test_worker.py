@@ -1,3 +1,4 @@
+from upload_fixtures import RIGHTS_FORM
 from datetime import timedelta
 
 from app.db import SessionLocal
@@ -10,7 +11,7 @@ def queued_job(client, monkeypatch):
     monkeypatch.setattr('app.main.probe_video', lambda _: {'duration': 2, 'width': 320, 'height': 240})
     token = new_user(client)
     response = client.post('/api/v1/jobs', headers={'Authorization': f'Bearer {token}'},
-                           files={'file': ('source.mp4', b'not-real-media', 'video/mp4')})
+                           files={'file': ('source.mp4', b'not-real-media', 'video/mp4')}, data=RIGHTS_FORM)
     assert response.status_code == 201
     return response.json()['id'], token
 

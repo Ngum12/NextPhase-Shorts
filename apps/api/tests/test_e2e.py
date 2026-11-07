@@ -1,3 +1,4 @@
+from upload_fixtures import RIGHTS_FORM
 import io
 import shutil
 import subprocess
@@ -23,7 +24,7 @@ def test_upload_worker_download_owner_only(client, tmp_path: Path):
                     '-c:v','libx264','-pix_fmt','yuv420p',str(clip)],check=True,timeout=30)
     response = client.post('/api/v1/jobs', headers=own,
                            files={'file':('sample.mp4',io.BytesIO(clip.read_bytes()),'video/mp4')},
-                           data={'style':'documentary','desired_seconds':'15','title':'Pilot test'})
+                           data={**RIGHTS_FORM, **({'style':'documentary','desired_seconds':'15','title':'Pilot test'})})
     assert response.status_code == 201, response.text
     job_id = response.json()['id']
     assert response.json()['status']=='queued'

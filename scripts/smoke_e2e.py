@@ -14,6 +14,8 @@ import uuid
 import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
+RIGHTS_FORM={'rights_confirmed':'true','consent_version':'upload-rights-v1'}
+RIGHTS_JSON={'rights_confirmed':True,'consent_version':'upload-rights-v1'}
 
 
 def check_api(base_url, output_dir):
@@ -35,11 +37,14 @@ def check_api(base_url, output_dir):
             return {'Authorization': 'Bearer ' + response.json()['access_token']}
         owner, other = register(), register()
         assert client.get('/api/v1/me/storage',headers=owner).json()['known_reserved_bytes']==0
+        denied=client.post('/api/v1/upload-sessions',headers={**owner,'Idempotency-Key':uuid.uuid4().hex},
+            json={'file_name':'source.mp4','total_bytes':source.stat().st_size})
+        assert denied.status_code==422
         key = uuid.uuid4().hex
         with source.open('rb') as handle:
             response = client.post('/api/v1/jobs', headers={**owner, 'Idempotency-Key': key},
                                    files={'file': ('source.mp4', handle, 'video/mp4')},
-                                   data={'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})
+                                   data={**RIGHTS_FORM, **({'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})})
         assert response.status_code == 201, response.status_code
         job = response.json()
         stored=client.get('/api/v1/me/storage',headers=owner).json()
@@ -50,7 +55,7 @@ def check_api(base_url, output_dir):
         with source.open('rb') as handle:
             replay = client.post('/api/v1/jobs', headers={**owner, 'Idempotency-Key': key},
                 files={'file': ('source.mp4', handle, 'video/mp4')},
-                data={'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})
+                data={**RIGHTS_FORM, **({'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})})
         assert replay.status_code == 200 and replay.json()['id'] == job['id']
         assert replay.headers['Idempotency-Replayed'] == 'true'
         assert len(client.get('/api/v1/jobs', headers=owner).json()) == 1
@@ -84,7 +89,7 @@ def check_api(base_url, output_dir):
         assert all(row['id']!=job['id'] for row in client.get('/api/v1/jobs',headers=owner).json())
         assert client.post('/api/v1/jobs',headers={**owner,'Idempotency-Key':key},
             files={'file':('source.mp4',source.read_bytes(),'video/mp4')},
-            data={'title':'Synthetic smoke test','style':'vlog','desired_seconds':'15'}).status_code==410
+            data={**RIGHTS_FORM, **({'title':'Synthetic smoke test','style':'vlog','desired_seconds':'15'})}).status_code==410
         deletion={'accepted':True,'download_revoked':True,'replay_blocked':True}
         (output_dir/'deletion-report.json').write_text(json.dumps(deletion,indent=2)+'\n')
         print('Project deletion:',json.dumps(deletion))
@@ -116,7 +121,7 @@ def check_queued_cancellation(base_url, output_dir):
         headers = {'Authorization': 'Bearer ' + registration.json()['access_token']}
         with source.open('rb') as handle:
             result = client.post('/api/v1/jobs', headers=headers,
-                                 files={'file': ('source.mp4', handle, 'video/mp4')})
+                                 files={'file': ('source.mp4', handle, 'video/mp4')}, data=RIGHTS_FORM)
         assert result.status_code == 201
         path = '/api/v1/jobs/' + result.json()['id']
         cancelled = client.post(path + '/cancel', headers=headers)
@@ -137,7 +142,7 @@ def begin_resumable(base_url, output_dir):
         '-preset', 'ultrafast', '-crf', '0', '-pix_fmt', 'yuv420p', '-c:a', 'aac', str(source)],
         check=True, timeout=30)
     data = source.read_bytes()
-    descriptor = dict(file_name='source.mp4', total_bytes=len(data), title='Resumable smoke', style='vlog', desired_seconds=15)
+    descriptor = dict(**RIGHTS_JSON,file_name='source.mp4', total_bytes=len(data), title='Resumable smoke', style='vlog', desired_seconds=15)
     with httpx.Client(base_url=base_url, trust_env=False, timeout=30) as client:
         response = client.post('/api/v1/auth/register', json={
             'email': f'{uuid.uuid4()}@example.com', 'password': secrets.token_urlsafe(24)})
@@ -150,6 +155,8 @@ def begin_resumable(base_url, output_dir):
         usage=client.get('/api/v1/me/storage',headers=owner).json()
         assert usage['uninventoried_count']==0 and usage['known_reserved_bytes']>len(data)
         session['_storage_budget']=usage['known_reserved_bytes']
+        assert session['rights_version']=='upload-rights-v1' and session['rights_confirmed_at']
+        session['_rights_at']=session['rights_confirmed_at']
         size = session['chunk_bytes']
         assert len(data) > size*2, 'Synthetic source must span several chunks'
         first = data[:size]
@@ -179,6 +186,7 @@ def finish_resumable(base_url, output_dir, transfer, *, restarted):
     with httpx.Client(base_url=base_url, trust_env=False, timeout=60) as client:
         status = client.get(path, headers=owner).json()
         assert status['received_bytes'] == session['chunk_bytes'], status
+        assert status['rights_version']=='upload-rights-v1' and status['rights_confirmed_at']==session['_rights_at']
         replay = client.post('/api/v1/upload-sessions', headers={**owner, 'Idempotency-Key': key}, json=descriptor)
         assert replay.status_code == 200 and replay.json()['id'] == session['id']
         for offset in range(status['received_bytes'], len(data), session['chunk_bytes']):
@@ -211,7 +219,7 @@ def finish_resumable(base_url, output_dir, transfer, *, restarted):
     subprocess.run(['ffmpeg','-nostdin','-v','error','-i',str(output),'-f','null','-'],check=True,timeout=30)
     report=dict(api_restarted=restarted, interrupted_part='not committed',
         acknowledged_offset=session['chunk_bytes'], source_bytes=len(data),
-        chunk_bytes=session['chunk_bytes'], checksum='passed', repeated_complete='one job', render_download='passed')
+        chunk_bytes=session['chunk_bytes'], checksum='passed', repeated_complete='one job', render_download='passed',rights_acknowledgement='preserved')
     (output_dir/'resumable-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print('Resumable upload:',json.dumps(report))
 
@@ -327,7 +335,7 @@ def main():
                 (args.output_dir/'telemetry-report.json').write_text(json.dumps(telemetry,indent=2)+'\n')
                 print('Render telemetry: measured successful attempts, output bytes and aggregate report passed')
                 subprocess.run([sys.executable,'-m','app.deletion'],cwd=ROOT,env=env,check=True,timeout=30)
-                verification='from app.storage import usage; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and usage(db,row.user_id)["known_reserved_bytes"]==0 and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); db.close()'
+                verification='from app.consent import RIGHTS_VERSION; from app.storage import usage; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and usage(db,row.user_id)["known_reserved_bytes"]==0 and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); assert all(row.rights_version==RIGHTS_VERSION and row.rights_confirmed_at is not None for row in db.scalars(select(RenderJob))); db.close()'
                 subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
                 print('Deleted source/output filesystem cleanup and storage release: passed')
             finally:

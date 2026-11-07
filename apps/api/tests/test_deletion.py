@@ -1,3 +1,4 @@
+from upload_fixtures import RIGHTS_FORM
 from datetime import timedelta
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -57,7 +58,7 @@ def test_deleted_idempotency_key_cannot_recreate_job(client,monkeypatch):
     monkeypatch.setattr('app.main.probe_video',lambda _: {'duration':2,'width':320,'height':240})
     token=new_user(client);key=uuid.uuid4().hex
     def upload():return client.post('/api/v1/jobs',headers={**auth(token),'Idempotency-Key':key},
-        files={'file':('source.mp4',b'original','video/mp4')})
+        files={'file':('source.mp4',b'original','video/mp4')}, data=RIGHTS_FORM)
     job_id=upload().json()['id']
     remove(client,job_id,token)
     assert upload().status_code==410
@@ -155,7 +156,9 @@ def test_deletion_stops_a_real_running_ffmpeg_attempt(client,monkeypatch):
         return original_check(current)
     original_popen=subprocess.Popen;children=[]
     def record(*args,**kwargs):
-        child=original_popen(*args,**kwargs);children.append(child);return child
+        child=original_popen(*args,**kwargs)
+        if args[0][0]=='ffmpeg':children.append(child)
+        return child
     monkeypatch.setattr(worker,'owns_claim',check)
     monkeypatch.setattr('app.media.subprocess.Popen',record)
     process(job)

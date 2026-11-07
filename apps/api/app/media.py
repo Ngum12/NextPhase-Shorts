@@ -5,6 +5,7 @@ import time
 from typing import Callable
 from pathlib import Path
 from .config import get_settings
+from .media_policy import CODEC_THREADS, input_args, validate_metadata
 
 class MediaError(Exception):
     pass
@@ -45,21 +46,13 @@ def run_render(cmd, timeout, should_cancel):
 def probe_video(path: Path) -> dict:
     try:
         result = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=index,codec_type,width,height",
+            ["ffprobe", "-v", "error", "-max_alloc", "67108864", *input_args(), "-show_entries", "format=duration,format_name:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,sample_rate,channels:stream_disposition=attached_pic",
              "-of", "json", str(path)],
             capture_output=True, text=True, timeout=30, check=True,
         )
         data = json.loads(result.stdout)
-        streams = [s for s in data.get("streams", []) if s.get("codec_type") == "video"]
-        duration = float(data.get("format", {}).get("duration", 0))
-        if not streams or not 0 < duration < 86400:
-            raise MediaError("Not a valid video with a known duration")
-        video = streams[0]
-        width, height = int(video.get("width", 0)), int(video.get("height", 0))
-        if not (16 <= width <= 7680 and 16 <= height <= 7680):
-            raise MediaError("Unsupported video dimensions")
-        return {"duration": duration, "width": width, "height": height}
-    except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        return validate_metadata(data)
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError, ZeroDivisionError, OverflowError, AttributeError, json.JSONDecodeError) as exc:
         raise MediaError("Could not inspect the uploaded media") from exc
 
 def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes: int | None = None, should_cancel: Callable[[], bool] | None = None) -> dict:
@@ -70,6 +63,10 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes:
     if not (1 <= seconds <= 60):
         raise MediaError("Duration must be 1–60 seconds")
     max_output_bytes = max_output_bytes or get_settings().max_render_bytes
+    if should_cancel is not None and should_cancel():raise MediaCancelled('Render cancelled')
+    source_info=probe_video(source)
+    if source_info['duration']>get_settings().max_source_seconds:
+        raise MediaError('Source exceeds the configured duration limit')
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_name(dest.stem + ".partial.mp4")
     tmp.unlink(missing_ok=True)
@@ -79,9 +76,11 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes:
         "fps=30,setsar=1,format=yuv420p"
     )
     cmd = [
-        "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
+        "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
+        "-max_alloc", "67108864", "-filter_threads", str(CODEC_THREADS),
+        *input_args(), "-i", str(source),
         "-t", str(max(0.5, seconds - 0.10)), "-map", "0:v:0", "-map", "0:a?", "-vf", vf,
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "24", "-pix_fmt", "yuv420p",
+        "-c:v", "libx264", "-threads", str(CODEC_THREADS), "-preset", "veryfast", "-crf", "24", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart",
         "-max_muxing_queue_size", "1024", str(tmp),
     ]

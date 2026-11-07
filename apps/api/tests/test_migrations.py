@@ -176,3 +176,24 @@ def test_storage_migration_does_not_guess_historical_usage(migration_engine):
         row=connection.execute(sa.text("SELECT title,status,storage_reserved_bytes,max_render_bytes FROM render_jobs WHERE id='inventory-job'")).one()
         assert row.title=='Keep video' and row.status=='queued'
         assert row.storage_reserved_bytes is None and row.max_render_bytes is None
+
+
+def test_rights_migration_preserves_old_rows_without_fabricating_ack(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import User,RenderJob,UploadSession,utcnow
+    from datetime import timedelta
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0008_storage_budgets')
+        connection.execute(User.__table__.insert().values(id='old-rights-owner',email='old-rights@example.com',password_hash='hash'))
+        connection.execute(RenderJob.__table__.insert().values(id='old-rights-job',user_id='old-rights-owner',title='Keep',style='vlog',
+            desired_seconds=15,source_duration_seconds=5,source_path='input.mp4',status='succeeded'))
+        connection.execute(UploadSession.__table__.insert().values(id='old-rights-session',user_id='old-rights-owner',client_key='keep-key',
+            descriptor_hash='a'*64,file_name='source.mp4',extension='.mp4',title='Keep',style='vlog',desired_seconds=15,
+            total_bytes=24,received_bytes=8,chunk_bytes=8,expires_at=utcnow()+timedelta(hours=1)))
+    upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        for table in ('render_jobs','upload_sessions'):
+            row=connection.execute(sa.text(f'SELECT rights_version,rights_confirmed_at FROM {table}')).one()
+            assert row.rights_version is None and row.rights_confirmed_at is None
+        assert connection.scalar(sa.text('SELECT received_bytes FROM upload_sessions'))==8

@@ -14,7 +14,7 @@ Base URL: `http://localhost:8000` in development only. Production must be HTTPS,
 | GET | `/api/v1/me/storage` | Bearer | Owner-only storage limit, known reservations, inventory status and availability |
 | GET | `/api/v1/me` | Bearer | Current user |
 | GET | `/api/v1/jobs` | Bearer | Current user's 100 recent jobs |
-| POST | `/api/v1/jobs` | Bearer | multipart `file`, `title`, `style`, `desired_seconds` |
+| POST | `/api/v1/jobs` | Bearer | multipart video/settings plus rights_confirmed=true, consent_version=upload-rights-v1 |
 | GET | `/api/v1/jobs/{id}` | Bearer | Owner-scoped job, status |
 | DELETE | `/api/v1/jobs/{id}` | Bearer | Owner-only irreversible deletion; 202 schedules cleanup |
 | POST | `/api/v1/jobs/{id}/cancel` | Bearer | Owner-only queued/processing cancellation; repeat-safe |
@@ -52,3 +52,11 @@ New upload admission reserves source plus bounded two-attempt rendering space;
 409 indicates full/unverified account storage. Accepted sessions/replays remain
 repeat-safe at capacity; deletion frees the reservation after media cleanup.
 See [budget and inventory contract](SAVE_AND_STORAGE.md).
+
+New uploads require the versioned affirmative rights/server-processing statement.
+Session JSON uses a strict boolean; multipart uses the literal string true. Old
+active sessions must be reconfirmed through key-preserving creation replay before
+parts/completion. Owner-only POST /api/v1/upload-sessions/discard-by-key takes
+only the Idempotency-Key header and fences late creation with an aborted tombstone;
+no rights assertion is needed for discard. GET /by-key/{client_key} recovers metadata.
+See [acknowledgement, media profile and upgrade contract](UPLOAD_CONSENT_AND_MEDIA.md).

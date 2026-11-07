@@ -20,6 +20,7 @@ from .media import MediaError, probe_video
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import ACTIVE_STATUSES, admit_job, lock_owner
 from .storage import reservation, usage
+from .consent import RIGHTS_VERSION, require_rights
 from .schemas import JobResponse, StyleInfo, UserResponse
 
 settings = get_settings()
@@ -111,6 +112,8 @@ def cancel_job(job_id: str, user: User = Depends(current_user), db: Session = De
 async def create_job(
     response: Response,
     file: Annotated[UploadFile, File(description="Video file, <=300 MiB")],
+    rights_confirmed: Annotated[str, Form()],
+    consent_version: Annotated[str, Form()],
     style: Annotated[str, Form()] = "vlog",
     desired_seconds: Annotated[int, Form(ge=5, le=60)] = 30,
     title: Annotated[str, Form(min_length=1, max_length=120)] = "My Short",
@@ -121,6 +124,8 @@ async def create_job(
     source = directory = None
     committed_new_job = False
     try:
+        require_rights(rights_confirmed == 'true',consent_version)
+        acknowledged_at=utcnow()
         if style not in STYLE_IDS:
             raise HTTPException(422, "Unknown editing style")
         ext = Path(file.filename or "").suffix.lower()
@@ -156,7 +161,7 @@ async def create_job(
         fingerprint = hashlib.sha256(json.dumps({
             'sha256': digest.hexdigest(), 'extension': ext, 'style': style,
             'title': title, 'desired_seconds': desired_seconds}, sort_keys=True).encode()).hexdigest()
-        candidate = RenderJob(id=job_id, user_id=user.id, title=title, style=style,
+        candidate = RenderJob(rights_version=RIGHTS_VERSION,rights_confirmed_at=acknowledged_at,id=job_id, user_id=user.id, title=title, style=style,
                               desired_seconds=desired_seconds, source_duration_seconds=info["duration"],
                               source_path=str(source.resolve()), status="queued",
                               storage_reserved_bytes=reservation(total,settings.max_render_bytes), max_render_bytes=settings.max_render_bytes,
