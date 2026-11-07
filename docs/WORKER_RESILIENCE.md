@@ -136,3 +136,12 @@ exception paths. Its success report is written only after the temporary tree is
 actually gone, with `temporary_cleanup=passed`. This changes only disposable test
 cleanup, not account databases, queue behavior or media handling. Native Windows
 rerun remains necessary; Linux regression tests simulate refusal while handles remain.
+
+## CI process-exit observation
+
+Linux can return ProcessLookupError (ESRCH) while reading an already opened
+/proc/<pid>/stat as the child exits, as well as FileNotFoundError (ENOENT) when
+opening it. The containment test treats only these as exited; a running process
+still fails the crash assertion and unexpected errors propagate. Readiness also
+waits for complete marker JSON rather than file creation alone. These changes
+harden test observation, not the parent-death signal or production worker policy.

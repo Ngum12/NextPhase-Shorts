@@ -5,6 +5,33 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## CI follow-up — procfs process-exit race
+
+- Owner supplied a failed PostgreSQL GitHub Actions run: **213 passed, one
+  failed (85.68 s)**. The hard-worker-crash test raised ProcessLookupError
+  reading `/proc/<pid>/stat`; it did not establish that FFmpeg survived. The
+  kernel can remove a process after procfs open but before read (ESRCH), while
+  the old observer handled only FileNotFoundError on open (ENOENT).
+- Test observer now treats both specific exit conditions as stopped. Regression
+  cases retain live-process detection, zombie handling and propagation of other
+  errors such as permission failures. No blanket OSError suppression, relaxed
+  kernel containment assertion or retry-to-pass behavior was added.
+- Child readiness waits for complete marker JSON, not just the creation of an
+  empty/partial file. A deterministic partial-marker regression covers that
+  adjacent CI scheduling race. These changes affect tests only, not production
+  process supervision, queue behavior or resource limits.
+- **220 backend tests passed on SQLite (55.02 s) and PostgreSQL (60.92 s)**,
+  no skips, one existing Starlette/httpx warning each. The 21 targeted resilience
+  tests passed (3.91 s), and the actual Linux hard-crash/credential-stripping test
+  passed **ten consecutive independent runs**, stopping immediately on any failure.
+- No application/mobile/schema/dependency change. HTTP/S3 smoke and native device
+  tests were not repeated for this test-observation fix. Existing validation and
+  strict Docker cgroup/Windows-native acceptance limits remain as recorded below.
+  No paid infrastructure, API, billing, AI or reference-kit assets introduced.
+- After review/merge, assess the **new GitHub Actions run for the fix commit**;
+  rerunning an older commit does not validate the fix. Remote CI success has not
+  been observed by this agent. No local reinstall, migration or app change needed.
+
 ## Windows follow-up — worker smoke temporary SQLite cleanup
 
 - Owner merged worker resilience (`f7fd233`) and reported **209 Windows tests

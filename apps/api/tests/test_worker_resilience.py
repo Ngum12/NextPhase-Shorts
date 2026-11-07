@@ -79,18 +79,49 @@ def test_database_outage_is_retried_without_logging_private_exception(monkeypatc
 
 def wait_for_file(path,child):
     deadline=time.monotonic()+10
-    while not path.exists():
+    while True:
+        try:return json.loads(path.read_text())
+        except (FileNotFoundError,json.JSONDecodeError):pass
+        # Creation and writing are separate: an existing marker may still be
+        # empty/partial on a busy runner. Wait for complete data, not existence.
         assert child.poll() is None,'Synthetic render parent exited early'
         assert time.monotonic()<deadline,'Synthetic render never started'
         time.sleep(.02)
-    return json.loads(path.read_text())
 
 
 def running(pid):
     try:
         # Linux orphan zombies have exited and consume no CPU; PID 1 controls reaping.
         return Path(f'/proc/{pid}/stat').read_text().split(') ',1)[1].split()[0]!='Z'
-    except FileNotFoundError:return False
+    # procfs may return ENOENT on open or ESRCH during read as a process exits.
+    except (FileNotFoundError,ProcessLookupError):return False
+
+
+@pytest.mark.parametrize('error',[FileNotFoundError,ProcessLookupError])
+def test_exited_process_observation_accepts_both_procfs_exit_errors(monkeypatch,error):
+    def gone(*args,**kwargs):raise error('Synthetic exited process')
+    monkeypatch.setattr(Path,'read_text',gone)
+    assert running(123) is False
+
+
+@pytest.mark.parametrize('state,expected',[('R',True),('Z',False)])
+def test_live_processes_remain_live_and_zombies_are_exited(monkeypatch,state,expected):
+    monkeypatch.setattr(Path,'read_text',lambda *_args,**_kwargs:f'123 (synthetic) {state} 1 2 3')
+    assert running(123) is expected
+
+
+def test_process_observation_does_not_hide_other_errors(monkeypatch):
+    def denied(*args,**kwargs):raise PermissionError('Synthetic permission failure')
+    monkeypatch.setattr(Path,'read_text',denied)
+    with pytest.raises(PermissionError):running(123)
+
+
+def test_marker_waits_for_complete_json(monkeypatch):
+    from types import SimpleNamespace
+    values=iter(['','{"pid":123}'])
+    monkeypatch.setattr(Path,'read_text',lambda *_args,**_kwargs:next(values))
+    monkeypatch.setattr(time,'sleep',lambda _:None)
+    assert wait_for_file(Path('synthetic-marker'),SimpleNamespace(poll=lambda:None))=={'pid':123}
 
 
 @pytest.mark.skipif(not sys.platform.startswith('linux'),reason='Linux kernel parent-death/rlimit behavior')
