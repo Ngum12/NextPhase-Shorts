@@ -214,3 +214,7 @@ export const confirmUploadRights=(record:PendingUpload,confirmed:boolean)=>exclu
   const current=await currentIntent(record);
   return savePending({...current,rightsVersion:RIGHTS_VERSION});
 });
+export const clearDeletedAccountUpload=(ownerId:string)=>exclusively(ownerId,async()=>{
+  const current=await loadPending(ownerId);
+  if(current)await clearPending(current);
+});

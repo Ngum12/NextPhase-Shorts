@@ -16,11 +16,24 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(256))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     jobs: Mapped[list["RenderJob"]] = relationship(back_populates="user")
 
 class StorageBudget:
     storage_reserved_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     max_render_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+class AccountDeletion(Base):
+    __tablename__ = 'account_deletions'
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), primary_key=True)
+    receipt_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    receipt_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    cleanup_after: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    media_cleaned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    namespaces: Mapped[str] = mapped_column(Text)
 
 
 class RightsRecord:

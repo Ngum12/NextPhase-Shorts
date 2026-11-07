@@ -110,3 +110,9 @@ local S3 service; signed requests do not activate a paid provider or clear right
 No dependency, reference-kit source, asset or paid provider was added. The existing
 843-record metadata inventory and licensing/security gates remain applicable.
 Synthetic local/S3 fixtures are original test data; no real footage is committed.
+
+## Account deletion increment
+
+No dependency, reference-kit code, asset, paid provider or billing integration added.
+The existing 843-record metadata inventory and unresolved licensing/security gates
+remain applicable. Validation uses original synthetic media only.

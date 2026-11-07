@@ -8,7 +8,7 @@
 - FFmpeg runs in a separate worker process / Docker service; production Docker worker uses unprivileged user.
 - Upload size and format checks, output <= 60 seconds, env-based private JWT secret.
 - Owner-only project deletion immediately revokes access/claims, with retryable
-  private-volume cleanup; backups, account deletion and full retention remain open.
+  private-volume cleanup; backups and full retention remain open.
   See [deletion boundaries](PROJECT_DELETION.md).
 - Conservative per-account source/render reservations and bounded accepted output
   files; global physical disk, spooling/orphan and production quota controls remain.
@@ -50,3 +50,8 @@ Unknown-orphan deletion is offline-only with minimum 24-hour grace, DB/reference
 protection, namespace-bound preview digest, bounded inventories and metadata
 rechecks. It is not an online race-proof collector or automatic saved-project
 expiry. See RETENTION.md for writer shutdown, backup and deletion boundaries.
+
+Account deletion requires current-password verification, owner locking and a durable
+receipt; it revokes sessions/claims before retryable media cleanup. Receipt recovery
+is an expiring opaque capability, not identity recovery. Operational records, backups
+and device exports remain. See ACCOUNT_DELETION.md for race/capability boundaries.

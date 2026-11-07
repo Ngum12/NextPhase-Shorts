@@ -29,6 +29,7 @@ settings = get_settings()
 from .catalog import STYLES, STYLE_IDS
 from .uploads import router as uploads_router
 from .direct_uploads import router as direct_uploads_router
+from .account_deletion import router as account_deletion_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +46,7 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
 
 app.include_router(uploads_router)
 app.include_router(direct_uploads_router)
+app.include_router(account_deletion_router)
 app.include_router(auth_router)
 app.include_router(deletion_router)
 

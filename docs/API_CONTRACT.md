@@ -72,3 +72,11 @@ sessions when enabled; existing replay keys keep their mode/digest. `part-url`
 signs only the next bounded incoming chunk; `part-commit/{grant_id}` verifies and
 seals before advancing the DB offset. Old API parts remain supported for API
 sessions. See [direct protocol, errors and cleanup deadlines](DIRECT_UPLOADS.md).
+
+## Account deletion
+
+Authenticated POST `/api/v1/account/delete` requires `current_password` and UUIDv4
+`receipt_key`; 202 confirms account disabled with media cleanup scheduled. All
+sessions/claims are revoked. POST `/api/v1/account/deletion-receipt` accepts only
+the opaque key without bearer authentication for seven days; 200 returns coarse
+status, unknown/expired returns 404. Both are rate limited. See ACCOUNT_DELETION.md.

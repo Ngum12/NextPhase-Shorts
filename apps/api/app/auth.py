@@ -72,6 +72,7 @@ def current_auth(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
         session_id = hashlib.sha256(nonce.encode()).hexdigest()
         result = db.execute(select(User, AuthSession).join(AuthSession, AuthSession.user_id == User.id).where(
             AuthSession.id == session_id, AuthSession.user_id == claims['sub'],
+            User.deleted_at.is_(None),
             AuthSession.revoked_at.is_(None), AuthSession.expires_at > utcnow())).first()
         if result:
             return AuthContext(*result)

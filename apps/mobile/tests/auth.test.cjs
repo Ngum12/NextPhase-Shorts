@@ -58,3 +58,15 @@ test('project deletion requires explicit server confirmation and preserves auth 
  status=401;body={detail:'Sign in again'};await assert.rejects(api.deleteJob('project-one','old'));
  assert.deepEqual(expired,['old']);offline=true;await assert.rejects(api.deleteJob('project-one','token'),/offline/);
 });
+
+test('account deletion authenticates the request; public receipt recovery cannot expire newer login',async()=>{
+ const events=load('authEvents'),expired=[],calls=[];events.onUnauthorized(token=>expired.push(token));
+ let status=202,body={status:'account_disabled'};
+ const api=load('api',{'./authEvents':events},{process:{env:{EXPO_PUBLIC_API_URL:'http://localhost'}},Headers,
+ fetch:async(url,init)=>{calls.push([url,init]);return {status,ok:status<400,json:async()=>body};}});
+ await api.requestAccountDeletion('old','password','key');assert.equal(calls.at(-1)[1].headers.get('Authorization'),'Bearer old');
+ status=401;await assert.rejects(api.accountDeletionReceipt('key'));
+ assert.deepEqual(expired,[]);assert.equal(calls.at(-1)[1].credentials,'omit');
+ assert.equal(calls.at(-1)[1].headers.Authorization,undefined);
+ status=200;await assert.rejects(api.requestAccountDeletion('old','password','key'),/not confirmed/);
+});

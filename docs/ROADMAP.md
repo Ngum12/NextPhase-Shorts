@@ -33,3 +33,7 @@ controls, physical direct-phone acceptance and stateless validation remain.
 Known upload expiry now uses bounded owner-locked maintenance. Preview-first offline
 orphan/stale-attempt removal is implemented; online allocation-aware GC, saved-project
 retention policy and full account/version/backup erasure remain. See RETENTION.md.
+
+Account lifecycle increment: password-confirmed disablement, session/claim revocation,
+durable local/S3 media cleanup and lost-response receipts. Full personal-data, backup
+and version-aware erasure remains open; see ACCOUNT_DELETION.md.

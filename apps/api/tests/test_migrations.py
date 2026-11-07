@@ -234,3 +234,16 @@ def test_direct_upload_migration_preserves_api_session_and_parts(migration_engin
         row=connection.execute(sa.text('SELECT sha256,object_reference,direct_grant_id FROM upload_parts')).one()
         assert row.sha256=='b'*64 and row.object_reference is None and row.direct_grant_id is None
         assert connection.scalar(sa.text('SELECT count(*) FROM direct_upload_grants'))==0
+
+
+def test_account_deletion_migration_preserves_live_account(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0011_direct_uploads')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at) VALUES ('keep-account','keep@example.com','keep-hash',CURRENT_TIMESTAMP)"))
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT email,password_hash,deleted_at FROM users WHERE id='keep-account'")).one()
+        assert row.email=='keep@example.com' and row.password_hash=='keep-hash' and row.deleted_at is None
+        assert connection.scalar(sa.text('SELECT count(*) FROM account_deletions'))==0

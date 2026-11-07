@@ -197,3 +197,10 @@ existing sessions and default local uploads retain their prior path. See
 Worker upload expiration is now bounded and owner-locked. A separate preview-first
 offline tool inventories/removes aged recognized orphans and unreferenced stale
 attempts while retaining valid projects. See [retention and safety limits](docs/RETENTION.md).
+
+### Account deletion
+
+Account → Delete account disables sessions and schedules durable server-media cleanup.
+Lost responses can be recovered from the sign-in screen. This excludes backups,
+operational records and saved/shared phone copies. Back up and run migration 0012
+before restarting. See [upgrade and disposable-account checks](docs/ACCOUNT_DELETION.md).

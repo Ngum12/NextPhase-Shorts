@@ -5,6 +5,69 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — account deletion and recoverable confirmation
+
+- Migration **0012_account_deletion** preserves live accounts and adds durable
+  disablement/receipt/cleanup metadata. Password-confirmed deletion atomically
+  revokes every session and render claim, tombstones projects/uploads and scrubs
+  account email/password and media display/path fields. Owner-lock rechecks stop
+  late admission, upload publication and worker claims after disablement.
+- Mobile adds Delete account with explicit confirmation and current password,
+  plus Finish account deletion on sign-in. A private random SecureStore receipt
+  recovers lost replies after authentication revocation. Server stores its hash,
+  offers only coarse status for seven days, rate limits recovery and never uses
+  the key as account login. Only confirmed deletion clears that owner's pending
+  private upload; network/local cleanup failures retain recovery state. Original,
+  saved/shared videos, caches and other account data are preserved.
+- Worker maintenance durably retries/resweeps canonical disabled-owner local and
+  S3 prefixes after upload/lease/grant deadlines. Namespace mismatches, unsafe
+  owner links and I/O failures stay pending. Operational tombstones, fingerprints,
+  rights/cost/session/grant records, historical untracked stores, versions and
+  backups are outside full erasure. No production privacy-compliance claim.
+- Baseline **187 tests passed (30.19 s)**. Final **197 tests passed on SQLite
+  (37.79 s) and PostgreSQL (45.66 s)**, no skips, one existing Starlette/httpx
+  deprecation warning each. Regression coverage includes
+  additive migration, session revocation, wrong password/rate limits, receipt
+  secrecy/expiry/collision, fenced completion, concurrent late upload admission,
+  pending-part/budget cleanup, namespace/provider failures and owner isolation.
+- TypeScript and **37 client logic tests** passed (15 uploads, 9 auth/API,
+  7 exports, 6 account recovery). Android Hermes export passed: 1,014 modules,
+  2.70 MB. Native/network adapters are mocked; no new Pixel/iOS acceptance claimed.
+- Real isolated HTTP smoke passed upload → queue → server render → download,
+  restart/auth, resumable transfer and previous deletion/retention checks. Output
+  1080×1920 / 30 fps / 4.9 s; baseline 2.43 s. Evidence (ignored synthetic only):
+  `.data/smoke-a8c66e5939e645dc9dad13e9f4a504c5/`.
+- Disposable local S3 smoke also passed direct transfer, verified sealing, render,
+  signed download expiry and orphan/project cleanup (baseline 8.14 s includes
+  six-second expiry wait). Evidence:
+  `.data/nextphase-s3-smoke-e696b31a83c0/workflow/`.
+  Both runs additionally disabled a separate synthetic account over HTTP,
+  restarted its API, recovered its receipt and verified revocation/other-owner
+  preservation. After stopping their own writers they advanced only the synthetic
+  cleanup deadline and verified local/S3 owner-media removal. This does not claim
+  an actual waiting-interval observation or deletion of the owner's real account.
+- Doctor, pip and diff checks passed. No new dependency, proprietary kit code,
+  asset, paid API/infrastructure, AI, billing or production deployment. Existing
+  843-record license inventory and last-known 17 npm advisories remain unresolved;
+  no fresh vulnerability scan or legal clearance claimed. Remote CI unobserved.
+- Owner-reported retention acceptance after merge (`a552111`): 187 Windows tests
+  passed (662.20 s), HTTP smoke passed (10.03 s); local preview scanned 51 entries,
+  protected 28, zero candidates, complete. S3 preview scanned/protected two,
+  zero candidates, complete. No owner retention apply was performed. Evidence:
+  `.data\smoke-ae5bddb56cb64c2c944bc2962d79c6d8`. These are user-supplied results.
+- Upgrade requires stopping API/worker, backing up DB/media, and migration 0012.
+  No dependency install is required solely for this increment. Restart all
+  services; test account deletion only with a disposable account. Runbook and
+  recovery/erasure limits: [ACCOUNT_DELETION.md](docs/ACCOUNT_DELETION.md).
+- Remaining Phase 2 gates include verified recovery/email delivery, refresh,
+  stronger queue/isolation/load/soak controls, allocation-aware online collection,
+  formal backup/version erasure, monitoring and production security/legal review.
+
+- Delivery: implementation `49b1cb8` pushed to
+  `dev/phase-2-account-deletion`. Automatic PR creation returned GitHub GraphQL
+  `Forbidden`; no PR, merge or deployment was performed. Owner review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-account-deletion
+
 ## Phase 2 increment — bounded maintenance and offline orphan preview
 
 - Worker expiration now selects a bounded batch (default 100, allowed 1–1000),
@@ -795,15 +858,12 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review the retention increment and observe CI. After merge restart services for
-   bounded maintenance and run the normal checks. No migration/dependency install
-   or orphan apply is required solely for this upgrade.
-2. Run nondeleting local/S3 previews under the correct server settings; review
-   complete reports. Any apply requires backup, all writers offline and the current
-   digest. See RETENTION.md; do not treat missing DB rows as online deletion proof.
-3. Continue Phase 2 allocation-aware online collection, retention/account/backup
-   erasure, verified recovery/auth delivery, queue/isolation and observability/load
-   work under prompt.md. Complete license/security/provider review before launch.
+1. Review/merge the account deletion branch and observe CI. Stop API/worker, back
+   up DB/media and run migration 0012 before restarting.
+2. Run the normal backend/mobile checks, then disposable-account Pixel acceptance
+   from ACCOUNT_DELETION.md. Preserve main account and original/saved videos.
+3. Continue remaining Phase 2 recovery/auth delivery, queue/isolation, monitoring,
+   capacity/load and backup/version erasure gates before production or AI phases.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

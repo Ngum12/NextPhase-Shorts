@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from '../src/auth';
 import { colors } from '../src/theme';
 function SessionGuard() {
   const {token,ready}=useAuth();const segments=useSegments();const router=useRouter();
-  useEffect(()=>{if(ready&&!token&&segments.length&&segments[0]!=='login')router.replace('/login');},[ready,token,segments]);
+  useEffect(()=>{if(ready&&!token&&segments.length&&segments[0]!=='login'&&segments[0]!=='delete-account')router.replace('/login');},[ready,token,segments]);
   return null;
 }
 export default function RootLayout() {
@@ -14,6 +14,7 @@ export default function RootLayout() {
     <Stack.Screen name="index" options={{headerShown:false}}/>
     <Stack.Screen name="login" options={{headerShown:false}}/>
     <Stack.Screen name="(tabs)" options={{headerShown:false}}/>
+    <Stack.Screen name="delete-account" options={{title:'Delete account'}}/>
     <Stack.Screen name="security" options={{title:'Account security'}}/>
     <Stack.Screen name="create" options={{title:'Create a Short'}}/>
     <Stack.Screen name="project/[id]" options={{title:'Your Short'}}/>
