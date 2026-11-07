@@ -32,6 +32,11 @@ the reported Android baseline flow, not production readiness or AI functionality
   rerunning an older commit does not validate the fix. Remote CI success has not
   been observed by this agent. No local reinstall, migration or app change needed.
 
+- Delivery: `d0d3d12` pushed to `fix/ci-process-exit-race`. GitHub GraphQL
+  returned `Forbidden` creating the PR; no PR/merge was performed by the agent.
+  Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/ci-process-exit-race
+
 ## Windows follow-up — worker smoke temporary SQLite cleanup
 
 - Owner merged worker resilience (`f7fd233`) and reported **209 Windows tests
