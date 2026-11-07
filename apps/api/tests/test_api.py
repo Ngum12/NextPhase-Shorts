@@ -1,3 +1,4 @@
+from upload_fixtures import RIGHTS_FORM
 import io
 import uuid
 from app.auth import make_password_hash, verify_password
@@ -21,7 +22,7 @@ def test_invalid_video_rejected(client):
     token = new_user(client)
     res = client.post("/api/v1/jobs", headers={"Authorization": f"Bearer {token}"},
                       files={"file": ("test.mp4", io.BytesIO(b"This is not a video"), "video/mp4")},
-                      data={"style": "vlog", "desired_seconds": "30", "title": "Test"})
+                      data={**RIGHTS_FORM, **({"style": "vlog", "desired_seconds": "30", "title": "Test"})})
     assert res.status_code == 422
 
 def test_style_list_truthfully_marks_planned(client):
@@ -34,7 +35,7 @@ def test_60_second_hard_limit(client):
     token = new_user(client)
     res = client.post("/api/v1/jobs", headers={"Authorization": f"Bearer {token}"},
                       files={"file": ("clip.mp4", io.BytesIO(b"invalid"), "video/mp4")},
-                      data={"style": "vlog", "desired_seconds": "61", "title": "Test"})
+                      data={**RIGHTS_FORM, **({"style": "vlog", "desired_seconds": "61", "title": "Test"})})
     assert res.status_code == 422
 
 def test_password_hash():
@@ -65,7 +66,7 @@ def test_upload_rejection_boundaries(client, monkeypatch):
     def upload(content=b"test", filename="clip.mp4", **data):
         return client.post("/api/v1/jobs", headers=headers,
                            files={"file": (filename, io.BytesIO(content), "video/mp4")},
-                           data={"style": "vlog", "desired_seconds": "15", **data})
+                           data={**RIGHTS_FORM, **({"style": "vlog", "desired_seconds": "15", **data})})
 
     assert upload(b"").status_code == 422
     assert upload(filename="clip.exe").status_code == 415

@@ -3,7 +3,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Alert, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { api } from '../src/api';
-import { discardUpload, loadPending, PendingUpload, prepareUpload, resumeUpload } from '../src/uploads';
+import { confirmUploadRights, discardUpload, loadPending, PendingUpload, prepareUpload, resumeUpload } from '../src/uploads';
+import {RIGHTS_TEXT,RIGHTS_VERSION} from '../src/uploadRights';
 import { useAuth } from '../src/auth';
 import { colors as c } from '../src/theme';
 import { Body, Button, Page, Title, s } from '../src/ui';
@@ -14,6 +15,7 @@ const styles = [
 ] as const;
 export default function Create() {
   const {token}=useAuth();
+  const [rights,setRights]=useState(false);
   const [ownerId,setOwnerId]=useState('');
   const [recovery,setRecovery]=useState(0);
   const [asset,setAsset]=useState<DocumentPicker.DocumentPickerAsset|null>(null);
@@ -29,13 +31,13 @@ export default function Create() {
   const controller=useRef<AbortController|null>(null);
   useEffect(()=>{
     let mounted=true;
-    setOwnerId('');setPending(null);
+    setOwnerId('');setPending(null);setRights(false);
     const recover=async()=>{
       try {
         if(!token)return;
         const user=await api<{id:string}>('/api/v1/me',token);
         const saved=await loadPending(user.id);
-        if(mounted){setOwnerId(user.id);setPending(saved);setMessage(saved?'A saved upload is ready to resume.':'');}
+        if(mounted){setOwnerId(user.id);setPending(saved);setRights(saved?.rightsVersion===RIGHTS_VERSION);setMessage(saved?'A saved upload is ready to resume.':'');}
       }catch(error:any){if(mounted)setMessage(error.message||'Connect to the server to recover uploads.');}
       finally{if(mounted)setLoading(false);}
     };
@@ -45,15 +47,16 @@ export default function Create() {
   const pick=async()=>{
     try {
       const result=await DocumentPicker.getDocumentAsync({type:'video/*',copyToCacheDirectory:true,multiple:false});
-      if(!result.canceled&&result.assets.length)setAsset(result.assets[0]);
+      if(!result.canceled&&result.assets.length){setAsset(result.assets[0]);setRights(false);}
     }catch(error:any){Alert.alert('Could not select video',error.message||'Try again');}
   };
   const submit=async()=>{
-    if(!token||!ownerId||running.current||(!pending&&!asset))return;
+    if(!rights||!token||!ownerId||running.current||(!pending&&!asset))return;
     running.current=true;setBusy(true);setMessage('Preparing your upload…');
     const abort=new AbortController();controller.current=abort;
     try {
-      const record=pending||await prepareUpload(ownerId,asset!,title,style,seconds);
+      const record=pending?(pending.rightsVersion===RIGHTS_VERSION?pending:await confirmUploadRights(pending,rights))
+        :await prepareUpload(ownerId,asset!,title,style,seconds,rights);
       setPending(record);
       if(abort.signal.aborted)throw new Error('Upload paused');
       const job=await resumeUpload(record,token,(sent,total)=>{
@@ -87,17 +90,23 @@ export default function Create() {
     {!!message&&<Body>{message}</Body>}
     {loading&&<Body>Checking for a saved upload…</Body>}
     {!loading&&!ownerId&&<Button title="Retry connection" onPress={()=>{setLoading(true);setRecovery(n=>n+1);}} secondary/>}
+    <Pressable accessibilityRole="checkbox" accessibilityState={{checked:rights,disabled:busy||loading}}
+      accessibilityLabel={RIGHTS_TEXT} disabled={busy||loading} onPress={()=>setRights(value=>!value)}
+      style={[s.card,{borderColor:rights?c.accent:c.border}]}>
+      <Text style={s.cardTitle}>{rights?'☑':'☐'} Upload rights and processing</Text>
+      <Body>{RIGHTS_TEXT}</Body>
+    </Pressable>
     {pending?<View style={s.card}>
       <Text style={s.cardTitle}>{pending.title}</Text>
       <Body>{pending.fileName} · {(pending.totalBytes/1048576).toFixed(1)} MiB</Body>
       <Body>{progress===null?'Progress will be checked with the server when you resume.':`Upload: ${Math.floor(progress*100)}% received`}</Body>
       <Body>Resume after a connection interruption or app restart. Keep this app’s data. Transfers run while the app is active.</Body>
       {busy&&controller.current?<Button title="Pause upload" onPress={()=>controller.current?.abort()} secondary/>:
-        <Button title="Resume upload" onPress={submit} disabled={busy}/>}
+        <Button title="Resume upload" onPress={submit} disabled={busy||!rights}/>}
       <Button title="Discard upload" onPress={discard} disabled={busy} secondary/>
     </View>:<>
       <View style={s.card}><Text style={s.cardTitle}>1. Choose your video</Text>
-        <Body>MP4, MOV, WebM or M4V · up to 10 minutes · up to 300 MiB. A private copy is saved in the app until upload completes or is discarded.</Body>
+        <Body>MP4, MOV, WebM or M4V · up to 10 minutes · up to 300 MiB. High-speed, multi-track and some professional formats are not supported yet. A private copy is saved in the app until upload completes or is discarded.</Body>
         <Button title={asset?`Selected: ${asset.name}`:'Choose from phone'} onPress={pick} disabled={busy||loading||!ownerId} secondary/>
       </View>
       <View style={s.card}><Text style={s.cardTitle}>2. Name your project</Text>
@@ -116,7 +125,7 @@ export default function Create() {
           <Text style={{color:seconds===n?c.bg:c.text,fontWeight:'800'}}>{n}s</Text>
         </Pressable>)}</View>
       </View>
-      <Button title={busy?'Saving your upload…':'Upload and start cloud render'} disabled={busy||loading||!ownerId||!asset||!title.trim()} onPress={submit}/>
+      <Button title={busy?'Saving your upload…':'Upload and start cloud render'} disabled={busy||loading||!rights||!ownerId||!asset||!title.trim()} onPress={submit}/>
     </>}
   </ScrollView></Page>;
 }

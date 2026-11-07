@@ -1,3 +1,4 @@
+import {RIGHTS_VERSION} from './uploadRights';
 import { File } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
@@ -6,7 +7,7 @@ import { api, ApiError, Job, BASE, extract, authenticatedFetch } from './api';
 export type PendingUpload = {
   version: 1; revision: number; ownerId: string; key: string; localName: string;
   fileName: string; totalBytes: number; title: string; style: string; seconds: number;
-  sessionId?: string;
+  sessionId?: string; rightsVersion?: string;
 };
 type Session = {
   id: string; status: string; total_bytes: number; received_bytes: number;
@@ -61,7 +62,8 @@ async function clearPending(record:PendingUpload) {
   for(const index of [0,1])await FileSystem.deleteAsync(slot(record.ownerId,index),{idempotent:true});
 }
 async function prepareUploadImpl(ownerId:string, selected:{uri:string;name:string},
-    title:string,style:string,seconds:number):Promise<PendingUpload> {
+    title:string,style:string,seconds:number,rightsConfirmed=false):Promise<PendingUpload> {
+  if(rightsConfirmed!==true)throw new Error('Confirm upload rights and server processing first.');
   if(await loadPending(ownerId))throw new Error('Resume or discard your pending upload first');
   const extension=selected.name.match(/\.(mp4|mov|webm|m4v)$/i)?.[0].toLowerCase();
   if(!extension)throw new Error('Choose MP4, MOV, M4V or WebM');
@@ -74,7 +76,7 @@ async function prepareUploadImpl(ownerId:string, selected:{uri:string;name:strin
     if(!Number.isSafeInteger(totalBytes)||totalBytes<=0||totalBytes>MAX_BYTES)
       throw new Error('Video must be nonempty and no larger than 300 MiB');
     return await savePending({version:1,revision:0,ownerId,key:Crypto.randomUUID(),localName,
-      fileName:selected.name,totalBytes,title:title.trim(),style,seconds});
+      fileName:selected.name,totalBytes,title:title.trim(),style,seconds,rightsVersion:RIGHTS_VERSION});
   } catch(error) {
     await FileSystem.deleteAsync(localUri,{idempotent:true});
     throw error;
@@ -84,7 +86,7 @@ async function requestSession(record:PendingUpload,token:string,signal?:AbortSig
   return extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions`,{
     method:'POST',signal,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','Idempotency-Key':record.key},
     body:JSON.stringify({file_name:record.fileName,total_bytes:record.totalBytes,title:record.title,
-      style:record.style,desired_seconds:record.seconds}),
+      style:record.style,desired_seconds:record.seconds,rights_confirmed:true,consent_version:record.rightsVersion}),
   })) as Promise<Session>;
 }
 function paused(signal?:AbortSignal) {
@@ -93,10 +95,10 @@ function paused(signal?:AbortSignal) {
 async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(sent:number,total:number)=>void,
     signal?:AbortSignal):Promise<Job> {
   paused(signal);
-  if(!record.sessionId) {
-    const created=await requestSession(record,token,signal);
-    record=await savePending({...record,sessionId:created.id});
-  }
+  if(record.rightsVersion!==RIGHTS_VERSION)throw new Error('Confirm upload rights before resuming this saved upload.');
+  const created=await requestSession(record,token,signal);
+  if(record.sessionId&&record.sessionId!==created.id)throw new Error('Saved upload does not match its server session.');
+  if(!record.sessionId)record=await savePending({...record,sessionId:created.id});
   let session=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}`,{
     signal,headers:{Authorization:`Bearer ${token}`},
   })) as Session;
@@ -141,7 +143,9 @@ async function discardUploadImpl(record:PendingUpload,token:string):Promise<Job|
   try {
   // Recover a session whose create response was lost before its ID was saved.
   const session=record.sessionId ? await api<Session>(`/api/v1/upload-sessions/${record.sessionId}`,token)
-    : await requestSession(record,token);
+    : await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/discard-by-key`,{
+        method:'POST',headers:{'Idempotency-Key':record.key},
+      })) as Session;
   let job:Job|null=null;
   if(session.status==='completed'&&session.job_id)job=await api<Job>(`/api/v1/jobs/${session.job_id}`,token);
   else await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${session.id}/abort`,{
@@ -164,6 +168,21 @@ async function exclusively<T>(ownerId:string,action:()=>Promise<T>):Promise<T> {
   actions.add(ownerId);
   try{return await action();}finally{actions.delete(ownerId);}
 }
+async function currentIntent(record:PendingUpload) {
+  const current=await loadPending(record.ownerId);
+  if(!current||current.key!==record.key||current.localName!==record.localName)
+    throw new Error('This saved upload changed. Reopen Create Short before continuing.');
+  return current;
+}
 export const prepareUpload=(...args:Parameters<typeof prepareUploadImpl>)=>exclusively(args[0],()=>prepareUploadImpl(...args));
-export const resumeUpload=(...args:Parameters<typeof resumeUploadImpl>)=>exclusively(args[0].ownerId,()=>resumeUploadImpl(...args));
-export const discardUpload=(...args:Parameters<typeof discardUploadImpl>)=>exclusively(args[0].ownerId,()=>discardUploadImpl(...args));
+export const resumeUpload=(...args:Parameters<typeof resumeUploadImpl>)=>exclusively(args[0].ownerId,async()=>{
+  await currentIntent(args[0]);return resumeUploadImpl(...args);
+});
+export const discardUpload=(...args:Parameters<typeof discardUploadImpl>)=>exclusively(args[0].ownerId,async()=>{
+  await currentIntent(args[0]);return discardUploadImpl(...args);
+});
+export const confirmUploadRights=(record:PendingUpload,confirmed:boolean)=>exclusively(record.ownerId,async()=>{
+  if(confirmed!==true)throw new Error('Confirm upload rights first.');
+  const current=await currentIntent(record);
+  return savePending({...current,rightsVersion:RIGHTS_VERSION});
+});

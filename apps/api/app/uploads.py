@@ -13,7 +13,7 @@ from datetime import timedelta, timezone
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, Path as PathParam
 from pydantic import BaseModel, Field
 from starlette.requests import ClientDisconnect
 from sqlalchemy import select
@@ -28,6 +28,7 @@ from .models import RenderJob, UploadPart, UploadSession, User, utcnow
 from .queue import active_count, admit_job, lock_owner, reserved_upload_count
 from .storage import reservation, require_capacity
 from .schemas import JobResponse
+from .consent import RIGHTS_VERSION, RightsAcknowledgement
 
 router = APIRouter(prefix='/api/v1/upload-sessions', tags=['uploads'])
 settings = get_settings()
@@ -35,7 +36,7 @@ logger = logging.getLogger('nextphase.uploads')
 KeyHeader = Annotated[str, Header(min_length=8, max_length=128, pattern=r'^[A-Za-z0-9_-]+$')]
 
 
-class SessionRequest(BaseModel):
+class SessionRequest(RightsAcknowledgement):
     file_name: str = Field(min_length=1, max_length=255)
     total_bytes: int = Field(gt=0, le=314572800, strict=True)
     title: str = Field(default='My Short', min_length=1, max_length=120)
@@ -58,7 +59,8 @@ def view(row):
                 total_bytes=row.total_bytes, received_bytes=row.received_bytes,
                 chunk_bytes=row.chunk_bytes, expires_at=aware(row.expires_at),
                 title=row.title, style=row.style, desired_seconds=row.desired_seconds,
-                job_id=row.job_id, source_sha256=row.source_sha256)
+                job_id=row.job_id, source_sha256=row.source_sha256,
+                rights_version=row.rights_version,rights_confirmed_at=aware(row.rights_confirmed_at) if row.rights_confirmed_at else None)
 
 
 def owned(db, session_id, user_id):
@@ -77,6 +79,8 @@ def require_uploading(row):
         raise HTTPException(410, 'Upload session expired. Start a new upload.')
     if status != 'uploading':
         raise HTTPException(409, 'Upload session is no longer accepting data')
+    if row.rights_version!=RIGHTS_VERSION or row.rights_confirmed_at is None:
+        raise HTTPException(409,'Confirm upload rights before resuming this upload.')
 
 
 def part_directory(user_id, session_id):
@@ -119,7 +123,7 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
         raise HTTPException(415, 'Video must be MP4, MOV, M4V or WebM')
     if payload.total_bytes > settings.max_upload_bytes:
         raise HTTPException(413, 'File exceeds the configured upload limit')
-    descriptor = payload.model_dump()
+    descriptor = payload.model_dump(exclude={'rights_confirmed','consent_version'})
     descriptor['title'] = title
     digest = hashlib.sha256(json.dumps(descriptor, sort_keys=True).encode()).hexdigest()
     lock_owner(db, user.id)
@@ -128,8 +132,13 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     if previous:
         if previous.status == 'deleted':
             raise HTTPException(410, 'This upload belongs to a deleted project. Start a new upload.')
+        if previous.status=='aborted' and previous.total_bytes==0:
+            raise HTTPException(410,'This upload intent was discarded. Start a new upload.')
         if previous.descriptor_hash != digest:
             raise HTTPException(409, 'This upload key was already used with different file details or settings')
+        if state(previous)=='uploading' and (previous.rights_version!=RIGHTS_VERSION or previous.rights_confirmed_at is None):
+            previous.rights_version=RIGHTS_VERSION;previous.rights_confirmed_at=utcnow()
+            db.commit()
         response.status_code = 200
         response.headers['Idempotency-Replayed'] = 'true'
         return view(previous)
@@ -138,7 +147,7 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
                             headers={'Retry-After': '5'})
     budget=reservation(payload.total_bytes,settings.max_render_bytes)
     require_capacity(db,user.id,budget)
-    row = UploadSession(storage_reserved_bytes=budget,max_render_bytes=settings.max_render_bytes,id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
+    row = UploadSession(rights_version=RIGHTS_VERSION,rights_confirmed_at=utcnow(),storage_reserved_bytes=budget,max_render_bytes=settings.max_render_bytes,id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
                         descriptor_hash=digest, file_name=payload.file_name, extension=extension,
                         title=title, style=payload.style, desired_seconds=payload.desired_seconds,
                         total_bytes=payload.total_bytes, chunk_bytes=settings.upload_chunk_bytes,
@@ -146,6 +155,36 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     db.add(row)
     db.commit()
     return view(row)
+
+
+@router.post('/discard-by-key')
+def discard_by_key(idempotency_key:KeyHeader,user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    # No rights assertion or file details are required merely to discard. A zero-
+    # byte aborted tombstone fences an in-flight create whose response was lost.
+    lock_owner(db,user.id)
+    row=db.scalar(select(UploadSession).where(UploadSession.user_id==user.id,
+        UploadSession.client_key==idempotency_key))
+    if row is None:
+        row=UploadSession(id=str(uuid.uuid4()),user_id=user.id,client_key=idempotency_key,
+            descriptor_hash='0'*64,file_name='discarded.mp4',extension='.mp4',title='Discarded upload',
+            style='vlog',desired_seconds=30,total_bytes=0,received_bytes=0,
+            chunk_bytes=settings.upload_chunk_bytes,status='aborted',parts_cleaned=True,
+            storage_reserved_bytes=0,max_render_bytes=settings.max_render_bytes,
+            expires_at=utcnow()+timedelta(hours=settings.upload_session_hours))
+        db.add(row)
+    elif row.status=='deleted':raise HTTPException(410,'This upload belongs to a deleted project.')
+    elif row.status!='completed':row.status='expired' if state(row)=='expired' else 'aborted'
+    db.commit()
+    result=view(row)
+    cleanup_parts(user.id,row.id)
+    return result
+
+
+@router.get('/by-key/{client_key}')
+def session_by_key(client_key:Annotated[str,PathParam(min_length=8,max_length=128,pattern=r'^[A-Za-z0-9_-]+$')],user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    row=db.scalar(select(UploadSession).where(UploadSession.client_key==client_key,UploadSession.user_id==user.id))
+    if row is None:raise HTTPException(404,'Upload session not found')
+    return view(owned(db,row.id,user.id))
 
 
 @router.get('/{session_id}')
@@ -294,7 +333,7 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
         if row.status == 'completed':
             return db.get(RenderJob, row.job_id)
         require_uploading(row)
-        candidate = RenderJob(id=job_id, user_id=user_id, title=row.title, style=row.style,
+        candidate = RenderJob(rights_version=row.rights_version,rights_confirmed_at=row.rights_confirmed_at,id=job_id, user_id=user_id, title=row.title, style=row.style,
                               desired_seconds=row.desired_seconds, source_duration_seconds=media['duration'],
                               source_path=str(source.resolve()), status='queued',
                               storage_reserved_bytes=row.storage_reserved_bytes or reservation(row.total_bytes,settings.max_render_bytes),

@@ -1,3 +1,4 @@
+from upload_fixtures import RIGHTS_FORM
 import io
 import json
 import os
@@ -22,7 +23,7 @@ def headers(client):
 def upload(client, owner, key=None, content=b'synthetic', **data):
     return client.post('/api/v1/jobs', headers={**owner, **({'Idempotency-Key': key} if key else {})},
         files={'file': ('source.mp4', io.BytesIO(content), 'video/mp4')},
-        data={'title': 'Queue test', 'style': 'vlog', 'desired_seconds': '15', **data})
+        data={**RIGHTS_FORM, **({'title': 'Queue test', 'style': 'vlog', 'desired_seconds': '15', **data})})
 
 
 @pytest.fixture

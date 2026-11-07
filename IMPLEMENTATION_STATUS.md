@@ -5,6 +5,65 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — upload acknowledgement and bounded media profile
+
+- Create Short now requires an explicit, initially unchecked rights and server-
+  processing acknowledgement. Choosing another file resets it. Both upload APIs
+  enforce `upload-rights-v1`; strict session JSON rejects false/string/numeric
+  booleans. This records authenticated self-attestation, not verified ownership,
+  legal clearance, consent from depicted people or permission for AI training.
+- Additive migration **0009** records nullable version/server UTC receipt time on
+  sessions and jobs. Historical records remain unknown; no fabricated backfill.
+  Old paused intents require explicit reconfirmation while retaining their key,
+  private copy and acknowledged offset. Replay preserves current receipt times.
+- Discard works without asserting rights. Owner-key locking and a zero-byte,
+  zero-budget aborted tombstone prevent a late creation from resurrecting an
+  intent discarded before its session ID was saved. Stale screens cannot replace
+  a newer pending intent. Network failure retains the private saved copy.
+- FFprobe and FFmpeg now restrict demuxers, decoders and protocols to the documented
+  baseline profile and file-only input. Validate actual container, one video,
+  optional single audio track, pixel/rate/audio/stream limits; worker revalidates
+  queued sources before rendering. Selected allocation/probe/thread limits apply.
+  This is not antivirus, a filesystem sandbox or a total memory/disk quota.
+  Real H.264/MP4, HEVC/MOV, VP9/WebM and AV1 render tests pass; a disguised remote
+  playlist cannot contact the HTTP canary through probe or renderer. HDR/VFR and
+  broad real-device codec/hostile-file coverage remain unverified.
+- **142 backend tests passed on SQLite (27.76 s) and PostgreSQL (45.00 s)**,
+  no skips, one existing Starlette/httpx deprecation warning each. Includes strict
+  acknowledgements, preserved legacy migration data/progress, repeated completion,
+  concurrent create/discard, owner isolation, media profile and prior regressions.
+- TypeScript, **11 upload + 8 auth/API + 7 export logic tests** passed. Android
+  Hermes export passed (1,011 modules / 2.69 MB). Native adapters are mocked in
+  client tests; the new checkbox/reconfirmation flow still needs owner Pixel QA.
+  Pip dependency and diff checks passed. No dependency changes: inventory remains
+  836 records; last audit remains 17 unresolved (4 high, 12 moderate, 1 low),
+  not a fresh vulnerability scan or commercial dependency clearance.
+- Real isolated HTTP smoke passed restart/auth/revocation, interrupted 51 MiB
+  upload, checksum/offset and acknowledgement preservation, repeat-safe completion,
+  queue/render/download/decode, deletion cleanup and reservation release. Output
+  1080×1920, 30 fps, 4.9 s; baseline workflow 1.99 s. Synthetic ignored evidence:
+  `.data/smoke-0fd5ca6c05584616bcd2fcfbe05c9dfc/`.
+- Backed up the isolated PostgreSQL application DB; rebuilt local Compose images,
+  applied migration 0009 and verified healthy API/worker/database. External HTTP
+  smoke passed auth/resume/acknowledgement/render/download/deletion access controls
+  against those services (2.66 s baseline). This external run did not restart the
+  API or independently inspect container filesystem cleanup. No paid cloud deployed.
+- Owner-reported acceptance of the previously merged Save/Share/storage increment:
+  Windows 106 backend tests, complete smoke (3.95 s), TypeScript and 22 client
+  tests passed; inventory found 23 records, zero unverified trees, no deletion.
+  Owner reported all Pixel checks worked, including separate Save/Share. This is
+  normal-flow acceptance; native denied-permission/OS-full errors remain untested.
+- Upgrade: stop API/worker/Expo, back up DB/media, pull this increment, run migration
+  0009 and restart updated API/mobile together. No additional inventory or package
+  installation is required solely for this increment. Old upload clients receive
+  422/409 until updated. Commands and device checklist:
+  [upload consent and media guide](docs/UPLOAD_CONSENT_AND_MEDIA.md).
+- Phase 2 remains open: owner Pixel checkbox/pause/restart/discard QA, security and
+  licensing review, private object storage/production queue/deployment foundations,
+  retention and capacity controls. AI styles, transcription, provider calls,
+  subscriptions and paid infrastructure are not enabled. Next implementation scope
+  must follow the roadmap and the owner's approval boundary for paid services.
+
 ## Phase 2 increment — native Save/Share and storage admission budgets
 
 - Replaced the combined cache-download/share button with separate Save video to
@@ -23,7 +82,7 @@ the reported Android baseline flow, not production readiness or AI functionality
   own video without broad read permission. Native config introspection verified
   broad Android media read/location permissions blocked and iOS add-only text
   present, with no photo-library read description. Expo Go's full-access warning
-  is not a claim that this app reads the gallery. Native device save is unverified.
+  is not a claim that this app reads the gallery. Owner subsequently reported normal Pixel Save/Share working (see above).
 - Migration 0008 adds nullable job/session byte budgets and per-attempt render caps.
   New admissions reserve declared/received source bytes plus two bounded render
   attempts (default 64 MiB each) against a per-account 5 GiB budget. Owner-row

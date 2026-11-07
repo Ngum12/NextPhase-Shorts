@@ -1,3 +1,4 @@
+from upload_fixtures import RIGHTS_FORM
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 import pytest
@@ -13,7 +14,7 @@ from test_upload_sessions import create,fill,context
 
 
 def legacy(client,owner,key=None,data=b'abcdefghijklmnopqrstuvwx'):
-    return client.post('/api/v1/jobs',headers={**owner,**({'Idempotency-Key':key} if key else {})},files={'file':('source.mp4',data,'video/mp4')})
+    return client.post('/api/v1/jobs',headers={**owner,**({'Idempotency-Key':key} if key else {})},files={'file':('source.mp4',data,'video/mp4')}, data=RIGHTS_FORM)
 
 
 def budget(client,owner):return client.get('/api/v1/me/storage',headers=owner).json()

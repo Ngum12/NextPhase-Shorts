@@ -59,3 +59,10 @@ include the notice in distributions. Inventory now has 836 records. This review
 covers this dependency's declared license and upstream notice, not full transitive,
 OS/container, commercial-policy or privacy clearance. No proprietary kit assets,
 fonts, music or video were added. Paid services and billing remain disabled.
+
+## Upload acknowledgement/media hardening increment
+
+No dependency or reference-kit asset was added. Codec tests use the existing
+FFmpeg installation and do not imply codec/patent clearance. The uploader statement
+is self-attestation, not rights verification or a substitute for a rights manifest.
+The 836-record inventory and unresolved legal/security gates remain applicable.

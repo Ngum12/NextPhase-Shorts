@@ -1,3 +1,4 @@
+import {RIGHTS_VERSION} from './uploadRights';
 import { unauthorized } from './authEvents';
 export const BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8000').replace(/\/$/, '');
 
@@ -56,9 +57,11 @@ export async function getStyles(): Promise<ShortStyle[]> {
 }
 
 export async function uploadVideo(token: string, selected: { uri: string; name: string; mimeType?: string },
-                                  style: string, title: string, seconds: number, idempotencyKey: string): Promise<Job> {
+                                  style: string, title: string, seconds: number, idempotencyKey: string, rightsConfirmed=false): Promise<Job> {
+  if(rightsConfirmed!==true)throw new Error('Confirm upload rights and server processing first.');
   const form = new FormData();
   form.append('file', { uri: selected.uri, name: selected.name, type: selected.mimeType || 'video/mp4' } as any);
+  form.append('rights_confirmed','true');form.append('consent_version',RIGHTS_VERSION);
   form.append('style', style);
   form.append('title', title);
   form.append('desired_seconds', String(seconds));

@@ -23,7 +23,12 @@ class StorageBudget:
     max_render_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
 
-class RenderJob(StorageBudget, Base):
+class RightsRecord:
+    rights_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rights_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class RenderJob(StorageBudget, RightsRecord, Base):
     __tablename__ = "render_jobs"
     __table_args__ = (Index("uq_render_jobs_owner_submission", "user_id", "idempotency_key", unique=True),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
@@ -52,7 +57,7 @@ class RenderJob(StorageBudget, Base):
     cleanup_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class UploadSession(StorageBudget, Base):
+class UploadSession(StorageBudget, RightsRecord, Base):
     __tablename__ = 'upload_sessions'
     __table_args__ = (Index('uq_upload_sessions_owner_key', 'user_id', 'client_key', unique=True),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)

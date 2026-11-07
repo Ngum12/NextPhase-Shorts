@@ -1,3 +1,5 @@
+from upload_fixtures import RIGHTS_JSON
+from upload_fixtures import RIGHTS_FORM
 import hashlib
 import io
 import uuid
@@ -38,7 +40,7 @@ def context(client, monkeypatch):
 
 def create(client, owner, total=24, key=None, **values):
     return client.post('/api/v1/upload-sessions', headers={**owner, 'Idempotency-Key': key or uuid.uuid4().hex},
-        json={'file_name': 'source.mp4', 'total_bytes': total, 'title': 'Resumable', 'style': 'vlog', 'desired_seconds': 15, **values})
+        json={**RIGHTS_JSON,'file_name': 'source.mp4', 'total_bytes': total, 'title': 'Resumable', 'style': 'vlog', 'desired_seconds': 15, **values})
 
 
 def put(client, owner, session_id, offset, data, checksum=None):
@@ -146,7 +148,7 @@ def test_reservations_share_capacity_with_legacy_uploads_and_completion(client, 
     owner, _, _ = context
     sessions = [create(client, owner).json()['id'] for _ in range(3)]
     assert create(client, owner).status_code == 429
-    old = client.post('/api/v1/jobs', headers=owner, files={'file': ('source.mp4', io.BytesIO(b'fake'), 'video/mp4')})
+    old = client.post('/api/v1/jobs', headers=owner, files={'file': ('source.mp4', io.BytesIO(b'fake'), 'video/mp4')}, data=RIGHTS_FORM)
     assert old.status_code == 429
     fill(client, owner, sessions[0], b'12345678abcdefghlastpart')
     assert client.post(f'/api/v1/upload-sessions/{sessions[0]}/complete', headers=owner).status_code == 200
@@ -247,7 +249,7 @@ def test_parallel_session_and_legacy_admission_share_the_same_limit(client, cont
     def submit(index):
         if index<2:
             return create(client, owner)
-        return client.post('/api/v1/jobs', headers=owner, files={'file': ('source.mp4', b'fake', 'video/mp4')})
+        return client.post('/api/v1/jobs', headers=owner, files={'file': ('source.mp4', b'fake', 'video/mp4')}, data=RIGHTS_FORM)
     with ThreadPoolExecutor(max_workers=3) as pool:
         results = list(pool.map(submit, range(3)))
     assert sorted(result.status_code for result in results) == [201, 201, 429]

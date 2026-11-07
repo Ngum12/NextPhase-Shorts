@@ -43,7 +43,19 @@ function fixture() {
     if(offline)throw Error('offline');
     if(options.signal?.aborted)throw Error('aborted');
     const route=new URL(url);
+    if(route.pathname.startsWith('/api/v1/upload-sessions/by-key/')){
+      if(gone)return response({detail:'Deleted project'},410);
+      const found=sessions.get(route.pathname.split('/').at(-1));
+      return found?response(snapshot(found)):response({detail:'No session'},404);
+    }
     if(gone&&route.pathname.startsWith('/api/v1/upload-sessions'))return response({detail:'Deleted project'},410);
+    if(route.pathname==='/api/v1/upload-sessions/discard-by-key'){
+      const key=options.headers['Idempotency-Key'];
+      assert.equal(options.body,undefined);
+      if(!sessions.has(key))sessions.set(key,{id:crypto.randomUUID(),key,status:'aborted',offset:0,parts:[],completeCalls:0,discardOnly:true});
+      const session=sessions.get(key);if(session.status!=='completed')session.status='aborted';
+      return response(snapshot(session));
+    }
     if(route.pathname==='/api/v1/upload-sessions') {
       const key=options.headers['Idempotency-Key'];
       if(!sessions.has(key))sessions.set(key,{id:crypto.randomUUID(),key,status:'uploading',offset:0,parts:[],completeCalls:0});
@@ -82,6 +94,7 @@ function fixture() {
         const result=crypto.createHash('sha256').update(bytes).digest();
         return result.buffer.slice(result.byteOffset,result.byteOffset+result.length);
       }},
+      './uploadRights':{RIGHTS_VERSION:'upload-rights-v1'},
       './api':{BASE:'http://localhost',ApiError,extract,authenticatedFetch:async(token,url,options)=>fetch(url,options),api:async endpoint=>extract(await fetch('http://localhost'+endpoint))},
     };
     vm.runInNewContext(javascript,{exports,require:name=>{assert(adapters[name],name);return adapters[name];},
@@ -94,7 +107,7 @@ function fixture() {
     set failDeleteCopy(value){failDeleteCopy=value;},get openHandles(){return openHandles;}};
 }
 async function prepared(runtime) {
-  return runtime.prepareUpload('owner-a',{uri:'file:///original.mp4',name:'source.mp4'},'Test','vlog',15);
+  return runtime.prepareUpload('owner-a',{uri:'file:///original.mp4',name:'source.mp4'},'Test','vlog',15,true);
 }
 
 test('runtime restart resumes after the server-acknowledged chunk without retransferring it',async()=>{
@@ -176,4 +189,47 @@ test('confirmed discard after remote project deletion removes only its private p
   assert.equal(await app.loadPending('owner-a'),null);
   assert(world.storage.has('file:///original.mp4'));
   assert(!world.storage.has(world.root+saved.localName));
+});
+
+
+test('rights are required before durable upload preparation or starting network upload',async()=>{
+  const world=fixture();const app=world.restart();
+  await assert.rejects(app.prepareUpload('owner-a',{uri:'file:///original.mp4',name:'source.mp4'},'Test','vlog',15),/Confirm upload rights/);
+  assert.equal(await app.loadPending('owner-a'),null);assert.equal(world.sessions.size,0);
+  const record=await prepared(app);delete record.rightsVersion;
+  await assert.rejects(app.resumeUpload(record,'token',()=>{}),/Confirm upload rights/);
+  assert.equal(world.sessions.size,0);
+});
+
+test('old saved intents require explicit reconfirmation and keep their original key and progress',async()=>{
+  const world=fixture();let app=world.restart();const record=await prepared(app);
+  world.dropPart=true;await assert.rejects(app.resumeUpload(record,'token',()=>{}));
+  for(const [uri,bytes] of world.storage){
+    if(uri.endsWith('.json')){const value=JSON.parse(bytes.toString());delete value.rightsVersion;world.storage.set(uri,Buffer.from(JSON.stringify(value)));}
+  }
+  app=world.restart();let saved=await app.loadPending('owner-a');assert.equal(saved.rightsVersion,undefined);
+  await assert.rejects(app.resumeUpload(saved,'token',()=>{}),/Confirm upload rights/);
+  await assert.rejects(app.confirmUploadRights(saved,false),/Confirm upload rights/);
+  saved=await app.confirmUploadRights(saved,true);
+  assert.equal(saved.key,record.key);assert.equal(saved.rightsVersion,'upload-rights-v1');
+  assert.equal((await app.resumeUpload(saved,'token',()=>{})).id,'job-one');
+  assert.deepEqual(world.offsets,[0,4,8]);assert.equal(world.sessions.size,1);
+});
+
+test('discarding an unstarted legacy intent uses a key-only tombstone and asserts no rights',async()=>{
+  const world=fixture();const app=world.restart();const record=await prepared(app);delete record.rightsVersion;
+  assert.equal(await app.discardUpload(record,'token'),null);
+  assert.equal(world.sessions.size,1);assert.equal([...world.sessions.values()][0].discardOnly,true);assert.deepEqual(world.offsets,[]);
+  assert.equal(await app.loadPending('owner-a'),null);assert(world.storage.has('file:///original.mp4'));
+});
+
+
+test('a stale screen cannot confirm, resume or discard a newer pending intent',async()=>{
+  const world=fixture();const app=world.restart();const old=await prepared(app);
+  await app.discardUpload(old,'token');const next=await prepared(app);
+  await assert.rejects(app.confirmUploadRights(old,true),/changed/);
+  await assert.rejects(app.resumeUpload(old,'token',()=>{}),/changed/);
+  await assert.rejects(app.discardUpload(old,'token'),/changed/);
+  assert.equal((await app.loadPending('owner-a')).key,next.key);
+  assert(world.storage.has(world.root+next.localName));
 });
