@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from starlette.background import BackgroundTask
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from .auth import current_user
 from .auth_routes import router as auth_router
 from .deletion import router as deletion_router
@@ -53,6 +54,15 @@ app.include_router(deletion_router)
 @app.get("/health")
 def health():
     return {"ok": True, "service": "nextphase-shorts", "stage": "baseline-renderer"}
+
+@app.get('/ready')
+def ready():
+    try:
+        require_current_schema(engine)
+    except (SQLAlchemyError,RuntimeError):
+        return JSONResponse({'ok':False,'service':'nextphase-shorts'},status_code=503,
+                            headers={'Cache-Control':'no-store'})
+    return JSONResponse({'ok':True,'service':'nextphase-shorts'},headers={'Cache-Control':'no-store'})
 
 @app.get("/api/v1/styles", response_model=list[StyleInfo])
 def styles():

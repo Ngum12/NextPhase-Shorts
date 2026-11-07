@@ -146,3 +146,13 @@ class RenderAttempt(Base):
     status: Mapped[str] = mapped_column(String(20), default='running')
     wall_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     output_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class WorkerPulse(Base):
+    __tablename__='worker_pulses'
+    id: Mapped[str] = mapped_column(String(36),primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+    stopped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    phase: Mapped[str] = mapped_column(String(24))
+    heartbeat_seconds: Mapped[float] = mapped_column(Float)

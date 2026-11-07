@@ -211,3 +211,10 @@ Claims now rotate across eligible accounts and expired-lease recovery is bounded
 Linux decoder children have parent-death/CPU limits and reduced environments. The
 Compose worker requires enforced cgroup v2 CPU/memory/PID caps and fails startup if
 unsupported. No migration or dependency change; see [upgrade and host acceptance](docs/WORKER_RESILIENCE.md).
+
+### Operational visibility
+
+Migration 0013 adds independent worker liveness pulses. `/ready` checks API DB/schema
+readiness; private `python -m app.operations` reports backlog, expired claims, recent
+failures and observed worker states. Worker events use validated JSON fields. No
+public metrics/admin endpoint or paid monitoring service. See [upgrade and checks](docs/OPERATIONS.md).

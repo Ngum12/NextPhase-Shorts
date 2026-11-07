@@ -247,3 +247,27 @@ def test_account_deletion_migration_preserves_live_account(migration_engine):
         row=connection.execute(sa.text("SELECT email,password_hash,deleted_at FROM users WHERE id='keep-account'")).one()
         assert row.email=='keep@example.com' and row.password_hash=='keep-hash' and row.deleted_at is None
         assert connection.scalar(sa.text('SELECT count(*) FROM account_deletions'))==0
+
+
+def test_worker_pulses_migration_preserves_accounts_and_media_paths(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import UploadSession,utcnow
+    from datetime import timedelta
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0012_account_deletion')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at) VALUES ('ops-owner','ops@example.com','hash',CURRENT_TIMESTAMP)"))
+        connection.execute(sa.text("""INSERT INTO render_jobs
+            (id,user_id,title,style,desired_seconds,source_duration_seconds,source_path,output_path,status,attempt_count,created_at)
+            VALUES ('ops-job','ops-owner','Keep','vlog',15,5,'keep/source.mp4','keep/output.mp4','succeeded',1,CURRENT_TIMESTAMP)"""))
+        connection.execute(UploadSession.__table__.insert().values(id='ops-upload',user_id='ops-owner',client_key='keep-ops-key',
+            descriptor_hash='c'*64,file_name='source.mp4',extension='.mp4',title='Keep',style='vlog',desired_seconds=15,
+            total_bytes=24,received_bytes=8,chunk_bytes=8,expires_at=utcnow()+timedelta(hours=1),
+            rights_version='upload-rights-v1',rights_confirmed_at=utcnow()))
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT source_path,output_path,status FROM render_jobs WHERE id='ops-job'")).one()
+        assert tuple(row)==('keep/source.mp4','keep/output.mp4','succeeded')
+        assert connection.scalar(sa.text('SELECT count(*) FROM worker_pulses'))==0
+        row=connection.execute(sa.text("SELECT received_bytes,rights_version,client_key FROM upload_sessions WHERE id='ops-upload'")).one()
+        assert tuple(row)==(8,'upload-rights-v1','keep-ops-key')

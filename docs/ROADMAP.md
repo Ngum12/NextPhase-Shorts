@@ -42,3 +42,8 @@ Worker reliability now includes durable account-turn fairness, bounded recovery,
 shutdown fencing, decoder containment and fail-closed Compose cgroup validation.
 Broker/heartbeat, per-tenant sandboxing, enforced host caps, representative load/soak
 and production acceptance remain open; see WORKER_RESILIENCE.md.
+
+Operational visibility foundation: migration 0013 process-liveness pulses, minimal
+DB/schema readiness, private aggregate queue/failure snapshot and structured worker
+events. Job lease renewal, broker/watchdog, full tracing/exporters, alerts, metadata
+retention and production load/security acceptance remain open. See OPERATIONS.md.

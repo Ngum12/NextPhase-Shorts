@@ -37,6 +37,9 @@ class Settings:
             raise RuntimeError('Storage budget must be positive; render cap must be 1–512 MiB')
         self.max_source_seconds = int(os.getenv("MAX_SOURCE_SECONDS", "600"))
         self.render_timeout_seconds = int(os.getenv("RENDER_TIMEOUT_SECONDS", "1200"))
+        self.worker_heartbeat_seconds=int(os.getenv('WORKER_HEARTBEAT_SECONDS','10'))
+        if not 1<=self.worker_heartbeat_seconds<=60:
+            raise RuntimeError('Worker heartbeat must be 1–60 seconds')
         self.worker_poll_seconds = float(os.getenv("WORKER_POLL_SECONDS", "2"))
         self.worker_require_limits = os.getenv('WORKER_REQUIRE_LIMITS','false').lower()=='true'
         import math
