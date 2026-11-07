@@ -39,6 +39,8 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     desired_seconds: Mapped[int] = mapped_column(Integer)
     source_duration_seconds: Mapped[float] = mapped_column(Float)
     source_path: Mapped[str] = mapped_column(Text)
+    media_backend: Mapped[str] = mapped_column(String(16), server_default='local')
+    object_store_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     output_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="queued", index=True)
     error_code: Mapped[str | None] = mapped_column(String(80), nullable=True)

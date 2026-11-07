@@ -62,21 +62,26 @@ def remove_private_tree(owner_id,leaf_id,*,staging=False):
 def cleanup_deleted(limit=100):
     if not 1<=limit<=1000:raise ValueError('Cleanup limit must be 1–1000')
     with SessionLocal() as db:
-        rows=list(db.execute(select(RenderJob.id,RenderJob.user_id).where(
+        rows=list(db.execute(select(RenderJob.id,RenderJob.user_id,RenderJob.media_backend,RenderJob.object_store_id).where(
             RenderJob.status=='deleted',RenderJob.cleanup_after<=utcnow())
             .order_by(case((RenderJob.media_deleted_at.is_(None),0),else_=1),
                 func.coalesce(RenderJob.cleanup_attempted_at,RenderJob.deleted_at),RenderJob.id).limit(limit)))
     cleaned=0
-    for job_id,owner_id in rows:
+    for job_id,owner_id,backend,store_id in rows:
         success=False
         try:
+            if backend == 's3':
+                from .object_store import remove_project, namespace_id
+                if store_id != namespace_id():
+                    raise ValueError('Stored private namespace differs from current configuration')
+                remove_project(owner_id, job_id)
             remove_private_tree(owner_id,job_id)
             with SessionLocal() as db:
                 sessions=list(db.scalars(select(UploadSession.id).where(UploadSession.job_id==job_id,
                     UploadSession.user_id==owner_id)))
             for session_id in sessions:remove_private_tree(owner_id,session_id,staging=True)
             success=True
-        except (OSError,ValueError):
+        except (OSError,ValueError,RuntimeError):
             logger.warning('project media cleanup deferred')  # No customer paths.
         with SessionLocal.begin() as db:
             db.execute(update(RenderJob).where(RenderJob.id==job_id,RenderJob.status=='deleted')

@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from starlette.background import BackgroundTask
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from .auth import current_user
@@ -21,6 +22,7 @@ from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import ACTIVE_STATUSES, admit_job, lock_owner
 from .storage import reservation, usage
 from .consent import RIGHTS_VERSION, require_rights
+from . import object_store
 from .schemas import JobResponse, StyleInfo, UserResponse
 
 settings = get_settings()
@@ -30,6 +32,8 @@ from .uploads import router as uploads_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     require_current_schema(engine)
+    if settings.media_backend == 's3':
+        object_store.check_bucket()
     yield
 
 app = FastAPI(title="NextPhase Shorts API", version="0.1.0", lifespan=lifespan)
@@ -79,6 +83,27 @@ def download(job_id: str, user: User = Depends(current_user), db: Session = Depe
         raise HTTPException(404, "Project not found")
     if job.status != "succeeded" or not job.output_path:
         raise HTTPException(409, "Video is not ready")
+    if job.media_backend == 's3':
+        key = object_store.output_key(user.id, job.id, job.claim_token)
+        try:
+            object_store.require_namespace(job.object_store_id)
+            remote = object_store.open_object(job.output_path, key, job.max_render_bytes or settings.max_render_bytes)
+        except object_store.ObjectStoreError:
+            raise HTTPException(503, 'Private video storage is temporarily unavailable')
+        def chunks():
+            sent = 0
+            try:
+                for chunk in remote['Body'].iter_chunks(chunk_size=65536):
+                    sent += len(chunk)
+                    if sent > remote['ContentLength']:
+                        raise object_store.ObjectStoreError('Private video length mismatch')
+                    yield chunk
+            finally:
+                remote['Body'].close()
+        # Keep bearer credentials on this API origin. No cross-origin redirects.
+        return StreamingResponse(chunks(), media_type='video/mp4', background=BackgroundTask(remote['Body'].close), headers={
+            'Content-Length': str(remote['ContentLength']), 'Cache-Control': 'private, no-store',
+            'Content-Disposition': 'attachment; filename="nextphase-short.mp4"'})
     directory = settings.storage_dir / user.id / job.id
     # Legacy successes keep their original path; new attempts are fenced by token.
     output = directory / job.claim_token / "output.mp4" if job.claim_token else directory / "output.mp4"
@@ -86,6 +111,27 @@ def download(job_id: str, user: User = Depends(current_user), db: Session = Depe
         raise HTTPException(404, "Video file is unavailable")
     return FileResponse(output, media_type="video/mp4", filename="nextphase-short.mp4",
                         headers={"Cache-Control":"private, no-store"})
+
+
+@app.post('/api/v1/jobs/{job_id}/download-link')
+def download_link(job_id: str, response: Response, user: User = Depends(current_user),
+                  db: Session = Depends(session_dep)):
+    job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id,
+                                           RenderJob.status != 'deleted'))
+    if job is None:
+        raise HTTPException(404, 'Project not found')
+    if job.status != 'succeeded' or not job.output_path:
+        raise HTTPException(409, 'Video is not ready')
+    if job.media_backend != 's3':
+        raise HTTPException(409, 'This development video uses authenticated API download')
+    try:
+        object_store.require_namespace(job.object_store_id)
+        key = object_store.output_key(user.id, job.id, job.claim_token)
+        url = object_store.signed_download(job.output_path, key)
+    except object_store.ObjectStoreError:
+        raise HTTPException(503, 'Private video storage is temporarily unavailable')
+    response.headers['Cache-Control'] = 'private, no-store'
+    return {'url': url, 'expires_in_seconds': settings.signed_download_seconds}
 
 @app.post("/api/v1/jobs/{job_id}/cancel", response_model=JobResponse)
 def cancel_job(job_id: str, user: User = Depends(current_user), db: Session = Depends(session_dep)):
@@ -123,6 +169,7 @@ async def create_job(
 ):
     source = directory = None
     committed_new_job = False
+    remote_attempt = False
     try:
         require_rights(rights_confirmed == 'true',consent_version)
         acknowledged_at=utcnow()
@@ -161,9 +208,17 @@ async def create_job(
         fingerprint = hashlib.sha256(json.dumps({
             'sha256': digest.hexdigest(), 'extension': ext, 'style': style,
             'title': title, 'desired_seconds': desired_seconds}, sort_keys=True).encode()).hexdigest()
-        candidate = RenderJob(rights_version=RIGHTS_VERSION,rights_confirmed_at=acknowledged_at,id=job_id, user_id=user.id, title=title, style=style,
+        source_reference = str(source.resolve())
+        if settings.media_backend == 's3':
+            remote_attempt = True
+            try:
+                source_reference = object_store.put(source, object_store.source_key(user.id, job_id, ext), settings.max_upload_bytes)
+            except object_store.ObjectStoreError:
+                raise HTTPException(503, 'Private storage is temporarily unavailable; retry this upload')
+        candidate = RenderJob(media_backend=settings.media_backend,rights_version=RIGHTS_VERSION,rights_confirmed_at=acknowledged_at,id=job_id, user_id=user.id, title=title, style=style,
+                              object_store_id=object_store.namespace_id() if settings.media_backend == 's3' else None,
                               desired_seconds=desired_seconds, source_duration_seconds=info["duration"],
-                              source_path=str(source.resolve()), status="queued",
+                              source_path=source_reference, status="queued",
                               storage_reserved_bytes=reservation(total,settings.max_render_bytes), max_render_bytes=settings.max_render_bytes,
                               idempotency_key=idempotency_key, request_hash=fingerprint if idempotency_key else None)
         job, replayed = admit_job(db, candidate)
@@ -171,6 +226,8 @@ async def create_job(
         # be unknown. An orphan is safer than deleting an accepted job's input.
         committed_new_job = not replayed
         db.commit()
+        if job.media_backend == 's3':
+            source.unlink(missing_ok=True)
         if replayed:
             response.status_code = 200
             response.headers['Idempotency-Replayed'] = 'true'
@@ -179,6 +236,8 @@ async def create_job(
         db.rollback()
         raise
     finally:
+        if remote_attempt and not committed_new_job:
+            object_store.discard_unaccepted(user.id, job_id)
         # Replays/rejections never leave a second source; an accepted job retains it
         # even if response delivery later fails. No I/O holds the owner-row lock.
         if not committed_new_job and source:

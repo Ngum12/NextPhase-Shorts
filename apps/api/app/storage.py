@@ -72,6 +72,9 @@ def reconcile():
         for row in db.scalars(select(RenderJob).where(or_(RenderJob.storage_reserved_bytes.is_(None),RenderJob.max_render_bytes.is_(None)))):
             if row.status=='deleted' and row.media_deleted_at is not None:
                 row.storage_reserved_bytes=0;row.max_render_bytes=cap;done+=1;continue
+            if row.media_backend == 's3':
+                # Local scratch does not inventory retained remote originals.
+                missing+=1;continue
             try:total,source=measured_tree(row.user_id,row.id)
             except (OSError,ValueError):missing+=1;continue
             remaining=max(0,MAX_RENDER_ATTEMPTS-row.attempt_count) if row.status in ('queued','processing') else 0

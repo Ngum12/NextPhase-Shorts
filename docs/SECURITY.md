@@ -31,3 +31,10 @@ limits are implemented; they do not satisfy the remaining production controls.
 - Logs cannot contain full customer videos, full ASR transcripts, personal payment information or secret tokens; least privilege and rotation.
 
 **Important:** Stage 1 is a developer prototype, not production-hardened; don't expose it as-is to the public internet.
+
+Optional S3 storage and exact-key expiring signed GETs are implemented; the default
+remains local. API downloads keep bearer credentials on-origin. Signed links are
+capabilities and cannot be recalled by logout or tombstoning alone; physical
+removal/expiry limits them. Private bucket policy, TLS, log redaction, version-aware
+erasure, orphan/lifecycle controls and provider isolation remain deployment gates.
+See PRIVATE_OBJECT_STORAGE.md; never treat a successful bucket HEAD as privacy proof.

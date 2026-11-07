@@ -15,6 +15,7 @@ from .migrate import require_current_schema
 from .media import MediaCancelled, MediaError, OutputLimitExceeded, render_baseline
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner
+from . import object_store
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("nextphase.worker")
@@ -63,14 +64,17 @@ def claim_job():
                 status='processing', attempt_count=RenderJob.attempt_count + 1,
                 started_at=now, finished_at=None, error_code=None,
                 output_path=None, output_duration_seconds=None, claim_token=token,
-                lease_expires_at=now + timedelta(seconds=settings.render_timeout_seconds + 90))
+                lease_expires_at=now + timedelta(seconds=settings.render_timeout_seconds +
+                    (300 if db.get(RenderJob, job_id).media_backend == 's3' else 90)))
             .returning(RenderJob)).scalar_one_or_none()
         if job is None:
             return None
         db.add(RenderAttempt(id=token,job_id=job.id,number=job.attempt_count,started_at=now,status='running'))
         return {'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
                 'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
-                'claim_token': token, 'max_render_bytes': job.max_render_bytes or settings.max_render_bytes}
+                'claim_token': token, 'media_backend': job.media_backend,
+                'object_store_id': job.object_store_id,
+                'max_render_bytes': job.max_render_bytes or settings.max_render_bytes}
 
 
 def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None):
@@ -101,11 +105,28 @@ def process(job):
     token = job['claim_token']
     output = settings.storage_dir / job['user_id'] / job['id'] / token / 'output.mp4'
     began = time.monotonic()
+    source = Path(job['source'])
+    remote = job.get('media_backend', 'local') == 's3'
+    if remote:
+        source = output.parent / 'input.media'
     try:
+        if remote:
+            object_store.require_namespace(job.get('object_store_id'))
+            output.parent.mkdir(parents=True, exist_ok=True)
+            extension = Path(job['source'].split('#', 1)[0]).suffix
+            object_store.fetch(job['source'], object_store.source_key(job['user_id'], job['id'], extension),
+                               source, settings.max_upload_bytes)
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
-        info = render_baseline(Path(job['source']), output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: not owns_claim(job))
-        if mark_done(job['id'], token, output_path=output.resolve(), output_duration=info['duration'],
-                     wall_seconds=time.monotonic()-began, output_bytes=output.stat().st_size):
+        info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: not owns_claim(job))
+        output_bytes = output.stat().st_size
+        output_reference = output.resolve()
+        if remote:
+            if not owns_claim(job):
+                raise MediaCancelled('Claim lost before private upload')
+            output_reference = object_store.put(output, object_store.output_key(job['user_id'], job['id'], token),
+                                                job.get('max_render_bytes', settings.max_render_bytes))
+        if mark_done(job['id'], token, output_path=output_reference, output_duration=info['duration'],
+                     wall_seconds=time.monotonic()-began, output_bytes=output_bytes):
             logger.info('render completed job_id=%s seconds=%.2f', job['id'], info['duration'])
         else:
             # A recovered attempt can never replace or remove the winner's artifact.
@@ -118,12 +139,18 @@ def process(job):
     except MediaError:
         logger.warning('media error job_id=%s', job['id'])
         mark_done(job['id'], token, error_code='RENDER_FAILED', wall_seconds=time.monotonic()-began)
+    except object_store.ObjectStoreError:
+        logger.warning('private storage error job_id=%s', job['id'])
+        mark_done(job['id'], token, error_code='STORAGE_UNAVAILABLE', wall_seconds=time.monotonic()-began)
     except Exception:
         # Do not log raw exception messages/tracebacks containing customer paths.
         logger.error('unexpected error job_id=%s', job['id'])
         mark_done(job['id'], token, error_code='INTERNAL_ERROR', wall_seconds=time.monotonic()-began)
 
     finally:
+        if remote:
+            source.unlink(missing_ok=True)
+            output.unlink(missing_ok=True)
         # If publication lost its fence, only close this attempt's telemetry.
         # Recovery may already have marked it lost: never overwrite that history.
         with SessionLocal.begin() as db:
@@ -162,6 +189,8 @@ def main():
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
     require_current_schema(engine)
+    if settings.media_backend == 's3':
+        object_store.check_bucket()
     logger.info('NextPhase worker started (leased baseline FFmpeg, no AI)')
     last_upload_cleanup = 0.0
     while not stop:

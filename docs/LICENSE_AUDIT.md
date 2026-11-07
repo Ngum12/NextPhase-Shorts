@@ -66,3 +66,34 @@ No dependency or reference-kit asset was added. Codec tests use the existing
 FFmpeg installation and do not imply codec/patent clearance. The uploader statement
 is self-attestation, not rights verification or a substitute for a rights manifest.
 The 836-record inventory and unresolved legal/security gates remain applicable.
+
+## Private object storage first increment
+
+Added boto3 1.43.126 (Apache-2.0) pinned in requirements. Installed transitive
+versions: botocore 1.43.126 (Apache-2.0), s3transfer 0.19.3 (Apache-2.0), jmespath
+1.1.0 (MIT), python-dateutil 2.9.0.post0 (dual Apache-2.0/BSD terms; see full notice),
+six 1.17.0 (MIT), urllib3 2.8.0 (MIT). Exact sources/metadata are inventoried in
+`dependency-inventory.json` (843 records). Required packaged LICENSE/NOTICE files
+are copied verbatim under `docs/licenses/s3-sdk/`; preserve these in distributions.
+Sources are the corresponding official PyPI project/version records. This is
+notice/metadata review, not full legal/security clearance or a frozen Python lock.
+
+The disposable development test uses SeaweedFS 4.06, upstream
+https://github.com/seaweedfs/seaweedfs/tree/4.06 , Apache-2.0 license retrieved from
+https://raw.githubusercontent.com/seaweedfs/seaweedfs/4.06/LICENSE and preserved at
+`docs/licenses/seaweedfs-4.06-Apache-2.0.txt`. Test image:
+`chrislusf/seaweedfs:4.06@sha256:a064c6923daf4451c943cec2f437a67523d7792ee589089bc4d4c27a61d78dea`.
+Apache-2.0 permits commercial use subject to its license/notice conditions. This
+records the upstream project license, not a complete OS/container/transitive SBOM,
+patent clearance, cloud-provider terms approval or production hosting decision.
+No proprietary reference kit/media, paid provider or billing activation was added.
+
+## CI diagnostic artifact action
+
+Official actions/upload-artifact v4.6.2 is pinned to commit
+`ea165f8d65b6e75b540449e92b4886f43607fa02` for sanitized failure logs only. Its
+MIT notice was retrieved from the exact upstream commit's LICENSE and preserved
+at docs/licenses/actions-upload-artifact-v4.6.2.txt. Source:
+https://github.com/actions/upload-artifact/tree/ea165f8d65b6e75b540449e92b4886f43607fa02 .
+This is a CI tool, outside the Python/npm inventory scope; no runtime dependency
+or proprietary kit code was added. Metadata/notice review is not legal clearance.

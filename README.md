@@ -13,7 +13,7 @@
 
 ## Not yet built (don't mistake labels for finished features)
 
-**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, subscription quotas, production hardened auth, cloud object storage yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
+**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, subscription quotas, production hardened auth, production cloud deployment yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
 
 ## Step 1 — Run local or Docker backend
 
@@ -183,3 +183,8 @@ New uploads now require a recorded rights/server-processing acknowledgement.
 Server container/codec/pixel/frame-rate checks and file-only FFmpeg input protocols
 are restricted; old paused uploads can reconfirm without losing progress. See
 [consent/media profile and migration 0009](docs/UPLOAD_CONSENT_AND_MEDIA.md).
+
+Optional private S3-compatible originals/results and short-lived signed download
+links are implemented behind `MEDIA_BACKEND=s3`. Local storage remains the default;
+normal mobile Save/Share stays API-authenticated. See [configuration, migration
+0010, local S3 smoke and remaining limits](docs/PRIVATE_OBJECT_STORAGE.md).

@@ -80,12 +80,36 @@ def check_api(base_url, output_dir):
         assert response.headers['cache-control']=='private, no-store'
         output = output_dir / 'output.mp4'
         output.write_bytes(response.content)
+        if os.getenv('NEXTPHASE_SMOKE_S3_CHECKS') == '1':
+            from urllib.parse import urlsplit, parse_qsl, urlencode, urlunsplit
+            link = client.post(path+'/download-link', headers=owner)
+            assert link.status_code == 200 and link.headers['cache-control'] == 'private, no-store'
+            assert client.post(path+'/download-link', headers=other).status_code == 404
+            assert client.post(path+'/download-link').status_code == 401
+            signed = link.json()['url']; parsed = urlsplit(signed)
+            assert parsed.hostname in ('localhost', '127.0.0.1'), 'Local S3 smoke must stay local'
+            assert link.json()['expires_in_seconds'] == 5
+            with httpx.Client(trust_env=False, timeout=30) as storage:
+                assert storage.get(signed).content == response.content
+                unsigned = urlunsplit(parsed._replace(query=''))
+                assert storage.get(unsigned).status_code == 403
+                assert storage.put(signed, content=b'cannot-overwrite').status_code == 403
+                query = dict(parse_qsl(parsed.query)); query['X-Amz-Signature'] = '0'*64
+                tampered = urlunsplit(parsed._replace(query=urlencode(query)))
+                assert storage.get(tampered).status_code == 403
+                time.sleep(6)
+                assert storage.get(signed).status_code == 403
+            (output_dir/'signed-storage-report.json').write_text(json.dumps({
+                'private_get':'passed', 'anonymous_denied':True, 'write_denied':True,
+                'tamper_denied':True, 'expiry_seconds':5, 'expired_denied':True})+'\n')
+            print('Private signed download: anonymous/write/tamper/expiry controls passed')
         # Delete only this run's own synthetic project after saving its test evidence.
         assert client.delete(path,headers=other).status_code==404
         assert client.delete(path,headers=owner).status_code==202
         assert client.delete(path,headers=owner).status_code==202
         assert client.get(path,headers=owner).status_code==404
         assert client.get(path+'/download',headers=owner).status_code==404
+        assert client.post(path+'/download-link',headers=owner).status_code==404
         assert all(row['id']!=job['id'] for row in client.get('/api/v1/jobs',headers=owner).json())
         assert client.post('/api/v1/jobs',headers={**owner,'Idempotency-Key':key},
             files={'file':('source.mp4',source.read_bytes(),'video/mp4')},
@@ -337,6 +361,10 @@ def main():
                 subprocess.run([sys.executable,'-m','app.deletion'],cwd=ROOT,env=env,check=True,timeout=30)
                 verification='from app.consent import RIGHTS_VERSION; from app.storage import usage; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and usage(db,row.user_id)["known_reserved_bytes"]==0 and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); assert all(row.rights_version==RIGHTS_VERSION and row.rights_confirmed_at is not None for row in db.scalars(select(RenderJob))); db.close()'
                 subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
+                if env.get('MEDIA_BACKEND') == 's3':
+                    verification='from app.object_store import client,prefix; from app.config import get_settings; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(not client().list_objects_v2(Bucket=get_settings().s3_bucket,Prefix=prefix(row.user_id,row.id)).get("Contents") for row in rows); db.close()'
+                    subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
+                    print('Deleted original/output object-prefix removal: passed')
                 print('Deleted source/output filesystem cleanup and storage release: passed')
             finally:
                 for process in reversed(processes):
