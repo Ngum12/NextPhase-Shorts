@@ -122,3 +122,9 @@
 - Dispose the helper's pooled SQLite handles before temporary-directory cleanup,
   including failure paths; report success only after cleanup completes.
 - No application behavior, schema, dependency or resource-limit change.
+
+## CI process-exit observation fix
+
+- Treat procfs ENOENT and ESRCH as exited processes in Linux containment tests.
+- Wait for complete child-marker JSON; keep live-process and unexpected-error
+  assertions intact. No application or deployment behavior changes.
