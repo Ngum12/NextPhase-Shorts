@@ -429,6 +429,12 @@ def main():
                     except subprocess.TimeoutExpired:
                         process.kill()
                         process.wait()
+        # Unknown-orphan cleanup is intentionally offline: stop only our own API
+        # and worker first, then exercise it in the same disposable fixture DB.
+        result=subprocess.check_output([sys.executable,str(ROOT/'scripts/retention_smoke.py')],
+            cwd=ROOT,env=env,text=True,timeout=60)
+        (args.output_dir/'retention-report.json').write_text(result)
+        print('Offline retention:',result.strip())
     print('Evidence:', args.output_dir)
 
 

@@ -104,3 +104,9 @@ No dependency, third-party asset or reference-kit code was introduced. The exist
 843-record inventory, preserved SDK/server/action notices and unresolved legal/
 security gates remain applicable. Tests use synthetic media and the existing
 local S3 service; signed requests do not activate a paid provider or clear rights.
+
+## Retention/orphan-cleanup increment
+
+No dependency, reference-kit source, asset or paid provider was added. The existing
+843-record metadata inventory and licensing/security gates remain applicable.
+Synthetic local/S3 fixtures are original test data; no real footage is committed.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Bounded retention maintenance and offline orphan preview
+
+- Owner-locked, bounded upload expiration; existing terminal cleanup/budget rules retained.
+- Preview-first offline collection of aged recognized orphans and unreferenced
+  noncurrent terminal attempts, with DB/reference/link/namespace/digest protections.
+- No automatic saved-project expiry, schema/dependency change or paid activation.
+
 ## Direct resumable storage uploads
 
 - Opt-in signed temporary chunks with verified private sealing, restart-safe
