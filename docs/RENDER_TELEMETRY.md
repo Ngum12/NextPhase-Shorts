@@ -99,3 +99,7 @@ resource/cost ceilings, full attempt recovery accounting and production SLOs rem
 This does not replace a durable broker, object storage, deletion/retention controls,
 verified email recovery, security review, dependency/license clearance or consent.
 All intensive editing stays on the server; exports remain 9:16 and <=60 seconds.
+
+The owner subsequently reported Windows/Pixel acceptance passed: 81 backend tests,
+full smoke and a playable new app render. One measured attempt (28.766 s, 7,206,440
+output bytes) confirms recording on that setup; it is not a representative benchmark.

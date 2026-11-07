@@ -138,6 +138,7 @@ async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(se
   return job;
 }
 async function discardUploadImpl(record:PendingUpload,token:string):Promise<Job|null> {
+  try {
   // Recover a session whose create response was lost before its ID was saved.
   const session=record.sessionId ? await api<Session>(`/api/v1/upload-sessions/${record.sessionId}`,token)
     : await requestSession(record,token);
@@ -148,6 +149,13 @@ async function discardUploadImpl(record:PendingUpload,token:string):Promise<Job|
   }));
   await clearPending(record);
   return job;
+  } catch(error) {
+    // Only a confirmed terminal server response permits private-copy removal.
+    if(error instanceof ApiError && [404,410].includes(error.status)) {
+      await clearPending(record);return null;
+    }
+    throw error;
+  }
 }
 
 const actions=new Set<string>();

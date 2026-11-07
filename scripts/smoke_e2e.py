@@ -67,8 +67,22 @@ def check_api(base_url, output_dir):
         response = client.get(path + '/download', headers=owner)
         assert response.status_code == 200
         assert response.headers['content-type'].startswith('video/mp4')
+        assert response.headers['cache-control']=='private, no-store'
         output = output_dir / 'output.mp4'
         output.write_bytes(response.content)
+        # Delete only this run's own synthetic project after saving its test evidence.
+        assert client.delete(path,headers=other).status_code==404
+        assert client.delete(path,headers=owner).status_code==202
+        assert client.delete(path,headers=owner).status_code==202
+        assert client.get(path,headers=owner).status_code==404
+        assert client.get(path+'/download',headers=owner).status_code==404
+        assert all(row['id']!=job['id'] for row in client.get('/api/v1/jobs',headers=owner).json())
+        assert client.post('/api/v1/jobs',headers={**owner,'Idempotency-Key':key},
+            files={'file':('source.mp4',source.read_bytes(),'video/mp4')},
+            data={'title':'Synthetic smoke test','style':'vlog','desired_seconds':'15'}).status_code==410
+        deletion={'accepted':True,'download_revoked':True,'replay_blocked':True}
+        (output_dir/'deletion-report.json').write_text(json.dumps(deletion,indent=2)+'\n')
+        print('Project deletion:',json.dumps(deletion))
     metadata = json.loads(subprocess.check_output([
         'ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', str(output)]))
     video = next(s for s in metadata['streams'] if s['codec_type'] == 'video')
@@ -303,6 +317,10 @@ def main():
                 assert telemetry['compute_estimate']['amount_for_observed_attempts'] is None
                 (args.output_dir/'telemetry-report.json').write_text(json.dumps(telemetry,indent=2)+'\n')
                 print('Render telemetry: measured successful attempts, output bytes and aggregate report passed')
+                subprocess.run([sys.executable,'-m','app.deletion'],cwd=ROOT,env=env,check=True,timeout=30)
+                verification='from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); db.close()'
+                subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
+                print('Deleted source/output filesystem cleanup: passed')
             finally:
                 for process in reversed(processes):
                     process.terminate()

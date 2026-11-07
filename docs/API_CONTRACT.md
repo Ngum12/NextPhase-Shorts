@@ -15,6 +15,7 @@ Base URL: `http://localhost:8000` in development only. Production must be HTTPS,
 | GET | `/api/v1/jobs` | Bearer | Current user's 100 recent jobs |
 | POST | `/api/v1/jobs` | Bearer | multipart `file`, `title`, `style`, `desired_seconds` |
 | GET | `/api/v1/jobs/{id}` | Bearer | Owner-scoped job, status |
+| DELETE | `/api/v1/jobs/{id}` | Bearer | Owner-only irreversible deletion; 202 schedules cleanup |
 | POST | `/api/v1/jobs/{id}/cancel` | Bearer | Owner-only queued/processing cancellation; repeat-safe |
 | GET | `/api/v1/jobs/{id}/download` | Bearer | Owner-scoped MP4 when succeeded |
 
@@ -41,3 +42,7 @@ Auth tokens now require a persistent session record (migration 0005). Existing
 users sign in once after upgrading. Responses include expires_in; default TTL
 24 hours. Login/register/password changes have shared fixed-window limits and
 429 Retry-After. See [session semantics and upgrade guide](AUTH_SESSIONS.md).
+
+Deleted projects are hidden from lists/detail/download/cancel (404). Repeated
+owner deletion returns 202; related session/key replay returns 410. See
+[cleanup timing, tombstones and retained records](PROJECT_DELETION.md).

@@ -143,3 +143,20 @@ def test_attempt_migration_preserves_auth_session(migration_engine):
     with migration_engine.connect() as connection:
         assert connection.scalar(sa.text('SELECT count(*) FROM auth_sessions'))==1
         assert connection.scalar(sa.text('SELECT count(*) FROM render_attempts'))==0
+
+
+def test_deletion_migration_keeps_existing_job_visible(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import User, RenderJob
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0006_render_attempts')
+        connection.execute(User.__table__.insert().values(id='keep-owner',email='keep-owner@example.com',password_hash='hash'))
+        connection.execute(RenderJob.__table__.insert().values(id='keep-job',user_id='keep-owner',title='Keep this',style='vlog',
+            desired_seconds=15,source_duration_seconds=5,source_path='old/input.mp4',output_path='old/output.mp4',status='succeeded'))
+    upgrade_schema(migration_engine)
+    upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT status,title,output_path,deleted_at,cleanup_after FROM render_jobs WHERE id='keep-job'")).one()
+        assert row.status=='succeeded' and row.title=='Keep this' and row.output_path=='old/output.mp4'
+        assert row.deleted_at is None and row.cleanup_after is None

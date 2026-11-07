@@ -5,6 +5,67 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — project deletion and private-volume cleanup
+
+- Migration `0007_project_deletion` adds nullable deletion/cleanup timestamps and an
+  index. Existing accounts, sessions, jobs, attempt records and paused uploads are
+  preserved; migration itself deletes no footage. No new sign-in is required.
+- Owner-only DELETE `/api/v1/jobs/{id}` commits a permanent tombstone before 202.
+  All prior statuses can be deleted; repeated owner requests stay repeat-safe and
+  other owners receive 404. Lists/detail/download/cancel hide deleted projects.
+  Claims are revoked and title/path/linked upload display metadata are scrubbed.
+- Owner/job-row locks follow the worker's job→attempt lock order. Active attempts
+  are cancelled, stale completion cannot publish, and legacy/session key replays
+  return 410 rather than resurrecting the project. Downloads now use private/no-store.
+- Worker maintenance and `python -m app.deletion` scan bounded batches of canonical
+  private UUID project/staging paths. Stored source/output paths are never deletion
+  targets; symlink/junction parents are refused. Failed I/O retries without logging
+  customer paths; pending removal precedes successful rescans, with oldest-attempt
+  ordering inside each group. Previously cleaned tombstones are rescanned for late
+  artifacts. Processing cleanup waits past the original lease plus 30 seconds.
+- Mobile adds explicit destructive confirmation, waits for the server's deleted
+  acknowledgement and returns to My Shorts. Offline failure stays retryable. It
+  attempts removal of the current app download cache and discloses local failure;
+  gallery/shared/other-device copies remain. Missing project routes have a back
+  action. Confirmed discard of a remotely deleted upload clears only its private
+  pending copy after 404/410; network failure does not authorize local deletion.
+  Library requests are invalidated on blur so a delayed old list cannot reinsert
+  a deleted item after returning from project detail.
+- **96 backend tests passed on SQLite (22.53 s) and PostgreSQL (31.89 s)**, no
+  skips on this Linux environment; one existing Starlette/httpx warning each.
+  Covers all prior media/auth/queue/upload regressions plus deletion ownership,
+  all statuses, concurrent completion, a forced lock-order race, actual running
+  FFmpeg termination, replay denial, retry/rescan/priority, symlink/path isolation
+  and fresh/repeat/additive migration preservation. On Windows the symlink-only
+  test skips if the OS lacks symlink creation privileges; other deletion tests run.
+- Mobile TypeScript, **7 upload + 8 auth/API client logic tests** and Android export
+  passed (1,007 modules, 2.66 MB Hermes). Doctor, pip check and diff whitespace checks
+  passed. No dependency changed; the last known 17 advisories (4 high, 12 moderate,
+  1 low) and 835-record inventory remain applicable, not cleared by this increment.
+- Final isolated real HTTP smoke killed/restarted its API, preserved auth controls,
+  resumed a partial 51 MiB upload, verified checksum/one-job completion, rendered,
+  downloaded/decoded valid 1080×1920/30fps/4.9 s MP4, then deleted the synthetic
+  project. Other-owner delete was denied; future downloads returned 404, key replay
+  410, and CLI cleanup physically removed its source/output tree. Baseline workflow
+  took 1.66 s. Ignored synthetic evidence:
+  `.data/smoke-16124dc67f7649359103bc3f0d6b7d8e/`.
+- The isolated Compose/PostgreSQL DB was backed up, migrated and rebuilt. Final
+  real HTTP auth/resume/render/download/deletion smoke passed (baseline 2.45 s),
+  followed by cleanup CLI and filesystem/DB read-back confirming both synthetic
+  deleted project trees absent. That external API was not restarted by the smoke.
+- Review delivery: implementation `2c2160a` pushed to `dev/phase-2-project-deletion`.
+  Automatic PR creation returned `Post https://api.github.com/graphql: Forbidden`.
+  Manual review link: https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-project-deletion .
+  No merge/deployment was performed; remote CI not independently observed.
+- Physical Pixel deletion/cache/offline/navigation checks remain pending after
+  review/merge; automated client tests use native/network adapters, not a device.
+- Scope is known committed project/staging media, not full account/personal-data
+  erasure: ID/key/fingerprint/operational tombstones and attempt metrics remain.
+  Backup expiry/restore reconciliation, uncommitted orphan GC, object-store erasure,
+  legal deadlines and full retention policy remain open. No paid service, AI calls,
+  billing, proprietary reference-kit code or new dependency was introduced.
+  See [upgrade, cleanup delay and acceptance](docs/PROJECT_DELETION.md).
+
 ## Phase 2 increment — render timing records and operator report
 
 - Migration `0006_render_attempts` adds one durable record per newly claimed render
@@ -47,7 +108,14 @@ the reported Android baseline flow, not production readiness or AI functionality
   `dev/phase-2-render-telemetry`. Automatic PR creation again returned
   `Post https://api.github.com/graphql: Forbidden`. Create the review PR at
   https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-render-telemetry .
-  No merge or deployment was performed for this increment; remote CI not observed.
+  The owner subsequently merged this telemetry increment into main (`0648ed2`);
+  no cloud deployment was performed. Remote CI was not independently observed.
+- Owner-reported Windows/Pixel validation passed after merge: 81 backend tests
+  (76.12 s), restart/resume/auth/render/telemetry smoke (baseline 2.24 s), and a new
+  Pixel upload/render/download/playback. Its local report contained one successful
+  28.766 s measured render, 0.088318 s first-claim wait and 7,206,440 output bytes;
+  cost remained null. Thirteen older/unclaimed jobs had no attempt records, as
+  expected. This is one sample/user-supplied evidence, not a performance baseline.
 - See [migration, definitions and operator checks](docs/RENDER_TELEMETRY.md).
   Full tracing/exporters, CPU/GPU/peak-memory measurement, representative load/soak,
   cost ceilings, retention/deletion, object storage and verified email recovery
@@ -314,17 +382,17 @@ limit/mock probe; no 300-MiB fixture or actual >10-minute upload was transferred
 AI highlights/director integration, ASR/captions, intelligent reframing, motion/3D,
 B-roll and six style engines; hardened auth/account lifecycle;
 full durable broker, private cloud object storage, OS background transfers,
-retention/deletion, production observability; payments, Mobile Money, entitlements,
+full account/backup/object-store erasure and retention, production observability; payments, Mobile Money, entitlements,
 quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge the render telemetry increment; stop services and back up the actual
-   Windows DB before migration 0006. Run tests/smoke, render through the app and
-   inspect the normal database report as documented in RENDER_TELEMETRY.md.
+1. Review/merge project deletion; stop services and back up the actual Windows DB
+   and media before migration 0007. Run tests/smoke, then the disposable Pixel
+   confirmation/queued-processing/offline/original-file checks in PROJECT_DELETION.md.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
-4. Next Phase 2 work: verified auth delivery/recovery, retention/deletion, private
+4. Next Phase 2 work: verified auth delivery/recovery, full retention/account/backup erasure, private
    object storage, full tracing/resource accounting and queue fairness under the master gates.
    See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
 
