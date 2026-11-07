@@ -60,3 +60,9 @@ parts/completion. Owner-only POST /api/v1/upload-sessions/discard-by-key takes
 only the Idempotency-Key header and fences late creation with an aborted tombstone;
 no rights assertion is needed for discard. GET /by-key/{client_key} recovers metadata.
 See [acknowledgement, media profile and upgrade contract](UPLOAD_CONSENT_AND_MEDIA.md).
+
+Optional S3 jobs keep the same authenticated streaming download route. Owner-only
+POST `/api/v1/jobs/{id}/download-link` issues an exact-key GET capability for 5–60 s;
+local/not-ready jobs return 409, other-owner/deleted jobs 404. Already-issued URLs
+remain usable until expiry or physical removal, including after logout/deletion.
+See [object access and deletion boundaries](PRIVATE_OBJECT_STORAGE.md).

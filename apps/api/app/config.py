@@ -10,6 +10,19 @@ class Settings:
         self.env = os.getenv("APP_ENV", "development")
         self.database_url = os.getenv("DATABASE_URL", "sqlite:///./.data/nextphase.db")
         self.storage_dir = Path(os.getenv("STORAGE_DIR", "./.data/media")).resolve()
+        # Opt-in only. Existing rows retain their own backend across config changes.
+        self.media_backend = os.getenv('MEDIA_BACKEND', 'local')
+        self.s3_endpoint = os.getenv('S3_ENDPOINT', '')
+        self.s3_public_endpoint = os.getenv('S3_PUBLIC_ENDPOINT', self.s3_endpoint)
+        self.s3_bucket = os.getenv('S3_BUCKET', '')
+        self.s3_region = os.getenv('S3_REGION', 'us-east-1')
+        self.s3_access_key = os.getenv('S3_ACCESS_KEY_ID', '')
+        self.s3_secret_key = os.getenv('S3_SECRET_ACCESS_KEY', '')
+        self.signed_download_seconds = int(os.getenv('SIGNED_DOWNLOAD_SECONDS', '60'))
+        if self.media_backend not in ('local', 's3') or not 5 <= self.signed_download_seconds <= 60:
+            raise RuntimeError('Invalid media backend or signed download lifetime (5–60 seconds)')
+        if self.media_backend == 's3':
+            self.validate_s3()
         self.jwt_secret = os.getenv("JWT_SECRET", "")
         self.max_upload_bytes = int(os.getenv("MAX_UPLOAD_BYTES", "314572800"))
         self.account_storage_bytes = int(os.getenv('ACCOUNT_STORAGE_BYTES','5368709120'))
@@ -49,6 +62,22 @@ class Settings:
         if self.env in {"staging", "production"} and not self.database_url.startswith(("postgresql://", "postgresql+psycopg://")):
             raise RuntimeError("Staging and production require PostgreSQL and migrations")
         self.storage_dir.mkdir(parents=True, exist_ok=True)
+
+    def validate_s3(self):
+        from urllib.parse import urlsplit
+        import re
+        if not all((self.s3_bucket, self.s3_access_key, self.s3_secret_key)):
+            raise RuntimeError('S3 requires an explicit bucket and scoped server credentials')
+        if not re.fullmatch(r'[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]', self.s3_bucket):
+            raise RuntimeError('Invalid S3 bucket name')
+        for endpoint in (self.s3_endpoint, self.s3_public_endpoint):
+            url = urlsplit(endpoint)
+            if (url.scheme not in ('http', 'https') or not url.hostname or url.username or
+                    url.password or url.path not in ('', '/') or url.query or url.fragment):
+                raise RuntimeError('S3 endpoint must be an explicit HTTP(S) origin')
+            if url.scheme != 'https' and (self.env not in ('development', 'test') or
+                    url.hostname not in ('localhost', '127.0.0.1', 's3')):
+                raise RuntimeError('HTTP S3 is allowed only for local development endpoints')
 
 @lru_cache(maxsize=1)
 def get_settings():

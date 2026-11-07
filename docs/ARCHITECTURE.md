@@ -7,7 +7,10 @@ Expo (Android / iOS) -> FastAPI (JWT auth, validated uploads, job listing, downl
                                       | local volume (development only)
                        worker poller -> FFmpeg -> verified 1080x1920 MP4 (<=60 s)
 
-**Truth in UI:** this is a standard baseline conversion from the first N seconds. Styles are listed as planned, not implemented. No AI, no captions, no subscriptions, no object storage.
+**Truth in UI:** this is a standard baseline conversion from the first N seconds. Styles are listed as planned, not implemented. No AI, captions or subscriptions. Optional S3 originals/results and signed GETs
+are now implemented; local remains the development default. API-mediated resumable
+staging still needs a private volume; workers are not fully stateless yet.
+See [storage boundaries](PRIVATE_OBJECT_STORAGE.md).
 
 ## Production target (Codex stages 2-12)
 

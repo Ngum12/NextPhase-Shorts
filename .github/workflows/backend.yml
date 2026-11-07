@@ -1,9 +1,9 @@
 name: Backend tests
 on:
   push:
-    paths: ['apps/api/**', 'scripts/smoke_e2e.py', '.github/workflows/backend.yml']
+    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', '.github/workflows/backend.yml']
   pull_request:
-    paths: ['apps/api/**', 'scripts/smoke_e2e.py', '.github/workflows/backend.yml']
+    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', '.github/workflows/backend.yml']
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -34,3 +34,6 @@ jobs:
           NEXTPHASE_TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql+psycopg://nextphase:localdev@127.0.0.1:5432/nextphase_test' || '' }}
       - name: Real HTTP and separate worker smoke
         run: python scripts/smoke_e2e.py
+      - name: Private S3 originals, renders, signed access and deletion
+        if: matrix.database == 'sqlite'
+        run: python scripts/smoke_object_store.py

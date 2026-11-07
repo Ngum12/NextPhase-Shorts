@@ -5,6 +5,88 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — private S3 originals/results and signed downloads
+
+- Optional `MEDIA_BACKEND=s3` stores validated originals and fenced rendered MP4s
+  in an existing private S3-compatible bucket. Local remains default; no cloud
+  account/bucket, paid API/infrastructure, AI, billing or subscription was activated.
+  This is the first object-storage increment, not all Phase 2 work completed.
+- Migration **0010_object_backend** retains existing jobs as local and adds a
+  nullable namespace fingerprint for new remote jobs. Existing accounts, paths,
+  rights records and pending upload offsets remain intact. A changed internal
+  endpoint/bucket blocks reads/rendering/deletion rather than claiming empty
+  replacement storage was erased. No automatic old-media migration is supplied.
+- UUID-only keys, bounded SHA-256 uploads and full source download verification;
+  FFmpeg receives local attempt scratch, never an S3/HTTP input URL. Validated
+  output must be stored before DB claim-fenced success. API-mediated resumable
+  ingestion remains; direct signed uploads and remote part staging are pending.
+- Owner-authenticated streaming downloads preserve the mobile Save/Share contract
+  and keep bearer credentials on the API origin. New owner-only POST download-link
+  issues exact-key SigV4 GET capabilities for 5–60 s. Anonymous, other-owner and
+  deleted-project API access are refused. Already-issued URLs remain valid until
+  expiry or object removal, even after logout/tombstoning; downloaded/in-flight
+  copies cannot be recalled. Signed URLs must not enter logs/analytics/public git.
+- Deletion retries remove only the canonical remote project prefix and private
+  staging/scratch. Partial/unavailable deletion or namespace mismatch retains the
+  reservation and unset media_deleted_at. Versioned/suspended buckets are refused;
+  version-aware erasure/retention is not implemented. Local inventory cannot infer
+  unknown retained remote usage from an empty scratch directory.
+- SDK: boto3 1.43.126 with seven total new installed Python records including its
+  transitives. Inventory regenerated to **843** records; packaged LICENSE/NOTICE
+  files preserved under docs/licenses/s3-sdk/. Local test server SeaweedFS 4.06 is
+  digest-pinned; official Apache-2.0 notice preserved. This is metadata/notice review,
+  not full OS/container/transitive, legal/patent or production clearance. No kit
+  code/assets were copied. Mobile dependency graph unchanged; last known 17 npm
+  findings remain unresolved, not freshly audited by this increment.
+- Final backend checks: **156 tests on SQLite (28.04 s) and PostgreSQL (37.16 s)**,
+  no skips; one existing Starlette/httpx warning each. Includes legacy/additive
+  migration, remote fault/ownership/hash/byte bounds, cancellation during output
+  publication, namespace-safe deletion, versioning refusal and unknown-usage guards.
+  Mobile TypeScript and all **26 client tests** passed; mobile source/dependencies
+  did not change, so no new native-device or APK/export claim. Doctor, pip check
+  and whitespace checks passed. Remote CI was configured, not independently observed.
+- Final disposable real S3 HTTP smoke passed API kill/restart, auth/revocation,
+  interrupted 51 MiB upload/resume, acknowledgement/checksum/repeat-safe completion,
+  stored originals, remote render publication, API download/full decode, signed GET,
+  anonymous denial, forbidden PUT, signature tamper and actual five-second expiry.
+  Deletion read-back confirmed the remote prefix empty plus scratch removal and
+  reservation release. 1080×1920/30 fps/4.9 s output; workflow 7.90 s **including a
+  six-second expiry wait**, not a performance benchmark. Ignored synthetic evidence:
+  `.data/nextphase-s3-smoke-a8cb786b75fa/workflow/`.
+- Default local-storage restart/resume/render/download/deletion smoke also passed
+  on the finalized migration (baseline 1.71 s; 1080×1920/30 fps/4.9 s output),
+  including physical cleanup and budget release. Ignored synthetic evidence:
+  `.data/smoke-beae1d2063bc42ddadf072081b9137d0/`.
+- Rebuilt the isolated PostgreSQL/SeaweedFS/API/worker stack after DB backup and
+  applied finalized migration 0010. All services healthy; real integrated HTTP
+  auth/resume/signed-link/render/download/deletion smoke passed (8.68 s including
+  expiry wait; external API not restarted). Operator read-back verified both remote
+  synthetic jobs' namespace, original/output objects, removed scratch, physical
+  deletion, reservation release and preserved old local job metadata. No paid cloud.
+- A validation run initially exhausted local Docker disk because the test server
+  preallocated large volumes; no success was claimed for that failed run/build.
+  Removed only the agent-created disposable server, bounded test volumes to 64 MiB
+  (16 slots), added writable-object readiness and owned anonymous-volume cleanup,
+  then reran successfully. Existing application volumes were preserved. The draft
+  migration was finalized on disposable databases before publication; the validation
+  application DB was restored from its pre-increment backup before the final upgrade.
+- Owner-reported acceptance of the merged acknowledgement increment (`718ba14`):
+  Windows migration passed, **142 tests (54.80 s)**, TypeScript and all **26 client
+  tests** passed; restart/resume/acknowledgement/render/download/cleanup smoke passed
+  (baseline 5.09 s; evidence `.data/smoke-3c2929a56ae042269b2d2cc0617426f8`). Owner
+  subsequently reported all listed Pixel acknowledgement/reset/resume/discard and
+  render/save checks worked. These are owner reports, not independent device runs.
+- Upgrade commands, exact storage/signed-link/deletion boundaries and local Docker
+  smoke: [private object storage](docs/PRIVATE_OBJECT_STORAGE.md). Stop services,
+  back up DB/media, install updated Python requirements, migrate 0010, restart and
+  recheck old/new projects. Keep the PC on default local mode unless S3 is explicitly
+  configured. No mobile npm/native dependency or automatic production rollout.
+- Remaining: direct signed uploads with immutable-part protection, fully remote
+  staging/stateless workers, orphan reconciliation and full account/version/backup
+  erasure; IAM/secret-manager policies, TLS/edge limits, production queue/isolation,
+  representative load/soak and legal/provider review. No production cloud, broad
+  compatibility/performance/SLA or full privacy compliance is claimed.
+
 ## Phase 2 increment — upload acknowledgement and bounded media profile
 
 - Create Short now requires an explicit, initially unchecked rights and server-
@@ -34,7 +116,7 @@ the reported Android baseline flow, not production readiness or AI functionality
   concurrent create/discard, owner isolation, media profile and prior regressions.
 - TypeScript, **11 upload + 8 auth/API + 7 export logic tests** passed. Android
   Hermes export passed (1,011 modules / 2.69 MB). Native adapters are mocked in
-  client tests; the new checkbox/reconfirmation flow still needs owner Pixel QA.
+  client tests; owner subsequently reported the Pixel checkbox/reconfirmation flow passed (see above).
   Pip dependency and diff checks passed. No dependency changes: inventory remains
   836 records; last audit remains 17 unresolved (4 high, 12 moderate, 1 low),
   not a fresh vulnerability scan or commercial dependency clearance.
@@ -58,7 +140,7 @@ the reported Android baseline flow, not production readiness or AI functionality
   installation is required solely for this increment. Old upload clients receive
   422/409 until updated. Commands and device checklist:
   [upload consent and media guide](docs/UPLOAD_CONSENT_AND_MEDIA.md).
-- Phase 2 remains open: owner Pixel checkbox/pause/restart/discard QA, security and
+- Phase 2 remains open: broader device/error QA, security and
   licensing review, private object storage/production queue/deployment foundations,
   retention and capacity controls. AI styles, transcription, provider calls,
   subscriptions and paid infrastructure are not enabled. Next implementation scope
@@ -526,15 +608,16 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge Save/Share and storage budgets; stop services, back up the actual
-   DB/media, migrate 0008 and run offline storage reconciliation. Install mobile
-   dependencies and perform the Pixel media-library Save/Share/storage checks in
-   SAVE_AND_STORAGE.md. Never skip unknown-usage inventory by forcing zero.
-2. Restore GitHub API access to create the review PR and observe remote CI.
-3. Complete dependency/license review before merging for commercial use.
-4. Next Phase 2 work: verified auth delivery/recovery, full retention/account/backup erasure, private
-   object storage, full tracing/resource accounting and queue fairness under the master gates.
-   See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
+1. Review the private-object-storage increment; after merge stop services, back up
+   DB/media, install the updated Python requirements and migrate 0010. Keep normal
+   PC/Pixel testing on local storage; the isolated S3 smoke requires Docker and uses
+   generated disposable credentials. See docs/PRIVATE_OBJECT_STORAGE.md.
+2. Restore GitHub API access and observe remote CI; branch push alone does not
+   establish PR creation, CI success, deployment or legal approval.
+3. Complete dependency/security/license review before commercial use.
+4. Continue Phase 2 direct signed upload/remote staging, retention/orphan/account
+   erasure, secure auth delivery/recovery, queue/isolation and observability work.
+   Follow docs/ROADMAP.md and the later phases in prompt.md in order.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

@@ -197,3 +197,19 @@ def test_rights_migration_preserves_old_rows_without_fabricating_ack(migration_e
             row=connection.execute(sa.text(f'SELECT rights_version,rights_confirmed_at FROM {table}')).one()
             assert row.rights_version is None and row.rights_confirmed_at is None
         assert connection.scalar(sa.text('SELECT received_bytes FROM upload_sessions'))==8
+
+
+def test_object_backend_migration_keeps_old_media_local(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection), '0009_upload_rights')
+        connection.execute(sa.text("INSERT INTO users VALUES ('object-owner','object-owner@example.com','hash',CURRENT_TIMESTAMP)"))
+        connection.execute(sa.text("""INSERT INTO render_jobs
+            (id,user_id,title,style,desired_seconds,source_duration_seconds,source_path,output_path,status,attempt_count,created_at)
+            VALUES ('object-job','object-owner','Keep','vlog',15,5,'old/input.mp4','old/output.mp4','succeeded',1,CURRENT_TIMESTAMP)"""))
+    upgrade_schema(migration_engine); upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row = connection.execute(sa.text("SELECT media_backend,source_path,output_path,status FROM render_jobs WHERE id='object-job'")).one()
+        assert row.media_backend == 'local' and row.source_path == 'old/input.mp4'
+        assert row.output_path == 'old/output.mp4' and row.status == 'succeeded'

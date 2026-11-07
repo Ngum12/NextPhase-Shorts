@@ -1,5 +1,14 @@
 # Changelog
 
+## Private object storage foundation
+
+- Opt-in S3 originals and fenced results, bounded checksum-verified worker fetches,
+  owner-only short-lived signed GETs and authenticated API streaming downloads.
+- Migration 0010 preserves existing local jobs; retryable remote prefix deletion
+  releases budgets only after success. Local remains default; no paid deployment.
+- Real local-S3 signature/privacy/expiry/render/erasure smoke; direct signed uploads
+  and full orphan/version/retention controls remain open.
+
 ## Unreleased — upload acknowledgement and media input hardening
 
 - Add migration 0009 with nullable rights-version/time records; require new upload acknowledgement and copy it from sessions to jobs without inventing historical consent.

@@ -290,6 +290,7 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
     directory.mkdir(parents=True, exist_ok=True)
     source = directory / ('input' + snapshot['extension'])
     retain_source = False
+    remote_attempt = False
     try:
         full_hash = hashlib.sha256()
         position = 0
@@ -328,26 +329,39 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
             raise HTTPException(422, 'File does not contain a supported video')
         if media['duration'] > settings.max_source_seconds:
             raise HTTPException(422, 'Source video exceeds 10-minute MVP limit')
+        from . import object_store
+        source_reference = str(source.resolve())
+        if settings.media_backend == 's3':
+            remote_attempt = True
+            try:
+                source_reference = object_store.put(source, object_store.source_key(user_id, job_id, snapshot['extension']), settings.max_upload_bytes)
+            except object_store.ObjectStoreError:
+                raise HTTPException(503, 'Private storage is temporarily unavailable; retry completion')
         lock_owner(db, user_id)
         row = owned(db, session_id, user_id)
         if row.status == 'completed':
             return db.get(RenderJob, row.job_id)
         require_uploading(row)
-        candidate = RenderJob(rights_version=row.rights_version,rights_confirmed_at=row.rights_confirmed_at,id=job_id, user_id=user_id, title=row.title, style=row.style,
+        candidate = RenderJob(media_backend=settings.media_backend,rights_version=row.rights_version,rights_confirmed_at=row.rights_confirmed_at,id=job_id, user_id=user_id, title=row.title, style=row.style,
+                              object_store_id=object_store.namespace_id() if settings.media_backend == 's3' else None,
                               desired_seconds=row.desired_seconds, source_duration_seconds=media['duration'],
-                              source_path=str(source.resolve()), status='queued',
+                              source_path=source_reference, status='queued',
                               storage_reserved_bytes=row.storage_reserved_bytes or reservation(row.total_bytes,settings.max_render_bytes),
                               max_render_bytes=row.max_render_bytes or settings.max_render_bytes)
         job, _ = admit_job(db, candidate, upload_session_id=session_id)
         row.status, row.job_id, row.source_sha256 = 'completed', job.id, full_hash.hexdigest()
         retain_source = True  # Preserve accepted input even if COMMIT acknowledgement is lost.
         db.commit()
+        if job.media_backend == 's3':
+            source.unlink(missing_ok=True)
         cleanup_parts(user_id, session_id)
         return job
     except Exception:
         db.rollback()
         raise
     finally:
+        if remote_attempt and not retain_source:
+            object_store.discard_unaccepted(user_id, job_id)
         if not retain_source:
             source.unlink(missing_ok=True)
             try:
