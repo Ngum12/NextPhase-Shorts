@@ -63,6 +63,11 @@ the reported Android baseline flow, not production readiness or AI functionality
   stronger queue/isolation/load/soak controls, allocation-aware online collection,
   formal backup/version erasure, monitoring and production security/legal review.
 
+- Delivery: implementation `49b1cb8` pushed to
+  `dev/phase-2-account-deletion`. Automatic PR creation returned GitHub GraphQL
+  `Forbidden`; no PR, merge or deployment was performed. Owner review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-account-deletion
+
 ## Phase 2 increment — bounded maintenance and offline orphan preview
 
 - Worker expiration now selects a bounded batch (default 100, allowed 1–1000),
