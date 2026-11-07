@@ -13,7 +13,7 @@ from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
 from .media import MediaCancelled, MediaError, render_baseline
-from .models import RenderJob, User, utcnow
+from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -66,12 +66,13 @@ def claim_job():
             .returning(RenderJob)).scalar_one_or_none()
         if job is None:
             return None
+        db.add(RenderAttempt(id=token,job_id=job.id,number=job.attempt_count,started_at=now,status='running'))
         return {'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
                 'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
                 'claim_token': token}
 
 
-def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None):
+def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None):
     now = utcnow()
     values = dict(finished_at=now, lease_expires_at=None,
                   status='failed' if error_code else 'succeeded', error_code=error_code,
@@ -81,6 +82,10 @@ def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duratio
         result = db.execute(update(RenderJob).where(
             RenderJob.id == job_id, RenderJob.status == 'processing',
             RenderJob.claim_token == claim_token, RenderJob.lease_expires_at > now).values(**values))
+        if result.rowcount == 1:
+            db.execute(update(RenderAttempt).where(RenderAttempt.id == claim_token,
+                RenderAttempt.status == 'running').values(status=values['status'],finished_at=now,
+                    wall_seconds=wall_seconds,output_bytes=None if error_code else output_bytes))
         return result.rowcount == 1
 
 
@@ -94,10 +99,12 @@ def owns_claim(job):
 def process(job):
     token = job['claim_token']
     output = settings.storage_dir / job['user_id'] / job['id'] / token / 'output.mp4'
+    began = time.monotonic()
     try:
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
         info = render_baseline(Path(job['source']), output, duration, should_cancel=lambda: not owns_claim(job))
-        if mark_done(job['id'], token, output_path=output.resolve(), output_duration=info['duration']):
+        if mark_done(job['id'], token, output_path=output.resolve(), output_duration=info['duration'],
+                     wall_seconds=time.monotonic()-began, output_bytes=output.stat().st_size):
             logger.info('render completed job_id=%s seconds=%.2f', job['id'], info['duration'])
         else:
             # A recovered attempt can never replace or remove the winner's artifact.
@@ -107,16 +114,35 @@ def process(job):
         logger.info('render cancelled or lease lost job_id=%s', job['id'])
     except MediaError:
         logger.warning('media error job_id=%s', job['id'])
-        mark_done(job['id'], token, error_code='RENDER_FAILED')
+        mark_done(job['id'], token, error_code='RENDER_FAILED', wall_seconds=time.monotonic()-began)
     except Exception:
-        logger.exception('unexpected error job_id=%s', job['id'])
-        mark_done(job['id'], token, error_code='INTERNAL_ERROR')
+        # Do not log raw exception messages/tracebacks containing customer paths.
+        logger.error('unexpected error job_id=%s', job['id'])
+        mark_done(job['id'], token, error_code='INTERNAL_ERROR', wall_seconds=time.monotonic()-began)
+
+    finally:
+        # If publication lost its fence, only close this attempt's telemetry.
+        # Recovery may already have marked it lost: never overwrite that history.
+        with SessionLocal.begin() as db:
+            state = db.scalar(select(RenderJob.status).where(RenderJob.id == job['id']))
+            db.execute(update(RenderAttempt).where(RenderAttempt.id == token,
+                RenderAttempt.status.in_(['running','cancelled']),
+                RenderAttempt.wall_seconds.is_(None)).values(finished_at=utcnow(),
+                    status='cancelled' if state == 'cancelled' else 'lease_lost',
+                    wall_seconds=time.monotonic()-began))
 
 
 def recover_stale_jobs():
     now = utcnow()
     expired = (RenderJob.status == 'processing', RenderJob.lease_expires_at <= now)
     with SessionLocal.begin() as db:
+        # Lock expired jobs before recording loss, so completion cannot win between
+        # the attempt record and recovery. SQLite's first write serializes writers.
+        if engine.dialect.name == 'postgresql':
+            db.execute(select(RenderJob.id).where(*expired).with_for_update()).all()
+        db.execute(update(RenderAttempt).where(RenderAttempt.status == 'running',
+            RenderAttempt.id.in_(select(RenderJob.claim_token).where(*expired)))
+            .values(status='lease_lost',finished_at=now))
         # Atomic updates, rather than loading rows which can change before commit.
         failed = db.execute(update(RenderJob).where(*expired,
             RenderJob.attempt_count >= MAX_ATTEMPTS).values(

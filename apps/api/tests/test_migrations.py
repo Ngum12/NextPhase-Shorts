@@ -127,3 +127,19 @@ def test_auth_upgrade_preserves_pending_uploads_and_completed_jobs(migration_eng
         assert connection.scalar(sa.text("SELECT received_bytes FROM upload_sessions WHERE id='pending'"))==1048576
         assert connection.scalar(sa.text("SELECT count(*) FROM upload_parts"))==1
         assert connection.scalar(sa.text("SELECT count(*) FROM auth_sessions"))==0
+
+
+def test_attempt_migration_preserves_auth_session(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import AuthSession, User, utcnow
+    from datetime import timedelta
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0005_auth_sessions')
+        connection.execute(User.__table__.insert().values(id='retained',email='retained@example.com',password_hash='hash'))
+        connection.execute(AuthSession.__table__.insert().values(id='c'*64,user_id='retained',
+            created_at=utcnow(),expires_at=utcnow()+timedelta(hours=1)))
+    upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        assert connection.scalar(sa.text('SELECT count(*) FROM auth_sessions'))==1
+        assert connection.scalar(sa.text('SELECT count(*) FROM render_attempts'))==0

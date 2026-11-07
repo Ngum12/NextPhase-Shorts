@@ -296,6 +296,13 @@ def main():
                                                   stdout=worker_log, stderr=subprocess.STDOUT))
                 finish_resumable(base, args.output_dir, transfer, restarted=True)
                 check_api(base, args.output_dir)
+                telemetry=json.loads(subprocess.check_output([sys.executable,'-m','app.telemetry'],cwd=ROOT,env=env,text=True))
+                assert telemetry['attempt_states'].get('succeeded',0)>=2
+                assert telemetry['attempt_wall_seconds']['samples']>=2
+                assert telemetry['successful_output_bytes']>0
+                assert telemetry['compute_estimate']['amount_for_observed_attempts'] is None
+                (args.output_dir/'telemetry-report.json').write_text(json.dumps(telemetry,indent=2)+'\n')
+                print('Render telemetry: measured successful attempts, output bytes and aggregate report passed')
             finally:
                 for process in reversed(processes):
                     process.terminate()

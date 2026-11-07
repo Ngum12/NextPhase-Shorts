@@ -16,7 +16,7 @@ from .config import get_settings
 from .db import engine, session_dep
 from .migrate import require_current_schema
 from .media import MediaError, probe_video
-from .models import RenderJob, User, utcnow
+from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import ACTIVE_STATUSES, admit_job, lock_owner
 from .schemas import JobResponse, StyleInfo, UserResponse
 
@@ -92,6 +92,8 @@ def cancel_job(job_id: str, user: User = Depends(current_user), db: Session = De
             raise HTTPException(404, 'Project not found')
         if job.status != 'cancelled':
             raise HTTPException(409, 'Only queued or processing jobs can be cancelled')
+    db.execute(update(RenderAttempt).where(RenderAttempt.job_id == job_id,
+        RenderAttempt.status == 'running').values(status='cancelled',finished_at=utcnow()))
     db.commit()
     return job
 

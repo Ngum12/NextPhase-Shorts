@@ -36,3 +36,8 @@ No proprietary reference kit code or assets were used.
 No dependency, reference-kit code, media or third-party service was added. Existing
 835-record dependency inventory and unresolved audit findings remain applicable;
 this auth change does not confer additional licensing or production clearance.
+
+## Render telemetry increment
+
+No dependencies, third-party assets or reference-kit code were added. The existing
+835-record inventory and unresolved commercial clearance/advisory gates still apply.
