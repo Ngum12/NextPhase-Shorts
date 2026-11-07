@@ -204,3 +204,10 @@ Account → Delete account disables sessions and schedules durable server-media 
 Lost responses can be recovered from the sign-in screen. This excludes backups,
 operational records and saved/shared phone copies. Back up and run migration 0012
 before restarting. See [upgrade and disposable-account checks](docs/ACCOUNT_DELETION.md).
+
+### Worker resilience
+
+Claims now rotate across eligible accounts and expired-lease recovery is bounded.
+Linux decoder children have parent-death/CPU limits and reduced environments. The
+Compose worker requires enforced cgroup v2 CPU/memory/PID caps and fails startup if
+unsupported. No migration or dependency change; see [upgrade and host acceptance](docs/WORKER_RESILIENCE.md).

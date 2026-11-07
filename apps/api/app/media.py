@@ -1,6 +1,10 @@
 """Minimal safe ffprobe/FFmpeg operations; no shell, no user-controlled filters."""
 import json
+import math
+import os
+import signal
 import subprocess
+import sys
 import time
 from typing import Callable
 from pathlib import Path
@@ -17,11 +21,29 @@ class MediaCancelled(MediaError):
     pass
 
 
+def decoder_invocation(cmd,timeout):
+    # No JWT, database, S3, proxy or provider credentials reach the decoder.
+    child_env={key:value for key,value in os.environ.items() if key.upper() in
+               {'PATH','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR','LANG','LC_ALL'}}
+    child_env['PYTHONDONTWRITEBYTECODE']='1'
+    child_cmd=cmd
+    if sys.platform.startswith('linux'):
+        # Absolute helper path also works with uvicorn --app-dir, which changes
+        # sys.path without exporting PYTHONPATH. Isolated Python ignores user sites.
+        child_cmd=[sys.executable,'-I',str(Path(__file__).with_name('render_child.py')),
+                   str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),*cmd]
+    kwargs={'start_new_session':True} if os.name=='posix' else {}
+    return child_cmd,child_env,kwargs
+
+
 def run_render(cmd, timeout, should_cancel):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
-    with subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE) as process:
+    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout)
+    # Diagnostics are deliberately discarded: malformed media cannot grow a
+    # PIPE buffer without bound or put private source paths into general logs.
+    with subprocess.Popen(child_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env, **kwargs) as process:
         try:
             while True:
                 if should_cancel():
@@ -30,26 +52,29 @@ def run_render(cmd, timeout, should_cancel):
                 if remaining <= 0:
                     raise subprocess.TimeoutExpired(cmd, timeout)
                 try:
-                    _, stderr = process.communicate(timeout=min(0.25, remaining))
+                    process.wait(timeout=min(0.25, remaining))
                     if process.returncode:
-                        raise subprocess.CalledProcessError(process.returncode, cmd, stderr=stderr)
+                        raise subprocess.CalledProcessError(process.returncode, cmd)
                     return
                 except subprocess.TimeoutExpired:
                     if time.monotonic() - started >= timeout:
                         raise
         finally:
-            if process.poll() is None:
+            if os.name=='posix':
+                try:os.killpg(process.pid,signal.SIGKILL)
+                except ProcessLookupError:pass
+            elif process.poll() is None:
                 process.kill()
-                process.communicate()
+            process.wait(timeout=5)
 
 
 def probe_video(path: Path) -> dict:
     try:
-        result = subprocess.run(
+        cmd,env,kwargs=decoder_invocation(
             ["ffprobe", "-v", "error", "-max_alloc", "67108864", *input_args(), "-show_entries", "format=duration,format_name:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,sample_rate,channels:stream_disposition=attached_pic",
-             "-of", "json", str(path)],
-            capture_output=True, text=True, timeout=30, check=True,
-        )
+             "-of", "json", str(path)],30)
+        result = subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
+            text=True,timeout=30,check=True,env=env,**kwargs)
         data = json.loads(result.stdout)
         return validate_metadata(data)
     except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError, ZeroDivisionError, OverflowError, AttributeError, json.JSONDecodeError) as exc:

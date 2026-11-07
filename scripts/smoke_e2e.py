@@ -436,6 +436,7 @@ def main():
         (args.output_dir/'retention-report.json').write_text(result)
         print('Offline retention:',result.strip())
     subprocess.run([sys.executable,str(ROOT/'scripts/smoke_account_deletion.py')],cwd=ROOT,check=True,timeout=120)
+    subprocess.run([sys.executable,str(ROOT/'scripts/smoke_worker_recovery.py')],cwd=ROOT,check=True,timeout=120)
     print('Evidence:', args.output_dir)
 
 

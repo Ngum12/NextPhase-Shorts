@@ -108,3 +108,11 @@
 - Password-confirmed account disablement and immediate session/claim revocation.
 - Durable owner-scoped media cleanup and expiring lost-response recovery receipts.
 - Mobile confirmation/recovery; migration 0012 required. Full backup erasure excluded.
+
+## Worker resilience increment (2026-11-07)
+
+- Rotate eligible accounts by durable last-claim history; bound expired-job recovery.
+- Fence shutdown, retry database outages, and contain Linux decoder child lifetimes.
+- Reduce decoder environments and enforce a guarded Docker resource profile.
+- Add disposable crash/restart/render proof and bounded 100-submission queue test.
+- No migration or dependency changes; strict Docker runtime acceptance required.

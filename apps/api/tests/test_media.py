@@ -48,7 +48,7 @@ def test_cancellation_kills_ffmpeg_and_removes_partial_output(tmp_path, monkeypa
     children = []
     def record_popen(*args, **kwargs):
         child = real_popen(*args, **kwargs)
-        if args[0][0]=='ffmpeg':children.append(child)
+        if 'ffmpeg' in args[0]:children.append(child)
         return child
     monkeypatch.setattr('app.media.subprocess.Popen', record_popen)
     checks = 0
