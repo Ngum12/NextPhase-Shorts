@@ -45,6 +45,8 @@ def check_api(base_url, output_dir):
     started = time.monotonic()
     with httpx.Client(base_url=base_url, trust_env=False, timeout=30) as client:
         assert client.get('/health').json()['ok']
+        readiness=client.get('/ready')
+        assert readiness.status_code==200 and readiness.json()=={'ok':True,'service':'nextphase-shorts'}
         assert client.get('/api/v1/jobs').status_code == 401
         assert all(not style['available'] for style in client.get('/api/v1/styles').json())
         def register():
@@ -361,7 +363,7 @@ def main():
         env.update(APP_ENV='test', PYTHONPATH=str(ROOT / 'apps/api'),
                    DATABASE_URL='sqlite:///' + temporary + '/db.sqlite3', STORAGE_DIR=temporary + '/media',
                    JWT_SECRET=secrets.token_urlsafe(48), AI_PROVIDER='disabled', BILLING_PROVIDER='disabled',
-                   WORKER_POLL_SECONDS='0.1', AUTH_LOGIN_ACCOUNT_LIMIT='5', AUTH_LOGIN_IP_LIMIT='30',
+                   WORKER_POLL_SECONDS='0.1', WORKER_HEARTBEAT_SECONDS='1', AUTH_LOGIN_ACCOUNT_LIMIT='5', AUTH_LOGIN_IP_LIMIT='30',
                    AUTH_REGISTER_IP_LIMIT='10', AUTH_PASSWORD_LIMIT='5', AUTH_WINDOW_SECONDS='900')
         subprocess.run([sys.executable, '-m', 'app.migrate'], cwd=ROOT, env=env, check=True, timeout=30)
         with socket.socket() as sock:
@@ -413,6 +415,15 @@ def main():
                 assert telemetry['compute_estimate']['amount_for_observed_attempts'] is None
                 (args.output_dir/'telemetry-report.json').write_text(json.dumps(telemetry,indent=2)+'\n')
                 print('Render telemetry: measured successful attempts, output bytes and aggregate report passed')
+                operations=json.loads(subprocess.check_output([sys.executable,'-m','app.operations','--check'],cwd=ROOT,env=env,text=True,timeout=30))
+                assert operations['workers']['fresh']==1 and operations['status']=='ok'
+                # S3 checks deliberately delete both successful projects. Current
+                # queue state must be empty while retained attempts prove renders.
+                assert operations['job_states'].get('queued',0)==0
+                assert operations['job_states'].get('processing',0)==0
+                assert operations['attempt_states_started_in_window'].get('succeeded',0)>=2
+                (args.output_dir/'operations-live.json').write_text(json.dumps(operations,indent=2)+'\n')
+                print('Operations: readiness, live worker and queue aggregates passed')
                 subprocess.run([sys.executable,'-m','app.deletion'],cwd=ROOT,env=env,check=True,timeout=30)
                 verification='from app.consent import RIGHTS_VERSION; from app.storage import usage; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and usage(db,row.user_id)["known_reserved_bytes"]==0 and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); assert all(row.rights_version==RIGHTS_VERSION and row.rights_confirmed_at is not None for row in db.scalars(select(RenderJob))); db.close()'
                 subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
@@ -435,6 +446,9 @@ def main():
             cwd=ROOT,env=env,text=True,timeout=60)
         (args.output_dir/'retention-report.json').write_text(result)
         print('Offline retention:',result.strip())
+        result=subprocess.check_output([sys.executable,str(ROOT/'scripts/operations_smoke.py'),str(args.output_dir)],cwd=ROOT,env=env,text=True,timeout=60)
+        (args.output_dir/'operations-proof.json').write_text(result)
+        print('Operations shutdown/failure detection:',result.strip())
     subprocess.run([sys.executable,str(ROOT/'scripts/smoke_account_deletion.py')],cwd=ROOT,check=True,timeout=120)
     subprocess.run([sys.executable,str(ROOT/'scripts/smoke_worker_recovery.py')],cwd=ROOT,check=True,timeout=120)
     print('Evidence:', args.output_dir)

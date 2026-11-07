@@ -1,9 +1,9 @@
 name: Backend tests
 on:
   push:
-    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', '.github/workflows/backend.yml']
+    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', 'scripts/operations_smoke.py', '.github/workflows/backend.yml']
   pull_request:
-    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', '.github/workflows/backend.yml']
+    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', 'scripts/operations_smoke.py', '.github/workflows/backend.yml']
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -18,8 +18,9 @@ from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner
 from . import object_store
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("nextphase.worker")
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+from .worker_events import emit
+from .worker_health import WorkerHeartbeat
 stop = False
 settings = get_settings()
 from .storage import MAX_RENDER_ATTEMPTS
@@ -135,24 +136,25 @@ def process(job):
                                                 job.get('max_render_bytes', settings.max_render_bytes))
         if mark_done(job['id'], token, output_path=output_reference, output_duration=info['duration'],
                      wall_seconds=time.monotonic()-began, output_bytes=output_bytes):
-            logger.info('render completed job_id=%s seconds=%.2f', job['id'], info['duration'])
+            emit('render_completed',job_id=job['id'],output_seconds=info['duration'])
         else:
             # A recovered attempt can never replace or remove the winner's artifact.
             output.unlink(missing_ok=True)
-            logger.warning('discarded stale render job_id=%s', job['id'])
+            emit('render_stale',job_id=job['id'])
     except MediaCancelled:
-        logger.info('render cancelled or lease lost job_id=%s', job['id'])
+        emit('render_cancelled',job_id=job['id'])
     except OutputLimitExceeded:
+        emit('output_limit_exceeded',job_id=job['id'])
         mark_done(job['id'], token, error_code='OUTPUT_LIMIT_EXCEEDED', wall_seconds=time.monotonic()-began)
     except MediaError:
-        logger.warning('media error job_id=%s', job['id'])
+        emit('render_failed',job_id=job['id'])
         mark_done(job['id'], token, error_code='RENDER_FAILED', wall_seconds=time.monotonic()-began)
     except object_store.ObjectStoreError:
-        logger.warning('private storage error job_id=%s', job['id'])
+        emit('storage_unavailable',job_id=job['id'])
         mark_done(job['id'], token, error_code='STORAGE_UNAVAILABLE', wall_seconds=time.monotonic()-began)
     except Exception:
         # Do not log raw exception messages/tracebacks containing customer paths.
-        logger.error('unexpected error job_id=%s', job['id'])
+        emit('render_internal_error',job_id=job['id'])
         mark_done(job['id'], token, error_code='INTERNAL_ERROR', wall_seconds=time.monotonic()-began)
 
     finally:
@@ -215,32 +217,37 @@ def main():
     require_current_schema(engine)
     if settings.media_backend == 's3':
         object_store.check_bucket()
-    logger.info('NextPhase worker started (leased baseline FFmpeg, no AI)')
-    last_upload_cleanup = 0.0
-    while not stop:
-        try:
-            if time.monotonic() - last_upload_cleanup >= 60:
-                from .upload_cleanup import cleanup_uploads
-                cleanup_uploads()
-                from .auth_limits import cleanup_auth
-                cleanup_auth()
-                from .deletion import cleanup_deleted
-                cleanup_deleted()
-                from .account_deletion import cleanup_accounts
-                cleanup_accounts()
-                last_upload_cleanup = time.monotonic()
-            recover_stale_jobs()
-            if stop:break
-            job = claim_job()
-            if job:
-                process(job)
-            else:
+    with WorkerHeartbeat(settings.worker_heartbeat_seconds) as heartbeat:
+        last_upload_cleanup = 0.0
+        while not stop:
+            try:
+                if time.monotonic() - last_upload_cleanup >= 60:
+                    heartbeat.phase('maintenance')
+                    from .upload_cleanup import cleanup_uploads
+                    cleanup_uploads()
+                    from .auth_limits import cleanup_auth
+                    cleanup_auth()
+                    from .deletion import cleanup_deleted
+                    cleanup_deleted()
+                    from .account_deletion import cleanup_accounts
+                    cleanup_accounts()
+                    last_upload_cleanup = time.monotonic()
+                requeued,failed=recover_stale_jobs()
+                if requeued or failed:emit('lease_recovery',worker_id=heartbeat.id,requeued=requeued,failed=failed)
+                if stop:break
+                heartbeat.phase('idle')
+                job = claim_job()
+                if job:
+                    heartbeat.phase('rendering')
+                    process(job)
+                else:
+                    time.sleep(settings.worker_poll_seconds)
+            except SQLAlchemyError:
+                # A failed DB round-trip cannot be acknowledged as completion. The
+                # durable lease and existing retry cap remain the source of truth.
+                heartbeat.phase('database_retry')
+                emit('database_unavailable',worker_id=heartbeat.id)
                 time.sleep(settings.worker_poll_seconds)
-        except SQLAlchemyError:
-            # A failed DB round-trip cannot be acknowledged as completion. The
-            # durable lease and existing retry cap remain the source of truth.
-            logger.warning('worker database unavailable; retrying')
-            time.sleep(settings.worker_poll_seconds)
 
 
 if __name__ == '__main__':

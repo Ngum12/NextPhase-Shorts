@@ -122,3 +122,9 @@ remain applicable. Validation uses original synthetic media only.
 No dependency, reference-kit code, media asset or paid provider added. Linux process
 controls use Python standard library/system interfaces and the existing FFmpeg.
 Existing 843-record inventory and unresolved legal/security gates remain applicable.
+
+## Operational visibility increment
+
+No dependency, reference-kit code, media asset or external monitoring provider added.
+Existing 843-record metadata inventory and unresolved legal/security/advisory gates
+remain applicable. SQLite/PostgreSQL and original synthetic fixtures are used for QA.

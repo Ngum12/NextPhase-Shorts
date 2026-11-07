@@ -128,3 +128,10 @@
 - Treat procfs ENOENT and ESRCH as exited processes in Linux containment tests.
 - Wait for complete child-marker JSON; keep live-process and unexpected-error
   assertions intact. No application or deployment behavior changes.
+
+## Operational visibility increment (2026-11-07)
+
+- Add migration 0013 and independent worker heartbeat records without lease renewal.
+- Add minimal DB/schema readiness and private queue/failure/worker operator reports.
+- Add allowlisted JSON worker events and live/shutdown/expired-claim smoke checks.
+- No dependency, mobile, paid-service or billing change.

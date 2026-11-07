@@ -61,3 +61,9 @@ CPU/open-file limits, POSIX render-group teardown and a strict Compose cgroup gu
 Read-only/unprivileged containers still share trusted media and network access; this
 is not a per-tenant exploit sandbox. Managed Docker here lacks cgroup enforcement;
 production host acceptance is required. See WORKER_RESILIENCE.md.
+
+Worker pulse metadata and aggregate queue snapshots are local operator tools; no
+public metrics/admin route is added. Minimal `/ready` exposes no dependency details.
+Validated structured worker events omit arbitrary messages, exception text and
+credentials; correlation UUIDs and all operational logs remain private. This is not
+a global logging/retention certification. See OPERATIONS.md for heartbeat boundaries.

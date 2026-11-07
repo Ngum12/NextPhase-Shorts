@@ -5,6 +5,80 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — operational visibility
+
+- Migration **0013_worker_pulses** adds minimal per-process liveness metadata:
+  random worker ID, start/last/stopped times, interval and sampled phase. No user,
+  host, PID, media reference or credential is stored. Existing accounts/projects,
+  media paths, upload intent/offset/rights records are preserved; no dependencies.
+- Worker heartbeat thread uses its own short DB sessions during foreground work.
+  Default 10 seconds (allowed 1–60), fresh for three intervals plus 15 seconds;
+  stopped/future-clock/stale states are distinct. It **never renews job leases**
+  or proves render progress. Hard kills retain last-seen until stale; orderly
+  stops mark the process stopped. Old process metadata remains retained, not GC'd.
+- GET `/ready` returns minimal no-store DB/schema availability (200/503), with
+  no raw exceptions or operational counts; `/health` remains unchanged liveness.
+  Compose API health now uses readiness. Provider reachability, worker capacity,
+  driver timeout tuning, overload/edge hardening remain separate boundaries.
+- Private `python -m app.operations` reports current nondeleted job states, oldest
+  queue/processing ages, expired/missing deadlines, bounded recent worker states,
+  windowed attempt states and fixed failure codes. Unknown labels are grouped as
+  other. It exports no IDs, names, paths, titles, URLs or secrets. No public
+  metrics/admin route. `--check` returns 1 for attention, 2 for unavailable DB/schema;
+  otherwise reports are read-only and never mutate retries/deletion/leases.
+- Worker lifecycle/render/recovery/outage events are validated JSON with fixed
+  messages and narrow fields. Canonical job/process correlation UUIDs remain in
+  private logs; arbitrary payloads, user IDs, URLs, tokens and exception text are
+  rejected. Legacy maintenance/third-party lines may remain plain. No complete
+  distributed tracing/exporter, external alert delivery or global log certification.
+- Baseline **220 tests passed (44.46 s)**. Final **233 tests passed on SQLite
+  (53.41 s) and PostgreSQL (61.91 s)**, no skips, one existing Starlette/httpx
+  deprecation warning each. Coverage includes concurrent pulse advancement without
+  lease mutation, shutdown/nonresurrection, DB retry privacy, worker truncation/
+  skew, queue/failure privacy, CLI exits, readiness failures, JSON log guards and
+  additive migration preservation. Final strengthened pending-upload/rights/key
+  preservation assertion also passed separately on both DBs.
+- TypeScript and all **37 client logic tests** passed. No mobile source/native
+  change or new APK/device test claimed. Doctor, pip, Compose syntax and diff
+  checks passed. No paid API/infrastructure, monitoring provider, AI, billing,
+  reference-kit code/assets or production deployment. Existing 843-record license
+  inventory and last-known 17 npm advisories remain unresolved, not newly audited.
+- Real isolated HTTP upload/resume/render/download/deletion/retention/crash smoke
+  passed (1080×1920/30fps/4.9 s; baseline 2.02 s). Readiness, fresh/advanced worker
+  pulse, operator CLI snapshot and two structured render events passed. After its
+  own writers stopped, the fixture observed stopped state, detected a synthetic
+  expired claim with CLI exit 1, and classified no fresh workers with an observation
+  clock advanced 200 seconds. No real waiting-period or production lease change.
+  Ignored synthetic evidence: `.data/smoke-28b154327dcf424f9ca6bc0adde279be/`.
+- Disposable private S3 direct-transfer/sealing/render/download/signed-expiry and
+  cleanup smoke repeated the operational checks successfully. Output 1080×1920/
+  30fps/4.9 s, baseline 7.99 s includes six-second signed-link expiry wait.
+  Evidence: `.data/nextphase-s3-smoke-e24b6eaf0ab0/workflow/`.
+  Initial new smoke assertions incorrectly expected retained successful jobs after
+  project deletion; corrected them to distinguish current queue state from retained
+  successful attempt history. No pass was claimed for those initial failed runs.
+- Owner-reported post-fix Windows acceptance on merged `9f294fd`: complete S3-backed
+  smoke exited zero (baseline 2.95 s), temporary SQLite cleanup passed, and owner
+  then confirmed listed Pixel old/new project, upload/render/save/cancellation
+  checks passed. Evidence: `.data\smoke-ce8a9b04c0844fedbf74ebc8bc649c5c` and
+  `.data\worker-recovery-93f7ad0561f84fc58cd72bb52129360b`. No newer Windows pytest
+  count or independent remote CI success was supplied. These are owner reports.
+- Strict Docker cgroup enforcement remains unsupported in this managed runtime
+  (driver none), as previously reproduced; the guard was not disabled. No rebuilt
+  production stack or new enforced-resource claim. Private CLI/heartbeat data is
+  a bounded observation, not a capacity/progress SLA. Remaining Phase 2: broker/
+  lease renewal, per-tenant isolation/egress, alert/exporter/retention policy,
+  verified auth recovery, global capacity/load/soak and production security/legal.
+- Upgrade/runbook: [OPERATIONS.md](docs/OPERATIONS.md). Stop API/workers, back up
+  DB/media, migrate 0013, restart updated processes and check readiness/private
+  report. No npm/pip reinstall needed solely for this build. Native Windows/Pixel
+  and strict Docker-host acceptance of this new increment remain outstanding.
+
+- Delivery: implementation `0942d9d` pushed to `dev/phase-2-operations`.
+  GitHub GraphQL returned `Forbidden` creating the PR; no PR, merge or production
+  deployment was performed. Manual owner review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-operations
+
 ## CI follow-up — procfs process-exit race
 
 - Owner supplied a failed PostgreSQL GitHub Actions run: **213 passed, one
@@ -1013,12 +1087,13 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge worker resilience and observe CI; restart updated native API/worker.
-   No migration/dependency change. Check old/new upload/render/save and cancellation.
-2. On Docker Desktop/Linux, build and validate cgroup enforcement before starting
-   the strict worker profile. Do not disable the guard for production.
-3. Continue remaining Phase 2 broker/heartbeat, per-tenant isolation/egress,
-   monitoring, capacity/load, verified recovery and backup/version erasure gates.
+1. Review/merge operational visibility and observe the new CI run. Stop API/workers,
+   back up DB/media and migrate 0013 before restarting updated server processes.
+2. Verify /ready, a fresh worker in app.operations, new/old uploads/render/save and
+   structured completion events. No dependency/mobile install is needed.
+3. Continue remaining Phase 2 broker/lease renewal, isolation/egress, external
+   monitoring/retention, capacity/load and verified recovery/legal gates. Strict
+   Docker cgroup-host acceptance remains required; paid services stay disabled.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

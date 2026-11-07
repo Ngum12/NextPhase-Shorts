@@ -80,3 +80,10 @@ Authenticated POST `/api/v1/account/delete` requires `current_password` and UUID
 sessions/claims are revoked. POST `/api/v1/account/deletion-receipt` accepts only
 the opaque key without bearer authentication for seven days; 200 returns coarse
 status, unknown/expired returns 404. Both are rate limited. See ACCOUNT_DELETION.md.
+
+## Operational readiness
+
+GET `/health` remains process liveness. GET `/ready` returns 200 or 503 with only
+`ok` and `service`, no-store, based on DB/current-schema availability. It does not
+guarantee workers or object-provider readiness. Detailed snapshots are operator-only
+CLI commands, with no public metrics endpoint. See OPERATIONS.md.
