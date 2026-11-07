@@ -11,10 +11,12 @@ const javascript=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/
   compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
 }).outputText;
 
-function fixture() {
+function fixture(options={}) {
   const storage=new Map([['file:///original.mp4',Buffer.from('abcdefghijk')]]);
   const sessions=new Map();
   const offsets=[];
+  const signedTransfers=[];
+  let denySigned=false,dropSigned=false,signedOrigin='https://storage.example';
   let gone=false;
   let openHandles=0,dropPart=false,dropCompletion=false,offline=false,failDeleteCopy=false;
   const root='file:///documents/nextphase-uploads/';
@@ -37,12 +39,26 @@ function fixture() {
         close(){openHandles--;}};
     }
   }
-  const snapshot=s=>({id:s.id,status:s.status,total_bytes:11,received_bytes:s.offset,chunk_bytes:4,job_id:s.jobId||null});
+  const snapshot=s=>({id:s.id,status:s.status,total_bytes:11,received_bytes:s.offset,chunk_bytes:4,job_id:s.jobId||null,transfer_backend:options.direct?'direct-s3':'api'});
   const response=(body,status=200)=>({ok:status<400,status,json:async()=>body});
   const fetch=async(url,options={})=>{
     if(offline)throw Error('offline');
     if(options.signal?.aborted)throw Error('aborted');
     const route=new URL(url);
+    if(route.hostname==='storage.example') {
+      assert.equal(options.credentials,'omit');assert.equal(options.redirect,'error');
+      assert(!Object.keys(options.headers).some(name=>name.toLowerCase()==='authorization'));
+      const [id,offsetText]=route.pathname.slice(1).split('/');const offset=Number(offsetText);
+      const session=[...sessions.values()].find(s=>s.id===id);assert(session);
+      signedTransfers.push(offset);
+      if(denySigned){denySigned=false;return response({},403);}
+      const bytes=Buffer.from(options.body);
+      assert.equal(options.headers['Content-Length'],String(bytes.length));
+      assert.equal(options.headers['x-amz-checksum-sha256'],crypto.createHash('sha256').update(bytes).digest('base64'));
+      session.incoming??=new Map();session.incoming.set(offset,bytes);
+      if(dropSigned){dropSigned=false;throw Error('lost signed PUT response');}
+      return response({});
+    }
     if(route.pathname.startsWith('/api/v1/upload-sessions/by-key/')){
       if(gone)return response({detail:'Deleted project'},410);
       const found=sessions.get(route.pathname.split('/').at(-1));
@@ -65,6 +81,19 @@ function fixture() {
     const id=route.pathname.split('/')[4];
     const session=[...sessions.values()].find(s=>s.id===id);
     assert(session,route.pathname);
+    if(route.pathname.endsWith('/part-url')) {
+      const intent=JSON.parse(options.body);const length=Math.min(4,11-intent.offset);
+      const checksum=Buffer.from(intent.sha256,'hex').toString('base64');
+      return response({committed:false,grant_id:String(intent.offset),url:`${signedOrigin}/${session.id}/${intent.offset}?signed=fixture`,
+        headers:{'Content-Length':String(length),'Content-Type':'application/octet-stream','x-amz-meta-sha256':intent.sha256,
+        'x-amz-checksum-sha256':checksum,Authorization:'must-not-forward'}});
+    }
+    if(route.pathname.includes('/part-commit/')) {
+      const offset=Number(route.pathname.split('/').at(-1));const bytes=session.incoming.get(offset);
+      assert.equal(offset,session.offset);offsets.push(offset);session.offset+=bytes.length;session.parts.push(bytes);
+      if(dropPart){dropPart=false;throw Error('lost chunk response');}
+      return response(snapshot(session));
+    }
     if(route.pathname.endsWith('/parts')) {
       const offset=Number(route.searchParams.get('offset'));
       const bytes=Buffer.from(options.body);
@@ -95,13 +124,15 @@ function fixture() {
         return result.buffer.slice(result.byteOffset,result.byteOffset+result.length);
       }},
       './uploadRights':{RIGHTS_VERSION:'upload-rights-v1'},
-      './api':{BASE:'http://localhost',ApiError,extract,authenticatedFetch:async(token,url,options)=>fetch(url,options),api:async endpoint=>extract(await fetch('http://localhost'+endpoint))},
+      './api':{BASE:'http://localhost',ApiError,extract,authenticatedFetch:async(token,url,options)=>{assert.equal(new URL(url).hostname,'localhost');return fetch(url,options);},api:async endpoint=>extract(await fetch('http://localhost'+endpoint))},
     };
     vm.runInNewContext(javascript,{exports,require:name=>{assert(adapters[name],name);return adapters[name];},
-      fetch,AbortController,console,Uint8Array,ArrayBuffer});
+      fetch,URL,AbortController,console,Uint8Array,ArrayBuffer});
     return exports;
   }
-  return {restart,storage,sessions,offsets,root,
+  return {restart,storage,sessions,offsets,signedTransfers,root,
+    set denySigned(value){denySigned=value;},set dropSigned(value){dropSigned=value;},
+    set signedOrigin(value){signedOrigin=value;},
     set gone(value){gone=value;},
     set dropPart(value){dropPart=value;},set dropCompletion(value){dropCompletion=value;},set offline(value){offline=value;},
     set failDeleteCopy(value){failDeleteCopy=value;},get openHandles(){return openHandles;}};
@@ -232,4 +263,42 @@ test('a stale screen cannot confirm, resume or discard a newer pending intent',a
   await assert.rejects(app.discardUpload(old,'token'),/changed/);
   assert.equal((await app.loadPending('owner-a')).key,next.key);
   assert(world.storage.has(world.root+next.localName));
+});
+
+test('direct upload restart skips a sealed chunk after losing its commit response',async()=>{
+  const world=fixture({direct:true});let app=world.restart();const record=await prepared(app);
+  world.dropPart=true;
+  await assert.rejects(app.resumeUpload(record,'private-token',()=>{}),/lost chunk response/);
+  app=world.restart();
+  const job=await app.resumeUpload(await app.loadPending('owner-a'),'private-token',()=>{});
+  assert.equal(job.id,'job-one');assert.deepEqual(world.signedTransfers,[0,4,8]);
+  assert.deepEqual(world.offsets,[0,4,8]);assert.equal(world.openHandles,0);
+});
+
+test('expired storage capability preserves intent and never receives API credentials',async()=>{
+  const world=fixture({direct:true});const app=world.restart();const record=await prepared(app);
+  world.denySigned=true;
+  await assert.rejects(app.resumeUpload(record,'private-token',()=>{}),/failed or expired/);
+  const saved=await app.loadPending('owner-a');assert.equal(saved.key,record.key);
+  assert(world.storage.has(world.root+record.localName));assert.deepEqual(world.offsets,[]);
+  await app.resumeUpload(saved,'private-token',()=>{});
+  assert.deepEqual(world.signedTransfers,[0,0,4,8]);assert.deepEqual(world.offsets,[0,4,8]);
+});
+
+test('lost direct PUT response retransfers only unacknowledged data after restart',async()=>{
+  const world=fixture({direct:true});let app=world.restart();const record=await prepared(app);
+  world.dropSigned=true;
+  await assert.rejects(app.resumeUpload(record,'private-token',()=>{}),/lost signed PUT/);
+  assert.deepEqual(world.offsets,[]);app=world.restart();
+  await app.resumeUpload(await app.loadPending('owner-a'),'private-token',()=>{});
+  assert.equal(world.sessions.size,1);assert.deepEqual(world.signedTransfers,[0,0,4,8]);
+  assert.equal(world.openHandles,0);
+});
+
+test('direct client refuses insecure storage addresses and preserves the private copy',async()=>{
+  const world=fixture({direct:true});const app=world.restart();const record=await prepared(app);
+  world.signedOrigin='http://storage.example';
+  await assert.rejects(app.resumeUpload(record,'private-token',()=>{}),/not secure/);
+  assert.deepEqual(world.signedTransfers,[]);assert.equal(world.openHandles,0);
+  assert(world.storage.has(world.root+record.localName));assert(await app.loadPending('owner-a'));
 });

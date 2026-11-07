@@ -213,3 +213,24 @@ def test_object_backend_migration_keeps_old_media_local(migration_engine):
         row = connection.execute(sa.text("SELECT media_backend,source_path,output_path,status FROM render_jobs WHERE id='object-job'")).one()
         assert row.media_backend == 'local' and row.source_path == 'old/input.mp4'
         assert row.output_path == 'old/output.mp4' and row.status == 'succeeded'
+
+
+def test_direct_upload_migration_preserves_api_session_and_parts(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import User,UploadSession,UploadPart,utcnow
+    from datetime import timedelta
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0010_object_backend')
+        connection.execute(User.__table__.insert().values(id='direct-old-owner',email='direct-old@example.com',password_hash='hash'))
+        connection.execute(UploadSession.__table__.insert().values(id='direct-old-session',user_id='direct-old-owner',client_key='keep-direct-key',
+            descriptor_hash='a'*64,file_name='source.mp4',extension='.mp4',title='Keep',style='vlog',desired_seconds=15,
+            total_bytes=24,received_bytes=8,chunk_bytes=8,expires_at=utcnow()+timedelta(hours=1)))
+        connection.execute(UploadPart.__table__.insert().values(session_id='direct-old-session',offset=0,size=8,sha256='b'*64))
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT transfer_backend,received_bytes,object_store_id FROM upload_sessions")).one()
+        assert row.transfer_backend=='api' and row.received_bytes==8 and row.object_store_id is None
+        row=connection.execute(sa.text('SELECT sha256,object_reference,direct_grant_id FROM upload_parts')).one()
+        assert row.sha256=='b'*64 and row.object_reference is None and row.direct_grant_id is None
+        assert connection.scalar(sa.text('SELECT count(*) FROM direct_upload_grants'))==0

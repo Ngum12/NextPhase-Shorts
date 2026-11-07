@@ -66,3 +66,9 @@ POST `/api/v1/jobs/{id}/download-link` issues an exact-key GET capability for 5â
 local/not-ready jobs return 409, other-owner/deleted jobs 404. Already-issued URLs
 remain usable until expiry or physical removal, including after logout/deletion.
 See [object access and deletion boundaries](PRIVATE_OBJECT_STORAGE.md).
+
+Optional strict `direct_upload: true` requests direct transfer for new upload
+sessions when enabled; existing replay keys keep their mode/digest. `part-url`
+signs only the next bounded incoming chunk; `part-commit/{grant_id}` verifies and
+seals before advancing the DB offset. Old API parts remain supported for API
+sessions. See [direct protocol, errors and cleanup deadlines](DIRECT_UPLOADS.md).

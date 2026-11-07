@@ -188,3 +188,8 @@ Optional private S3-compatible originals/results and short-lived signed download
 links are implemented behind `MEDIA_BACKEND=s3`. Local storage remains the default;
 normal mobile Save/Share stays API-authenticated. See [configuration, migration
 0010, local S3 smoke and remaining limits](docs/PRIVATE_OBJECT_STORAGE.md).
+
+Direct signed chunk uploads are now opt-in with `DIRECT_UPLOADS_ENABLED=true` and
+S3 storage. The API verifies and seals each chunk before acknowledging progress;
+existing sessions and default local uploads retain their prior path. See
+[migration 0011, protections and validation](docs/DIRECT_UPLOADS.md).

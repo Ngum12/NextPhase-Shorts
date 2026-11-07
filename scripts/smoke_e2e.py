@@ -18,6 +18,23 @@ RIGHTS_FORM={'rights_confirmed':'true','consent_version':'upload-rights-v1'}
 RIGHTS_JSON={'rights_confirmed':True,'consent_version':'upload-rights-v1'}
 
 
+def signed_chunk(client, owner, session, offset, chunk):
+    import hashlib
+    path = '/api/v1/upload-sessions/'+session['id']
+    result = client.post(path+'/part-url', headers=owner,
+        json={'offset':offset,'sha256':hashlib.sha256(chunk).hexdigest()})
+    assert result.status_code == 200, result.text
+    grant = result.json()
+    if grant['committed']:
+        return client.get(path, headers=owner), grant
+    with httpx.Client(trust_env=False, timeout=30) as storage:
+        uploaded = storage.put(grant['url'], headers=grant['headers'], content=chunk)
+        assert uploaded.status_code == 200, uploaded.status_code
+    response = client.post(path+'/part-commit/'+grant['grant_id'], headers=owner)
+    assert response.status_code == 200, response.text
+    return response, grant
+
+
 def check_api(base_url, output_dir):
     source = output_dir / 'source.mp4'
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-f', 'lavfi',
@@ -166,7 +183,9 @@ def begin_resumable(base_url, output_dir):
         '-preset', 'ultrafast', '-crf', '0', '-pix_fmt', 'yuv420p', '-c:a', 'aac', str(source)],
         check=True, timeout=30)
     data = source.read_bytes()
+    direct = os.getenv('NEXTPHASE_SMOKE_DIRECT') == '1'
     descriptor = dict(**RIGHTS_JSON,file_name='source.mp4', total_bytes=len(data), title='Resumable smoke', style='vlog', desired_seconds=15)
+    if direct: descriptor['direct_upload'] = True
     with httpx.Client(base_url=base_url, trust_env=False, timeout=30) as client:
         response = client.post('/api/v1/auth/register', json={
             'email': f'{uuid.uuid4()}@example.com', 'password': secrets.token_urlsafe(24)})
@@ -184,18 +203,44 @@ def begin_resumable(base_url, output_dir):
         size = session['chunk_bytes']
         assert len(data) > size*2, 'Synthetic source must span several chunks'
         first = data[:size]
-        response = client.put(f"/api/v1/upload-sessions/{session['id']}/parts?offset=0",
-            headers={**owner, 'X-Chunk-SHA256': hashlib.sha256(first).hexdigest()}, content=first)
+        if direct:
+            assert session['transfer_backend'] == 'direct-s3'
+            response, first_grant = signed_chunk(client, owner, session, 0, first)
+            with httpx.Client(trust_env=False, timeout=30) as storage:
+                assert storage.put(first_grant['url'].replace('/incoming/','/sealed/'),
+                    headers=first_grant['headers'], content=first).status_code == 403
+                assert storage.put(first_grant['url'], headers={**first_grant['headers'],
+                    'Content-Length':str(len(first)+1)}, content=first+b'!').status_code == 403
+            # Try an altered payload through the still-live incoming capability.
+            # Provider may reject its checksum; either way the sealed copy survives.
+            with httpx.Client(trust_env=False, timeout=30) as storage:
+                result = storage.put(first_grant['url'], headers=first_grant['headers'], content=b'X'*len(first))
+                assert result.status_code in (200,400,403)
+            next_chunk = data[size:size*2]
+            second = client.post(f"/api/v1/upload-sessions/{session['id']}/part-url", headers=owner,
+                json={'offset':size,'sha256':hashlib.sha256(next_chunk).hexdigest()}).json()
+            time.sleep(6)
+            with httpx.Client(trust_env=False, timeout=30) as storage:
+                assert storage.put(second['url'], headers=second['headers'], content=next_chunk).status_code == 403
+            renewed = client.post(f"/api/v1/upload-sessions/{session['id']}/part-url", headers=owner,
+                json={'offset':size,'sha256':hashlib.sha256(next_chunk).hexdigest()}).json()
+            assert renewed['grant_id'] == second['grant_id']
+            session['_next_grant'] = renewed
+        else:
+            response = client.put(f"/api/v1/upload-sessions/{session['id']}/parts?offset=0",
+                headers={**owner, 'X-Chunk-SHA256': hashlib.sha256(first).hexdigest()}, content=first)
         assert response.status_code == 200 and response.json()['received_bytes'] == size
     # Deliberately disconnect halfway through the NEXT chunk. It must not advance
     # the committed offset, even if the server dies before cleaning its staging file.
-    address = urlsplit(base_url)
+    address = urlsplit(session['_next_grant']['url'] if direct else base_url)
     connection_class = http.client.HTTPSConnection if address.scheme == 'https' else http.client.HTTPConnection
     connection = connection_class(address.hostname, address.port, timeout=10)
     next_chunk = data[size:size*2]
-    connection.putrequest('PUT', f"/api/v1/upload-sessions/{session['id']}/parts?offset={size}")
-    for name, value in {**owner, 'Content-Type': 'application/octet-stream', 'Content-Length': str(len(next_chunk)),
-                        'X-Chunk-SHA256': hashlib.sha256(next_chunk).hexdigest()}.items():
+    target = address.path+'?'+address.query if direct else f"/api/v1/upload-sessions/{session['id']}/parts?offset={size}"
+    connection.putrequest('PUT', target)
+    headers = session['_next_grant']['headers'] if direct else {**owner, 'Content-Type':'application/octet-stream',
+        'Content-Length':str(len(next_chunk)), 'X-Chunk-SHA256':hashlib.sha256(next_chunk).hexdigest()}
+    for name, value in headers.items():
         connection.putheader(name, value)
     connection.endheaders()
     connection.send(next_chunk[:len(next_chunk)//2])
@@ -215,8 +260,11 @@ def finish_resumable(base_url, output_dir, transfer, *, restarted):
         assert replay.status_code == 200 and replay.json()['id'] == session['id']
         for offset in range(status['received_bytes'], len(data), session['chunk_bytes']):
             chunk = data[offset:offset+session['chunk_bytes']]
-            response = client.put(path+f'/parts?offset={offset}',
-                headers={**owner, 'X-Chunk-SHA256': hashlib.sha256(chunk).hexdigest()}, content=chunk)
+            if status.get('transfer_backend') == 'direct-s3':
+                response, _ = signed_chunk(client, owner, session, offset, chunk)
+            else:
+                response = client.put(path+f'/parts?offset={offset}',
+                    headers={**owner, 'X-Chunk-SHA256': hashlib.sha256(chunk).hexdigest()}, content=chunk)
             assert response.status_code == 200, response.text
         response = client.post(path+'/complete', headers=owner)
         assert response.status_code == 200, response.text
@@ -235,6 +283,10 @@ def finish_resumable(base_url, output_dir, transfer, *, restarted):
         assert response.status_code==200
         output = output_dir/'resumable-output.mp4'
         output.write_bytes(response.content)
+        if status.get('transfer_backend') == 'direct-s3':
+            assert client.delete('/api/v1/jobs/'+job_id, headers=owner).status_code == 202
+            assert client.post(path+'/part-url', headers=owner,
+                json={'offset':0,'sha256':hashlib.sha256(data[:session['chunk_bytes']]).hexdigest()}).status_code == 410
     metadata = json.loads(subprocess.check_output(['ffprobe','-v','error','-show_streams','-show_format','-of','json',str(output)]))
     video = next(s for s in metadata['streams'] if s['codec_type']=='video')
     assert (video['width'],video['height'],video['r_frame_rate'])==(1080,1920,'30/1')
@@ -242,8 +294,11 @@ def finish_resumable(base_url, output_dir, transfer, *, restarted):
     assert 0<float(metadata['format']['duration'])<=5
     subprocess.run(['ffmpeg','-nostdin','-v','error','-i',str(output),'-f','null','-'],check=True,timeout=30)
     report=dict(api_restarted=restarted, interrupted_part='not committed',
+        transfer_backend=status.get('transfer_backend','api'),
         acknowledged_offset=session['chunk_bytes'], source_bytes=len(data),
         chunk_bytes=session['chunk_bytes'], checksum='passed', repeated_complete='one job', render_download='passed',rights_acknowledgement='preserved')
+    if status.get('transfer_backend') == 'direct-s3':
+        report.update(signed_expiry='passed', same_key_renewal='passed', sealed_overwrite_protection='passed')
     (output_dir/'resumable-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print('Resumable upload:',json.dumps(report))
 
@@ -362,7 +417,7 @@ def main():
                 verification='from app.consent import RIGHTS_VERSION; from app.storage import usage; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and usage(db,row.user_id)["known_reserved_bytes"]==0 and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); assert all(row.rights_version==RIGHTS_VERSION and row.rights_confirmed_at is not None for row in db.scalars(select(RenderJob))); db.close()'
                 subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
                 if env.get('MEDIA_BACKEND') == 's3':
-                    verification='from app.object_store import client,prefix; from app.config import get_settings; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(not client().list_objects_v2(Bucket=get_settings().s3_bucket,Prefix=prefix(row.user_id,row.id)).get("Contents") for row in rows); db.close()'
+                    verification='from app.object_store import client,prefix,upload_prefix; from app.config import get_settings; from app.db import SessionLocal; from app.models import RenderJob,UploadSession; from sqlalchemy import select; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(not client().list_objects_v2(Bucket=get_settings().s3_bucket,Prefix=prefix(row.user_id,row.id)).get("Contents") for row in rows); sessions=list(db.scalars(select(UploadSession).where(UploadSession.status=="deleted",UploadSession.transfer_backend=="direct-s3"))); assert all(not client().list_objects_v2(Bucket=get_settings().s3_bucket,Prefix=upload_prefix(row.user_id,row.id)).get("Contents") for row in sessions); db.close()'
                     subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
                     print('Deleted original/output object-prefix removal: passed')
                 print('Deleted source/output filesystem cleanup and storage release: passed')

@@ -5,6 +5,86 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — signed direct chunks and verified sealing
+
+- `DIRECT_UPLOADS_ENABLED=false` by default. Updated mobile can negotiate direct
+  chunks only for new capable sessions when enabled with private S3. Existing
+  upload keys, modes, checksums, offsets, rights and normal PC API uploads survive.
+  No paid API/infrastructure, cloud deployment, AI or billing was activated.
+- Migration **0011_direct_uploads** preserves legacy sessions/parts as API uploads;
+  adds namespace/transfer/cleanup fields, remote part references and one durable
+  random grant per offset. Renewal reuses the bounded incoming key and refuses
+  changed content intent. No dependency was added; existing 843-record inventory,
+  license notices and last known 17 npm findings remain applicable, not cleared.
+- Owner-only part-url signs exact temporary PUT key/length/checksum/type for at
+  most 60 s. Part commit downloads and rehashes the chunk, checks exact length and
+  stores a separate private sealed reference before acknowledging. Signed links
+  cannot write sealed chunks, source originals or results. Lost replies/restarts
+  recover from DB offsets; concurrent commits publish once; abort/expiry/deletion
+  during sealing cannot publish. Source completion verifies the sealed manifest
+  and whole source before media admission and one-job publication.
+- Mobile uses raw storage PUT with no bearer/cookies/redirects, validates the
+  target/required headers and retains its journal/copy on expired-link/network
+  failure. API 401 handling remains separate; original footage is never removed.
+  No new native permission/module. Transfers are foreground only; no encoding/AI
+  was moved onto phones. S3 direct native Pixel behavior remains unverified.
+- Direct admission reserves three source copies plus two render caps; reservation
+  transfers once to the job and remains conservative until project deletion.
+  Terminal staging removal waits for recorded signed expiry, retries failures and
+  rescans late writes. Project deletion releases only after project and staging
+  cleanup. Capabilities cannot be recalled by logout/abort alone; retained grant/
+  operational tombstones, long in-flight writes, orphans, backup/account erasure,
+  physical/global quotas and ingress/cost/ACL/provider policies remain limits.
+- Baseline before changes: **158 tests passed** (29.08 s). Final **168 backend tests
+  passed on SQLite (30.00 s) and PostgreSQL (37.23 s)**, no skips; one existing
+  Starlette/httpx warning each. Coverage adds ownership, capability opt-in, legacy
+  digest/migration compatibility, corruption/length rejection, renewal bounds,
+  concurrent commits, mutation after sealing, abort races, namespaces and cleanup.
+  Final direct PostgreSQL race tests also passed separately (9 tests, 2.76 s).
+- An initial PostgreSQL run hit stale synthetic tombstones from a reused test DB,
+  affecting an existing cleanup-priority assertion. The tests now create/drop a
+  per-run schema inside the explicitly selected *_test DB, preserving unrelated
+  data; backend tests also force local/off storage defaults to avoid a developer's
+  real provider configuration. The full suite passed with this isolation. Migration
+  preservation is still exercised independently in dedicated test schemas.
+- TypeScript, **15 upload + 8 auth/API + 7 export tests** and Android Hermes export
+  passed (1,011 modules / 2.69 MB). Includes sealed-ack restart without retransmit,
+  lost direct PUT reply recovery, expired capability preserving intent, forbidden
+  insecure origin and no API credentials in storage requests. Native/network
+  adapters are mocked; this is not a physical direct upload or APK validation.
+- Real disposable local S3 smoke passed a partially disconnected PUT, API kill/
+  restart, resumed 51 MiB source at byte 1,048,576, true expired-link rejection,
+  same-key renewal, sealed-path/signed-length tamper denial, overwrite protection,
+  checksum/rights preservation, one-job completion and actual render/download/decode.
+  Physical upload/project prefix removal, local cleanup and zero owner reservation
+  were checked. Output 1080×1920/30 fps/4.9 s. Final baseline flow 8.30 s includes
+  the six-second signed-GET expiry wait; it excludes stress-source generation and
+  direct transfer setup and is not a production speed/SLA claim. Ignored evidence:
+  `.data/nextphase-s3-smoke-17243d3c0827/workflow/`.
+- Backed up the isolated PostgreSQL application DB, rebuilt and applied migration
+  0011; API/worker/S3/DB healthy. Integrated external HTTP direct resume/signature/
+  render/download/deletion smoke passed (8.77 s baseline including expiry wait;
+  external API not restarted). Operator read-back verified removed direct staging,
+  project objects and manifest, retained grant tombstones and released budget.
+- Normal local/API restart/resume/render/download/deletion smoke also passed on
+  migration 0011: 1.91 s baseline, 1080×1920/30 fps/4.9 s, owner isolation and
+  physical cleanup/budget release. Ignored synthetic evidence:
+  `.data/smoke-45b7556abb534c4daf0f28d7936d172d/`. Doctor, pip and diff checks passed.
+- Owner-reported prior merged object-storage/CI-fix acceptance (`1734c1c`): Windows
+  dependencies/migration succeeded, **158 tests (109.20 s)** and full local smoke
+  passed (2.20 s; `.data/smoke-572d1192c2534f0abf4374f5e0a0e67b`). Owner subsequently
+  reported old/new Pixel upload/render/save/delete checks worked. S3 was explicitly
+  off on that PC; these are owner reports of the prior local path, not direct QA.
+- Upgrade and acceptance: [direct uploads](docs/DIRECT_UPLOADS.md). Stop services,
+  back up DB/media, pull, migrate 0011 and update API/mobile together. No new pip/npm
+  installation is required solely for this increment. Keep normal PC local/off;
+  run the disposable Docker S3 smoke separately. Review/remote CI and physical
+  direct Pixel/OS tests remain; no independent CI success or merge is claimed.
+- Remaining Phase 2: production IAM/TLS/edge abuse/cost controls, fully stateless
+  validation, broad provider compatibility, retention/orphan/version/account/backup
+  erasure, verified auth delivery/recovery, robust broker/isolation, observability
+  and representative load/soak. Later AI styles and payments stay disabled.
+
 ## CI follow-up — private S3 startup permissions
 
 - Owner supplied a failing GitHub SQLite job: the pinned image pulled successfully,
@@ -640,16 +720,15 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review the private-object-storage increment; after merge stop services, back up
-   DB/media, install the updated Python requirements and migrate 0010. Keep normal
-   PC/Pixel testing on local storage; the isolated S3 smoke requires Docker and uses
-   generated disposable credentials. See docs/PRIVATE_OBJECT_STORAGE.md.
-2. Restore GitHub API access and observe remote CI; branch push alone does not
-   establish PR creation, CI success, deployment or legal approval.
-3. Complete dependency/security/license review before commercial use.
-4. Continue Phase 2 direct signed upload/remote staging, retention/orphan/account
-   erasure, secure auth delivery/recovery, queue/isolation and observability work.
-   Follow docs/ROADMAP.md and the later phases in prompt.md in order.
+1. Review the signed direct-upload increment; after merge stop services, back up
+   DB/media and migrate 0011. Update API/mobile together; default PC stays local/off.
+   Run normal regression and separate disposable local S3 smoke. See DIRECT_UPLOADS.md.
+2. Observe remote CI and perform consented Pixel default/direct pause/restart,
+   expired-link and discard checks with a reviewed client-reachable S3 endpoint.
+3. Complete security/dependency/license/provider review before commercial use.
+4. Continue remaining Phase 2 retention/orphan/account erasure, secure auth delivery,
+   queue/isolation and observability/load testing under prompt.md; no paid activation
+   without explicit approval.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

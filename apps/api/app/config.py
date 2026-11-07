@@ -19,6 +19,12 @@ class Settings:
         self.s3_access_key = os.getenv('S3_ACCESS_KEY_ID', '')
         self.s3_secret_key = os.getenv('S3_SECRET_ACCESS_KEY', '')
         self.signed_download_seconds = int(os.getenv('SIGNED_DOWNLOAD_SECONDS', '60'))
+        self.direct_uploads_enabled = os.getenv('DIRECT_UPLOADS_ENABLED', 'false').lower() == 'true'
+        self.signed_upload_seconds = int(os.getenv('SIGNED_UPLOAD_SECONDS', '60'))
+        if not 5 <= self.signed_upload_seconds <= 60:
+            raise RuntimeError('Signed upload lifetime must be 5–60 seconds')
+        if self.direct_uploads_enabled and self.media_backend != 's3':
+            raise RuntimeError('Direct uploads require S3 media storage')
         if self.media_backend not in ('local', 's3') or not 5 <= self.signed_download_seconds <= 60:
             raise RuntimeError('Invalid media backend or signed download lifetime (5–60 seconds)')
         if self.media_backend == 's3':

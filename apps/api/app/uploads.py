@@ -14,7 +14,8 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, Path as PathParam
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
+from contextlib import closing
 from starlette.requests import ClientDisconnect
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,13 +23,14 @@ from sqlalchemy.orm import Session
 from .auth import current_user
 from .catalog import STYLE_IDS
 from .config import get_settings
-from .db import session_dep
+from .db import session_dep, SessionLocal
 from .media import MediaError, probe_video
 from .models import RenderJob, UploadPart, UploadSession, User, utcnow
 from .queue import active_count, admit_job, lock_owner, reserved_upload_count
 from .storage import reservation, require_capacity
 from .schemas import JobResponse
 from .consent import RIGHTS_VERSION, RightsAcknowledgement
+from . import object_store
 
 router = APIRouter(prefix='/api/v1/upload-sessions', tags=['uploads'])
 settings = get_settings()
@@ -37,6 +39,7 @@ KeyHeader = Annotated[str, Header(min_length=8, max_length=128, pattern=r'^[A-Za
 
 
 class SessionRequest(RightsAcknowledgement):
+    direct_upload: StrictBool = False
     file_name: str = Field(min_length=1, max_length=255)
     total_bytes: int = Field(gt=0, le=314572800, strict=True)
     title: str = Field(default='My Short', min_length=1, max_length=120)
@@ -56,6 +59,7 @@ def state(row):
 
 def view(row):
     return dict(id=row.id, status=state(row), file_name=row.file_name,
+                transfer_backend=row.transfer_backend,
                 total_bytes=row.total_bytes, received_bytes=row.received_bytes,
                 chunk_bytes=row.chunk_bytes, expires_at=aware(row.expires_at),
                 title=row.title, style=row.style, desired_seconds=row.desired_seconds,
@@ -102,11 +106,22 @@ def sync_directory(path):
 
 def cleanup_parts(user_id, session_id):
     try:
+        from .models import DirectUploadGrant
+        with SessionLocal() as db:
+            row = db.get(UploadSession, session_id)
+            if row and row.user_id == user_id and row.transfer_backend == 'direct-s3':
+                # Signed incoming writes may remain valid after Abort/Complete.
+                # Delay release; terminal sessions are rescanned for late writes.
+                grants = list(db.scalars(select(DirectUploadGrant).where(DirectUploadGrant.session_id == session_id)))
+                if any(aware(grant.expires_at) > utcnow() for grant in grants):
+                    return False
+                object_store.require_namespace(row.object_store_id)
+                object_store.remove_upload_session(user_id, session_id)
         shutil.rmtree(part_directory(user_id, session_id))
         return True
     except FileNotFoundError:
         return True
-    except OSError:
+    except (OSError, RuntimeError):
         # A concurrent request may still have an open staging file on Windows.
         logger.warning('upload cleanup deferred session_id=%s', session_id)
         return False
@@ -123,7 +138,7 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
         raise HTTPException(415, 'Video must be MP4, MOV, M4V or WebM')
     if payload.total_bytes > settings.max_upload_bytes:
         raise HTTPException(413, 'File exceeds the configured upload limit')
-    descriptor = payload.model_dump(exclude={'rights_confirmed','consent_version'})
+    descriptor = payload.model_dump(exclude={'rights_confirmed','consent_version','direct_upload'})
     descriptor['title'] = title
     digest = hashlib.sha256(json.dumps(descriptor, sort_keys=True).encode()).hexdigest()
     lock_owner(db, user.id)
@@ -145,9 +160,12 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     if active_count(db, user.id) + reserved_upload_count(db, user.id) >= settings.max_active_jobs_per_user:
         raise HTTPException(429, 'Your queue is full. Finish or discard a pending upload, or cancel a queued job.',
                             headers={'Retry-After': '5'})
-    budget=reservation(payload.total_bytes,settings.max_render_bytes)
+    direct = payload.direct_upload and settings.direct_uploads_enabled
+    budget=reservation(payload.total_bytes * (3 if direct else 1),settings.max_render_bytes)
     require_capacity(db,user.id,budget)
-    row = UploadSession(rights_version=RIGHTS_VERSION,rights_confirmed_at=utcnow(),storage_reserved_bytes=budget,max_render_bytes=settings.max_render_bytes,id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
+    row = UploadSession(transfer_backend='direct-s3' if direct else 'api',
+                        object_store_id=object_store.namespace_id() if direct else None,
+                        rights_version=RIGHTS_VERSION,rights_confirmed_at=utcnow(),storage_reserved_bytes=budget,max_render_bytes=settings.max_render_bytes,id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
                         descriptor_hash=digest, file_name=payload.file_name, extension=extension,
                         title=title, style=payload.style, desired_seconds=payload.desired_seconds,
                         total_bytes=payload.total_bytes, chunk_bytes=settings.upload_chunk_bytes,
@@ -200,6 +218,8 @@ async def upload_part(session_id: str, request: Request, response: Response,
     user_id = user.id
     row = owned(db, session_id, user_id)
     require_uploading(row)
+    if row.transfer_backend != 'api':
+        raise HTTPException(409, 'This session requires signed chunk upload and commit')
     if offset >= row.total_bytes or offset % row.chunk_bytes:
         raise HTTPException(409, 'Chunk offset is not a valid part boundary')
     expected = min(row.chunk_bytes, row.total_bytes - offset)
@@ -281,8 +301,8 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
     require_uploading(row)
     if row.received_bytes != row.total_bytes:
         raise HTTPException(409, 'Upload is incomplete; query progress and resume')
-    snapshot = {key: getattr(row, key) for key in ('total_bytes', 'extension', 'title', 'style', 'desired_seconds')}
-    parts = [(part.offset, part.size, part.sha256) for part in db.scalars(
+    snapshot = {key: getattr(row, key) for key in ('total_bytes', 'extension', 'title', 'style', 'desired_seconds', 'transfer_backend', 'object_store_id')}
+    parts = [(part.offset, part.size, part.sha256, part.object_reference, part.direct_grant_id) for part in db.scalars(
         select(UploadPart).where(UploadPart.session_id == session_id).order_by(UploadPart.offset))]
     db.rollback()
     job_id = str(uuid.uuid4())
@@ -295,13 +315,21 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
         full_hash = hashlib.sha256()
         position = 0
         with source.open('xb') as output:
-            for offset, size, checksum in parts:
+            for offset, size, checksum, reference, grant_id in parts:
                 if offset != position:
                     raise HTTPException(409, 'Upload parts are not contiguous')
                 part_hash = hashlib.sha256()
                 copied = 0
                 try:
-                    with part_path(user_id, session_id, offset, checksum).open('rb') as part:
+                    if snapshot['transfer_backend'] == 'direct-s3':
+                        object_store.require_namespace(snapshot['object_store_id'])
+                        key = object_store.upload_key(user_id, session_id, grant_id, sealed=True)
+                        if object_store.parse_reference(reference, key) != checksum:
+                            raise HTTPException(409, 'Stored chunk reference has changed')
+                        reader = closing(object_store.open_object(reference, key, size)['Body'])
+                    else:
+                        reader = part_path(user_id, session_id, offset, checksum).open('rb')
+                    with reader as part:
                         while chunk := part.read(65536):
                             copied += len(chunk)
                             if copied > size:
@@ -309,7 +337,7 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
                             part_hash.update(chunk)
                             full_hash.update(chunk)
                             output.write(chunk)
-                except FileNotFoundError:
+                except (FileNotFoundError, object_store.ObjectStoreError):
                     db.rollback()
                     current = owned(db, session_id, user_id)
                     if current.status == 'completed':
@@ -329,9 +357,9 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
             raise HTTPException(422, 'File does not contain a supported video')
         if media['duration'] > settings.max_source_seconds:
             raise HTTPException(422, 'Source video exceeds 10-minute MVP limit')
-        from . import object_store
         source_reference = str(source.resolve())
-        if settings.media_backend == 's3':
+        backend = 's3' if snapshot['transfer_backend'] == 'direct-s3' else settings.media_backend
+        if backend == 's3':
             remote_attempt = True
             try:
                 source_reference = object_store.put(source, object_store.source_key(user_id, job_id, snapshot['extension']), settings.max_upload_bytes)
@@ -342,8 +370,8 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
         if row.status == 'completed':
             return db.get(RenderJob, row.job_id)
         require_uploading(row)
-        candidate = RenderJob(media_backend=settings.media_backend,rights_version=row.rights_version,rights_confirmed_at=row.rights_confirmed_at,id=job_id, user_id=user_id, title=row.title, style=row.style,
-                              object_store_id=object_store.namespace_id() if settings.media_backend == 's3' else None,
+        candidate = RenderJob(media_backend=backend,rights_version=row.rights_version,rights_confirmed_at=row.rights_confirmed_at,id=job_id, user_id=user_id, title=row.title, style=row.style,
+                              object_store_id=object_store.namespace_id() if backend == 's3' else None,
                               desired_seconds=row.desired_seconds, source_duration_seconds=media['duration'],
                               source_path=source_reference, status='queued',
                               storage_reserved_bytes=row.storage_reserved_bytes or reservation(row.total_bytes,settings.max_render_bytes),

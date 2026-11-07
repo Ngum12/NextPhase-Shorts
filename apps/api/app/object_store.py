@@ -46,6 +46,30 @@ def output_key(owner, job, token):
     return prefix(owner, job) + token + '/output.mp4'
 
 
+def upload_prefix(owner, session):
+    return prefix(owner, session).replace('media/', 'uploads/', 1)
+
+
+def upload_key(owner, session, grant, *, sealed=False):
+    if str(uuid.UUID(grant)) != grant:
+        raise ValueError('Noncanonical grant identity')
+    return upload_prefix(owner, session) + ('sealed/' if sealed else 'incoming/') + grant
+
+
+def signed_part(owner, session, grant, size, digest, seconds):
+    checksum = base64.b64encode(bytes.fromhex(digest)).decode()
+    headers = {'Content-Length': str(size), 'Content-Type': 'application/octet-stream',
+               'x-amz-checksum-sha256': checksum, 'x-amz-meta-sha256': digest}
+    try:
+        url = client(public=True).generate_presigned_url('put_object', Params={
+            'Bucket': get_settings().s3_bucket, 'Key': upload_key(owner, session, grant),
+            'ContentLength': size, 'ContentType': headers['Content-Type'],
+            'ChecksumSHA256': checksum, 'Metadata': {'sha256': digest}}, ExpiresIn=seconds)
+        return {'url': url, 'headers': headers, 'expires_in_seconds': seconds}
+    except (BotoCoreError, ClientError) as error:
+        raise ObjectStoreError('Signed chunk storage is unavailable') from error
+
+
 @lru_cache(maxsize=2)
 def client(public=False):
     settings = get_settings()
@@ -152,12 +176,20 @@ def signed_download(ref, key):
 
 def remove_project(owner, job):
     """Retryable deletion of bounded, nonversioned project objects, including losers."""
+    _remove_prefix(prefix(owner, job))
+
+
+def remove_upload_session(owner, session):
+    _remove_prefix(upload_prefix(owner, session))
+
+
+def _remove_prefix(private_prefix):
     try:
         bucket = get_settings().s3_bucket
         if client().get_bucket_versioning(Bucket=bucket).get('Status') in ('Enabled', 'Suspended'):
             raise ObjectStoreError('Versioned buckets require version-aware erasure')
         for _ in range(10):
-            page = client().list_objects_v2(Bucket=bucket, Prefix=prefix(owner, job), MaxKeys=1000)
+            page = client().list_objects_v2(Bucket=bucket, Prefix=private_prefix, MaxKeys=1000)
             objects = [{'Key': item['Key']} for item in page.get('Contents', [])]
             if not objects:
                 return
