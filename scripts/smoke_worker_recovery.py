@@ -1,18 +1,22 @@
 """Crash/restart proof using a private temporary DB and generated footage only."""
 import json,os,secrets,subprocess,sys,tempfile,time,uuid
 from pathlib import Path
+from contextlib import ExitStack
 ROOT=Path(__file__).resolve().parents[1]
 
 
 def main():
     evidence=ROOT/'.data'/('worker-recovery-'+uuid.uuid4().hex);evidence.mkdir(parents=True)
-    with tempfile.TemporaryDirectory(prefix='nextphase-worker-smoke-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='nextphase-worker-smoke-') as temporary, ExitStack() as cleanup:
         env=os.environ.copy();env.update(APP_ENV='test',PYTHONPATH=str(ROOT/'apps/api'),
             DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',STORAGE_DIR=temporary+'/media',
             JWT_SECRET=secrets.token_urlsafe(48),MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false')
         os.environ.update(env);sys.path.insert(0,str(ROOT/'apps/api'))
         subprocess.run([sys.executable,'-m','app.migrate'],cwd=ROOT,env=env,check=True,timeout=30)
-        from app.db import SessionLocal
+        from app.db import SessionLocal,engine
+        # Windows cannot unlink SQLite while the SQLAlchemy pool retains handles.
+        # ExitStack runs before TemporaryDirectory, on success and failure alike.
+        cleanup.callback(engine.dispose)
         from app.models import User,RenderJob,RenderAttempt,utcnow
         from app.consent import RIGHTS_VERSION
         from app.worker import mark_done
@@ -57,10 +61,13 @@ def main():
                 report={'crashed_claimant':True,'restarted_worker':'succeeded','attempts':2,'stale_publication':'refused',
                     'width':info['width'],'height':info['height'],'duration':info['duration'],
                     'lease':'advanced only for killed disposable fixture','scope':'not a production load/soak benchmark'}
-                (evidence/'report.json').write_text(json.dumps(report,indent=2)+'\n')
-                print('Worker crash/restart:',json.dumps(report));print('Worker evidence:',evidence)
             finally:
                 if child.poll() is None:child.kill();child.wait(timeout=5)
+
+    assert not Path(temporary).exists()
+    report['temporary_cleanup']='passed'
+    (evidence/'report.json').write_text(json.dumps(report,indent=2)+'\n')
+    print('Worker crash/restart:',json.dumps(report));print('Worker evidence:',evidence)
 
 
 if __name__=='__main__':main()

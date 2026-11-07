@@ -5,6 +5,44 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Windows follow-up — worker smoke temporary SQLite cleanup
+
+- Owner merged worker resilience (`f7fd233`) and reported **209 Windows tests
+  passed, three expected Linux-only skips (410.52 s)** and TypeScript passed.
+  HTTP/S3 upload/render/download/deletion/retention and crash/restart checks ran,
+  but the overall smoke exited nonzero: WinError 32 removing its temporary SQLite
+  database. This is not recorded as a complete Windows smoke pass. No new Pixel
+  or strict Docker cgroup acceptance was supplied.
+- Root cause: closing ORM sessions returned SQLite connections to the engine
+  pool; the helper kept those idle file handles open until process exit. Linux
+  unlink permits this, while Windows correctly refuses removal of the open DB.
+- The disposable helper now registers engine disposal with ExitStack, which runs
+  before TemporaryDirectory cleanup on success or exception. Child termination
+  still precedes disposal. Success/report output is deferred until the temporary
+  directory is confirmed absent, and includes `temporary_cleanup=passed`.
+- Two real-subprocess regression cases simulate Windows refusal with any idle or
+  checked-out pooled connection: both normal completion and an injected error
+  after DB use pass. The same guard fails against the original helper with
+  "SQLite pool still holds file handles", reproducing the defect on Linux.
+- **214 backend tests passed on SQLite (51.01 s)**, no skips, one existing
+  Starlette/httpx warning. Standalone crash/restart smoke and complete HTTP smoke
+  exited zero, validated 1080×1920/30fps/4.9 s output, and confirmed temporary
+  cleanup. Baseline flow 2.97 s; ignored synthetic evidence:
+  `.data/smoke-dd76299e5eaf48909554e4b6db9a900b/` and
+  `.data/worker-recovery-a50ac41cb65c40128f3f936117dfc769/`.
+- Native Windows rerun remains outstanding; Linux simulation is not claimed as
+  Windows execution. PostgreSQL, S3-specific and mobile tests were not repeated
+  for this fixture-only fix; prior results and the owner's new reports remain
+  scoped as above. No application code, schema, dependencies, media policy,
+  resource guard, paid service, AI, billing or license asset change.
+- After review/merge: pull and rerun `python scripts/smoke_e2e.py` from the root
+  with the existing venv/server configuration. No migration or reinstall needed.
+
+- Delivery: `0857f57` pushed to `fix/windows-worker-smoke-cleanup`. GitHub
+  GraphQL returned `Forbidden` creating the PR; no PR or merge was performed.
+  Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/windows-worker-smoke-cleanup
+
 ## Phase 2 increment — fair queue and worker containment
 
 - Eligible accounts rotate by durable most-recent attempt claim, never-served

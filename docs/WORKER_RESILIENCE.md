@@ -126,3 +126,13 @@ refusals, and drains three fair rounds. It does not establish 100 simultaneously
 active render workers, a long soak, hostile-code isolation, latency SLAs or capacity
 for real public traffic. Physical Pixel and strict Docker-host acceptance of this
 increment remain outstanding until supplied by the owner.
+
+## Windows smoke cleanup correction
+
+The owner reported WinError 32 after the crash/restart checks passed: idle SQLite
+connections in the helper's SQLAlchemy pool prevented TemporaryDirectory cleanup.
+The helper now disposes that engine before directory cleanup on both success and
+exception paths. Its success report is written only after the temporary tree is
+actually gone, with `temporary_cleanup=passed`. This changes only disposable test
+cleanup, not account databases, queue behavior or media handling. Native Windows
+rerun remains necessary; Linux regression tests simulate refusal while handles remain.
