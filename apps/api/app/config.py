@@ -12,6 +12,10 @@ class Settings:
         self.storage_dir = Path(os.getenv("STORAGE_DIR", "./.data/media")).resolve()
         self.jwt_secret = os.getenv("JWT_SECRET", "")
         self.max_upload_bytes = int(os.getenv("MAX_UPLOAD_BYTES", "314572800"))
+        self.account_storage_bytes = int(os.getenv('ACCOUNT_STORAGE_BYTES','5368709120'))
+        self.max_render_bytes = int(os.getenv('MAX_RENDER_BYTES','67108864'))
+        if self.account_storage_bytes < 1 or not 1048576 <= self.max_render_bytes <= 536870912:
+            raise RuntimeError('Storage budget must be positive; render cap must be 1–512 MiB')
         self.max_source_seconds = int(os.getenv("MAX_SOURCE_SECONDS", "600"))
         self.render_timeout_seconds = int(os.getenv("RENDER_TIMEOUT_SECONDS", "1200"))
         self.worker_poll_seconds = float(os.getenv("WORKER_POLL_SECONDS", "2"))

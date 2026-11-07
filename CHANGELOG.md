@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased — project deletion and media cleanup
+## Unreleased — Save/Share and server storage budgets
+
+- Separate native Save video to phone from Share video, with write-only permissions where required, explicit native save confirmation and no broad Android 13+ library read request.
+- Add SDK-compatible MIT-declared Expo Media Library 18.2.1 and preserve its upstream notice.
+- Add migration 0008, persistent per-upload/job storage reservations, owner-only usage reporting and offline legacy inventory; new uploads fail closed when usage is unverified/full.
+- Reserve source plus two bounded render attempts, transfer once at completion and release only after media cleanup. Oversize exports fail instead of silently truncating.
+- Add Account storage status and record owner-reported previous deletion acceptance.
+
+## Phase 2 project deletion and media cleanup
 
 - Add migration 0007 with durable owner-only deletion tombstones and retryable cleanup timestamps. Existing media/accounts are not deleted by migration.
 - Hide deleted jobs, revoke active claims, block upload/key replay and scrub title/path/upload metadata; return 202 before physical cleanup, not an erasure claim.

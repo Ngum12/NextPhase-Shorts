@@ -128,3 +128,8 @@ its isolated database. Existing-device acceptance is user-reported, not automate
 A Windows symlink-only test skips if OS privileges prohibit creating symlinks;
 normal derived-path/deletion tests still run. Native confirmation, navigation,
 cache permissions and offline interactions still need the physical check above.
+
+The owner later reported Windows validation and the listed Pixel deletion checks
+passed. The old combined download/share action opened the share sheet; separate
+media-library Save is introduced in the next increment and still needs device
+acceptance. Native cache/offline/OS edge cases were not independently captured.

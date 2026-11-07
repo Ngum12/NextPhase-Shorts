@@ -10,6 +10,8 @@
 - Owner-only project deletion immediately revokes access/claims, with retryable
   private-volume cleanup; backups, account deletion and full retention remain open.
   See [deletion boundaries](PROJECT_DELETION.md).
+- Conservative per-account source/render reservations and bounded accepted output
+  files; global physical disk, spooling/orphan and production quota controls remain.
 - Billing disabled, AI model disabled, no secret keys in app.
 
 Migration-managed PostgreSQL, private-volume resumable uploads and shared auth

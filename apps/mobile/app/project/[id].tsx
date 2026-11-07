@@ -2,16 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
-import { api, ApiError, cancelJob, deleteJob, downloadUrl, Job } from '../../src/api';
-import { unauthorized } from '../../src/authEvents';
+import { api, ApiError, cancelJob, deleteJob, Job } from '../../src/api';
+import { exportVideo } from '../../src/videoExports';
 import { useAuth } from '../../src/auth';
 import { colors as c } from '../../src/theme';
 import { Body, Button, Loading, Page, Title, s } from '../../src/ui';
 export default function Project() {
   const params=useLocalSearchParams<{id:string}>(); const id=String(params.id||'');
   const {token}=useAuth();const[job,setJob]=useState<Job|null>(null);const[error,setError]=useState('');
-  const [downloading,setDownloading]=useState(false);
+  const [downloading,setDownloading]=useState(false);const exportBusy=useRef(false);
   const [cancelling,setCancelling]=useState(false);
   const [deleting,setDeleting]=useState(false);const [unavailable,setUnavailable]=useState(false);
   const revision=useRef(0);
@@ -55,18 +54,14 @@ export default function Project() {
         finally{setDeleting(false);}
       }},
     ]);
-  const download=async()=>{
-    if(!token||!job)return;
-    setDownloading(true);
+  const download=async(action:'save'|'share')=>{
+    if(!token||!job||exportBusy.current)return;
+    exportBusy.current=true;setDownloading(true);
     try {
-      const dest=(FileSystem.cacheDirectory||FileSystem.documentDirectory)+`nextphase-${job.id}.mp4`;
-      const result=await FileSystem.downloadAsync(downloadUrl(job.id),dest,{headers:{Authorization:`Bearer ${token}`}});
-      if(result.status===401)unauthorized(token);
-      if(result.status!==200)throw new Error('Download not authorized or unavailable');
-      if(await Sharing.isAvailableAsync()) await Sharing.shareAsync(result.uri,{mimeType:'video/mp4'});
-      else Alert.alert('Saved','Video stored in app cache. Sharing is unavailable on this device.');
-    }catch(e:any){Alert.alert('Could not download',e.message||'Try again');}
-    finally{setDownloading(false);}
+      await exportVideo(action,job.id,token);
+      if(action==='save')Alert.alert('Video saved','Saved to your phone’s media library. Open Photos or Gallery to find it.');
+    }catch(e:any){Alert.alert(action==='save'?'Could not save video':'Could not share video',e.message||'Try again');}
+    finally{exportBusy.current=false;setDownloading(false);}
   };
   return <Page><ScrollView contentContainerStyle={{paddingTop:22,gap:18}}>
     <Title>{job?.title||'Your project'}</Title>
@@ -76,11 +71,14 @@ export default function Project() {
         <Text style={{fontSize:23,fontWeight:'800',color:job.status==='succeeded'?c.accent:c.warning}}>{job.status.toUpperCase()}</Text>
         <Body>{job.status==='queued'?'Waiting for a server worker.':job.status==='processing'?'Processing on the server — your phone is not rendering.':job.status==='succeeded'?'Your 9:16 short is ready.':job.status==='cancelled'?'This render was cancelled. You can create a new Short.':'Rendering failed; support and retry controls are planned.'}</Body>
         <Body>Requested {job.desired_seconds}s · {job.style} · actual {job.output_duration_seconds?.toFixed(1)||'—'}s</Body>
-        {job.error_code&&<Body>Error code: {job.error_code}</Body>}
+        {job.error_code&&<Body>{job.error_code==='OUTPUT_LIMIT_EXCEEDED'?'This export exceeded its server file limit. Try a shorter output.':`Error code: ${job.error_code}`}</Body>}
       </View>
       {['queued','processing'].includes(job.status)&&<Button title={cancelling?'Cancelling…':'Cancel render'} onPress={cancel} disabled={cancelling||deleting||downloading} secondary/>}
       <Button title="Refresh status" onPress={refresh} disabled={deleting} secondary />
-      {job.status==='succeeded'&&<Button title={downloading?'Downloading…':'Download or share MP4'} onPress={download} disabled={downloading||deleting||cancelling}/>}
+      {job.status==='succeeded'&&<>
+        <Button title={downloading?'Please wait…':'Save video to phone'} onPress={()=>download('save')} disabled={downloading||deleting||cancelling}/>
+        <Button title="Share video" onPress={()=>download('share')} disabled={downloading||deleting||cancelling} secondary/>
+      </>}
       <Button title={deleting?'Deleting…':'Delete project'} onPress={remove} disabled={deleting||downloading||cancelling} secondary/>
       <Body>Stage 1 preview: trimmed vertical MP4 only. Intelligent highlight selection and advanced styles will be built in later phases.</Body>
     </>}

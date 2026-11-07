@@ -13,7 +13,7 @@
 
 ## Not yet built (don't mistake labels for finished features)
 
-**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, quotas, production hardened auth, cloud object storage yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
+**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, subscription quotas, production hardened auth, cloud object storage yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
 
 ## Step 1 — Run local or Docker backend
 
@@ -86,7 +86,7 @@ For Android emulator use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. For iOS sim
 1. Create account / sign in.
 2. Create Short -> choose your own short sample video -> choose a style (future marker) -> 15, 30, 45 or 60 s maximum -> upload.
 3. Observe queued/processing status; refresh or see auto-poll.
-4. Tap Download/Share MP4 after completed; output stored server-side and accessed with JWT.
+4. Tap Save video to phone for the media library, or Share video for the share sheet; both use authenticated server download.
 
 The mobile app **does not render** the video. It may use network/battery for file transfers and video playback.
 
@@ -174,3 +174,7 @@ partial cost estimates. See [measurement definitions and upgrade](docs/RENDER_TE
 Project details now offer confirmed owner-only deletion. Access is revoked when
 the request commits; private-volume files are removed by retryable cleanup, with
 active renders deferred past their old lease. See [deletion scope and upgrade](docs/PROJECT_DELETION.md).
+
+Save and Share are now separate native actions. Per-account server storage
+admission budgets require migration 0008 and an offline inventory for existing
+media. See [upgrade, native permissions and budget definitions](docs/SAVE_AND_STORAGE.md).

@@ -9,6 +9,9 @@ from .config import get_settings
 class MediaError(Exception):
     pass
 
+class OutputLimitExceeded(MediaError):
+    pass
+
 class MediaCancelled(MediaError):
     pass
 
@@ -59,13 +62,14 @@ def probe_video(path: Path) -> dict:
     except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         raise MediaError("Could not inspect the uploaded media") from exc
 
-def render_baseline(source: Path, dest: Path, seconds: int, *, should_cancel: Callable[[], bool] | None = None) -> dict:
+def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes: int | None = None, should_cancel: Callable[[], bool] | None = None) -> dict:
     """Stage 1 baseline only: first seconds, centered letterbox, safe AAC/H.264, vertical 30fps.
 
     This is NOT AI editing. Phase 2+ adds a structured timeline and professional effects.
     """
     if not (1 <= seconds <= 60):
         raise MediaError("Duration must be 1–60 seconds")
+    max_output_bytes = max_output_bytes or get_settings().max_render_bytes
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_name(dest.stem + ".partial.mp4")
     tmp.unlink(missing_ok=True)
@@ -82,10 +86,14 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, should_cancel: Ca
         "-max_muxing_queue_size", "1024", str(tmp),
     ]
     try:
-        if should_cancel is None:
-            subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=get_settings().render_timeout_seconds)
-        else:
-            run_render(cmd, get_settings().render_timeout_seconds, should_cancel)
+        def stop_requested():
+            if tmp.exists() and tmp.stat().st_size >= max_output_bytes:
+                raise OutputLimitExceeded('Rendered file exceeded its reserved output limit')
+            return should_cancel() if should_cancel is not None else False
+        # Abort oversize output, never silently truncate it into a shorter export.
+        run_render(cmd, get_settings().render_timeout_seconds, stop_requested)
+        if tmp.stat().st_size >= max_output_bytes:
+            raise OutputLimitExceeded('Rendered file exceeded its reserved output limit')
         info = probe_video(tmp)
         if info["width"] != 1080 or info["height"] != 1920 or info["duration"] > float(seconds) or info["duration"] > 60.0:
             raise MediaError("Rendered video failed aspect ratio or duration check")

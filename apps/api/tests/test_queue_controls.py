@@ -136,7 +136,7 @@ while not Path(sys.argv[1]).exists():
     time.sleep(.01)
 with SessionLocal.begin() as db:
     job=RenderJob(id=str(uuid.uuid4()), user_id=sys.argv[2],title='Parallel',style='vlog',
-        desired_seconds=15,source_duration_seconds=5,source_path='synthetic',status='queued',
+        desired_seconds=15,source_duration_seconds=5,source_path='synthetic',status='queued',storage_reserved_bytes=1,max_render_bytes=67108864,
         idempotency_key=sys.argv[3],request_hash='a'*64)
     try:
         admitted,replayed=admit_job(db,job)

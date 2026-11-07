@@ -5,6 +5,71 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — native Save/Share and storage admission budgets
+
+- Replaced the combined cache-download/share button with separate Save video to
+  phone and Share video actions. Save resolves the native media-library write
+  before confirming success; it never opens Share. Share never saves automatically.
+  Denied permission, missing/empty downloads, 401/404/network and native save errors
+  do not claim success or fall back to another action. Per-screen export guard
+  prevents overlapping export actions; all editing remains server-side.
+- Added SDK-matched Expo Media Library 18.2.1 (declared MIT), verified its official
+  SDK 54 upstream license and preserved the notice in docs/licenses/. Inventory
+  regenerated to 836 records. The npm package omits a standalone license file;
+  inventory points to the preserved upstream notice. Full legal/OS/transitive
+  clearance remains open. Fresh npm audit is unchanged: 17 unresolved (4 high,
+  12 moderate, 1 low). No paid service, billing or proprietary kit assets added.
+- Save uses add/write permission where needed; Android API 33+ can add the app's
+  own video without broad read permission. Native config introspection verified
+  broad Android media read/location permissions blocked and iOS add-only text
+  present, with no photo-library read description. Expo Go's full-access warning
+  is not a claim that this app reads the gallery. Native device save is unverified.
+- Migration 0008 adds nullable job/session byte budgets and per-attempt render caps.
+  New admissions reserve declared/received source bytes plus two bounded render
+  attempts (default 64 MiB each) against a per-account 5 GiB budget. Owner-row
+  transactions prevent concurrent accepted uploads overbooking; completion swaps
+  one session reservation for one job. Replay/accepted sessions remain repeat-safe
+  at capacity or after a config reduction; stored caps/reservations are retained.
+- New owner-only GET /api/v1/me/storage powers Account's used/reserved storage card.
+  New uploads return clear 409 errors for full or unverified inventory. Failed,
+  cancelled and completed jobs retain reservations until deletion media cleanup;
+  aborted/expired staging retains its reservation until cleaned. These are local
+  resource admission budgets, not paid credits or strict physical filesystem quotas.
+- Offline `python -m app.storage --reconcile` inventories existing canonical media
+  trees while API/workers are stopped. Missing/unsafe/permission-denied trees stay
+  unknown and block only that owner's new uploads rather than being guessed as zero.
+  Existing accounts/sessions/media are preserved; no media is deleted by inventory.
+  Migration alone does not fabricate old usage; this is a required upgrade step.
+- FFmpeg output is monitored and validated against its stored cap. Exceeding it
+  kills the child, removes its partial artifact and fails with OUTPUT_LIMIT_EXCEEDED;
+  it never silently truncates an export. Transient overshoot/temp/spooling/orphan
+  files and backups still need physical/global capacity controls and retention.
+- **106 backend tests passed on SQLite (25.62 s) and PostgreSQL (37.03 s)**, no skips
+  in this Linux environment; one existing Starlette/httpx warning each. Covers
+  legacy/resumable admission, exact replay, transfer, config reduction, cleanup
+  release, unknown/offline inventory failures, four concurrent HTTP uploads,
+  additive migration preservation, real oversize output failure and all prior
+  deletion/auth/queue/media regressions. No multi-GiB upload/load-soak claim.
+- Clean npm ci, TypeScript, **7 upload + 8 auth/API + 7 export logic tests** and
+  Android Hermes export passed (1,010 modules / 2.68 MB). Offline installed-SDK
+  compatibility check reports up to date; online Expo Doctor not run. Pip check,
+  native config introspection and diff checks passed. Native adapters are mocked
+  in client tests; Pixel save/gallery and permission/OS-storage failure tests remain.
+- Real isolated HTTP smoke passed API kill/restart, auth limits/revocation,
+  interrupted 51 MiB upload/resume, unchanged storage reservation after completion,
+  valid 1080×1920/30fps/4.9s render/download/decode, deletion and physical cleanup
+  with owner reservation released to zero. Baseline workflow 1.64 s. Ignored
+  synthetic evidence: `.data/smoke-cf55070041db417fbbb78c5d9961e1ab/`.
+- The isolated PostgreSQL application DB/media were backed up; migration 0008
+  and offline inventory succeeded (22 records, zero unverified trees), without
+  deleting media. Rebuilt Compose services passed real HTTP auth/resume/reservation
+  transfer/render/download/deletion smoke (baseline 2.58 s); the external API was
+  not restarted by that run.
+- See [upgrade/inventory, scope and physical acceptance](docs/SAVE_AND_STORAGE.md).
+  New `npm ci` is required; custom native builds must be rebuilt for permissions.
+  The OS-saved copy remains outside server deletion. No gallery save on a real
+  phone, iOS device run, full privacy erasure or production disk ceiling is claimed.
+
 ## Phase 2 increment — project deletion and private-volume cleanup
 
 - Migration `0007_project_deletion` adds nullable deletion/cleanup timestamps and an
@@ -56,9 +121,15 @@ the reported Android baseline flow, not production readiness or AI functionality
 - Review delivery: implementation `2c2160a` pushed to `dev/phase-2-project-deletion`.
   Automatic PR creation returned `Post https://api.github.com/graphql: Forbidden`.
   Manual review link: https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-project-deletion .
-  No merge/deployment was performed; remote CI not independently observed.
-- Physical Pixel deletion/cache/offline/navigation checks remain pending after
-  review/merge; automated client tests use native/network adapters, not a device.
+  The owner subsequently merged the deletion increment into main (`c848d7c`).
+  No cloud deployment was performed; remote CI not independently observed.
+- Owner-reported Windows validation: 96 tests passed (43.71 s), full restart/render/
+  deletion/physical-cleanup smoke passed (baseline 3.83 s), TypeScript and all 15
+  prior client tests passed. The owner reported the listed Pixel deletion checks
+  worked, while the old Download or share action opened Share instead of saving to
+  the gallery. That was the prior cache/share behavior; the Save action above is
+  new and still needs device acceptance. These are user-reported results, not cloud
+  native-device tests; not every cache/OS/offline edge case was independently captured.
 - Scope is known committed project/staging media, not full account/personal-data
   erasure: ID/key/fingerprint/operational tombstones and attempt metrics remain.
   Backup expiry/restore reconciliation, uncommitted orphan GC, object-store erasure,
@@ -383,13 +454,14 @@ AI highlights/director integration, ASR/captions, intelligent reframing, motion/
 B-roll and six style engines; hardened auth/account lifecycle;
 full durable broker, private cloud object storage, OS background transfers,
 full account/backup/object-store erasure and retention, production observability; payments, Mobile Money, entitlements,
-quotas, legal/store signoffs and commercial production hosting.
+subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge project deletion; stop services and back up the actual Windows DB
-   and media before migration 0007. Run tests/smoke, then the disposable Pixel
-   confirmation/queued-processing/offline/original-file checks in PROJECT_DELETION.md.
+1. Review/merge Save/Share and storage budgets; stop services, back up the actual
+   DB/media, migrate 0008 and run offline storage reconciliation. Install mobile
+   dependencies and perform the Pixel media-library Save/Share/storage checks in
+   SAVE_AND_STORAGE.md. Never skip unknown-usage inventory by forcing zero.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
 4. Next Phase 2 work: verified auth delivery/recovery, full retention/account/backup erasure, private

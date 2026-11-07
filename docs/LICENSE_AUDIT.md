@@ -46,3 +46,16 @@ No dependencies, third-party assets or reference-kit code were added. The existi
 
 No dependencies, third-party media or reference-kit assets were added. The existing
 835-record inventory and unresolved legal/security dependency gates remain applicable.
+
+## Save/Share native dependency
+
+Added SDK-compatible expo-media-library 18.2.1, declared MIT in its installed npm
+metadata: https://www.npmjs.com/package/expo-media-library/v/18.2.1 . Its package
+archive omits a standalone LICENSE file; the official SDK 54 upstream license was
+retrieved from https://raw.githubusercontent.com/expo/expo/sdk-54/LICENSE and is
+preserved verbatim at `docs/licenses/expo-sdk54-MIT.txt` (650 Industries/Expo).
+MIT permits commercial use subject to preserving copyright/permission notices;
+include the notice in distributions. Inventory now has 836 records. This review
+covers this dependency's declared license and upstream notice, not full transitive,
+OS/container, commercial-policy or privacy clearance. No proprietary kit assets,
+fonts, music or video were added. Paid services and billing remain disabled.

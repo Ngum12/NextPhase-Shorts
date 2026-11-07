@@ -160,3 +160,19 @@ def test_deletion_migration_keeps_existing_job_visible(migration_engine):
         row=connection.execute(sa.text("SELECT status,title,output_path,deleted_at,cleanup_after FROM render_jobs WHERE id='keep-job'")).one()
         assert row.status=='succeeded' and row.title=='Keep this' and row.output_path=='old/output.mp4'
         assert row.deleted_at is None and row.cleanup_after is None
+
+
+def test_storage_migration_does_not_guess_historical_usage(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import User,RenderJob
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0007_project_deletion')
+        connection.execute(User.__table__.insert().values(id='inventory-owner',email='inventory@example.com',password_hash='unchanged'))
+        connection.execute(RenderJob.__table__.insert().values(id='inventory-job',user_id='inventory-owner',title='Keep video',style='vlog',
+            desired_seconds=15,source_duration_seconds=5,source_path='input.mp4',status='queued'))
+    upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT title,status,storage_reserved_bytes,max_render_bytes FROM render_jobs WHERE id='inventory-job'")).one()
+        assert row.title=='Keep video' and row.status=='queued'
+        assert row.storage_reserved_bytes is None and row.max_render_bytes is None

@@ -26,6 +26,7 @@ from .db import session_dep
 from .media import MediaError, probe_video
 from .models import RenderJob, UploadPart, UploadSession, User, utcnow
 from .queue import active_count, admit_job, lock_owner, reserved_upload_count
+from .storage import reservation, require_capacity
 from .schemas import JobResponse
 
 router = APIRouter(prefix='/api/v1/upload-sessions', tags=['uploads'])
@@ -135,7 +136,9 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     if active_count(db, user.id) + reserved_upload_count(db, user.id) >= settings.max_active_jobs_per_user:
         raise HTTPException(429, 'Your queue is full. Finish or discard a pending upload, or cancel a queued job.',
                             headers={'Retry-After': '5'})
-    row = UploadSession(id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
+    budget=reservation(payload.total_bytes,settings.max_render_bytes)
+    require_capacity(db,user.id,budget)
+    row = UploadSession(storage_reserved_bytes=budget,max_render_bytes=settings.max_render_bytes,id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
                         descriptor_hash=digest, file_name=payload.file_name, extension=extension,
                         title=title, style=payload.style, desired_seconds=payload.desired_seconds,
                         total_bytes=payload.total_bytes, chunk_bytes=settings.upload_chunk_bytes,
@@ -293,7 +296,9 @@ def complete_session(session_id: str, user: User = Depends(current_user), db: Se
         require_uploading(row)
         candidate = RenderJob(id=job_id, user_id=user_id, title=row.title, style=row.style,
                               desired_seconds=row.desired_seconds, source_duration_seconds=media['duration'],
-                              source_path=str(source.resolve()), status='queued')
+                              source_path=str(source.resolve()), status='queued',
+                              storage_reserved_bytes=row.storage_reserved_bytes or reservation(row.total_bytes,settings.max_render_bytes),
+                              max_render_bytes=row.max_render_bytes or settings.max_render_bytes)
         job, _ = admit_job(db, candidate, upload_session_id=session_id)
         row.status, row.job_id, row.source_sha256 = 'completed', job.id, full_hash.hexdigest()
         retain_source = True  # Preserve accepted input even if COMMIT acknowledgement is lost.

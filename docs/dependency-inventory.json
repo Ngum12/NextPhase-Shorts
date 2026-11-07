@@ -3372,6 +3372,14 @@
     },
     {
       "ecosystem": "npm",
+      "name": "expo-media-library",
+      "version": "18.2.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-media-library/v/18.2.1",
+      "license_location": "docs/licenses/expo-sdk54-MIT.txt (upstream SDK 54)"
+    },
+    {
+      "ecosystem": "npm",
       "name": "expo-modules-autolinking",
       "version": "3.0.28",
       "license": "MIT",

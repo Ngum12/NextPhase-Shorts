@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select, update
 from .models import RenderJob, UploadSession, User, utcnow
 from .config import get_settings
+from .storage import require_capacity
 
 ACTIVE_STATUSES = ('queued', 'processing')
 
@@ -52,6 +53,10 @@ def admit_job(db, job, *, upload_session_id=None):
     if reservation is None and active_count(db, job.user_id) + reserved_upload_count(db, job.user_id) >= get_settings().max_active_jobs_per_user:
         raise HTTPException(429, 'Your queue is full. Wait for a job to finish or cancel one.',
                             headers={'Retry-After': '5'})
+    if job.storage_reserved_bytes is None or job.max_render_bytes is None:
+        raise ValueError('Admission requires a server storage reservation')
+    if reservation is None:
+        require_capacity(db,job.user_id,job.storage_reserved_bytes)
     db.add(job)
     db.flush()
     return job, False

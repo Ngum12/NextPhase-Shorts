@@ -63,3 +63,13 @@ def test_cancellation_kills_ffmpeg_and_removes_partial_output(tmp_path, monkeypa
     assert children[0].poll() is not None
     assert not output.exists()
     assert not output.with_name('cancelled.partial.mp4').exists()
+
+
+def test_output_limit_fails_instead_of_accepting_a_truncated_video(tmp_path):
+    from app.media import OutputLimitExceeded
+    source=tmp_path/'limited-source.mp4'
+    subprocess.run(['ffmpeg','-nostdin','-v','error','-y','-f','lavfi','-i','testsrc2=size=320x180:rate=30',
+        '-t','3','-c:v','libx264','-pix_fmt','yuv420p',str(source)],check=True,timeout=30)
+    output=tmp_path/'limited.mp4'
+    with pytest.raises(OutputLimitExceeded):render_baseline(source,output,3,max_output_bytes=1024)
+    assert not output.exists() and not output.with_name('limited.partial.mp4').exists()

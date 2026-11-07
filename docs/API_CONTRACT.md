@@ -11,6 +11,7 @@ Base URL: `http://localhost:8000` in development only. Production must be HTTPS,
 | POST | `/api/v1/auth/logout` | Bearer | Revoke this session, 204 |
 | POST | `/api/v1/auth/logout-all` | Bearer | Revoke all account sessions, 204 |
 | POST | `/api/v1/auth/password` | Bearer | Verify current/change password, revoke all sessions, 204 |
+| GET | `/api/v1/me/storage` | Bearer | Owner-only storage limit, known reservations, inventory status and availability |
 | GET | `/api/v1/me` | Bearer | Current user |
 | GET | `/api/v1/jobs` | Bearer | Current user's 100 recent jobs |
 | POST | `/api/v1/jobs` | Bearer | multipart `file`, `title`, `style`, `desired_seconds` |
@@ -46,3 +47,8 @@ users sign in once after upgrading. Responses include expires_in; default TTL
 Deleted projects are hidden from lists/detail/download/cancel (404). Repeated
 owner deletion returns 202; related session/key replay returns 410. See
 [cleanup timing, tombstones and retained records](PROJECT_DELETION.md).
+
+New upload admission reserves source plus bounded two-attempt rendering space;
+409 indicates full/unverified account storage. Accepted sessions/replays remain
+repeat-safe at capacity; deletion frees the reservation after media cleanup.
+See [budget and inventory contract](SAVE_AND_STORAGE.md).

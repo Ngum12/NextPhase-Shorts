@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, Index, Boolean
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, String, Text, Index, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -18,7 +18,12 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     jobs: Mapped[list["RenderJob"]] = relationship(back_populates="user")
 
-class RenderJob(Base):
+class StorageBudget:
+    storage_reserved_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    max_render_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+class RenderJob(StorageBudget, Base):
     __tablename__ = "render_jobs"
     __table_args__ = (Index("uq_render_jobs_owner_submission", "user_id", "idempotency_key", unique=True),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
@@ -47,7 +52,7 @@ class RenderJob(Base):
     cleanup_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class UploadSession(Base):
+class UploadSession(StorageBudget, Base):
     __tablename__ = 'upload_sessions'
     __table_args__ = (Index('uq_upload_sessions_owner_key', 'user_id', 'client_key', unique=True),)
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
