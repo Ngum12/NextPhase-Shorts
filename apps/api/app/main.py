@@ -28,6 +28,7 @@ from .schemas import JobResponse, StyleInfo, UserResponse
 settings = get_settings()
 from .catalog import STYLES, STYLE_IDS
 from .uploads import router as uploads_router
+from .direct_uploads import router as direct_uploads_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,6 +44,7 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                    expose_headers=["Idempotency-Replayed", "Upload-Offset", "X-Chunk-SHA256"])
 
 app.include_router(uploads_router)
+app.include_router(direct_uploads_router)
 app.include_router(auth_router)
 app.include_router(deletion_router)
 

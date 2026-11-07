@@ -70,6 +70,7 @@ def main():
         env.update(APP_ENV='test',MEDIA_BACKEND='s3',S3_ENDPOINT=endpoint,S3_PUBLIC_ENDPOINT=endpoint,
             S3_BUCKET='nextphase-smoke',S3_ACCESS_KEY_ID=access,S3_SECRET_ACCESS_KEY=secret,
             SIGNED_DOWNLOAD_SECONDS='5',NEXTPHASE_SMOKE_S3_CHECKS='1',
+            DIRECT_UPLOADS_ENABLED='true',SIGNED_UPLOAD_SECONDS='5',NEXTPHASE_SMOKE_DIRECT='1',
             JWT_SECRET=secrets.token_urlsafe(48))
         # The parent initializes only this disposable local bucket.
         os.environ.update(env)

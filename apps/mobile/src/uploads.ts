@@ -12,6 +12,7 @@ export type PendingUpload = {
 type Session = {
   id: string; status: string; total_bytes: number; received_bytes: number;
   chunk_bytes: number; job_id: string|null;
+  transfer_backend?: 'api'|'direct-s3';
 };
 const MAX_BYTES = 314572800;
 function root() {
@@ -86,7 +87,7 @@ async function requestSession(record:PendingUpload,token:string,signal?:AbortSig
   return extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions`,{
     method:'POST',signal,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','Idempotency-Key':record.key},
     body:JSON.stringify({file_name:record.fileName,total_bytes:record.totalBytes,title:record.title,
-      style:record.style,desired_seconds:record.seconds,rights_confirmed:true,consent_version:record.rightsVersion}),
+      style:record.style,desired_seconds:record.seconds,rights_confirmed:true,consent_version:record.rightsVersion,direct_upload:true}),
   })) as Promise<Session>;
 }
 function paused(signal?:AbortSignal) {
@@ -123,7 +124,34 @@ async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(se
       const digest=await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256,bytes);
       const checksum=Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('');
       paused(signal);
-      session=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}/parts?offset=${offset}`,{
+      if(session.transfer_backend==='direct-s3') {
+        const grant=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}/part-url`,{
+          method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({offset,sha256:checksum}),
+        })) as {committed:boolean;session?:Session;url?:string;headers?:Record<string,string>;grant_id?:string};
+        if(grant.committed&&grant.session)session=grant.session;
+        else {
+          if(!grant.url||!grant.headers||!grant.grant_id)throw new Error('Upload connection is unavailable. Please retry.');
+          const target=new URL(grant.url);
+          if(target.username||target.password||!(target.protocol==='https:'||
+              (target.protocol==='http:'&&['localhost','127.0.0.1'].includes(target.hostname))))
+            throw new Error('Upload connection is not secure');
+          const headers:Record<string,string>={};
+          for(const name of ['Content-Length','Content-Type','x-amz-checksum-sha256','x-amz-meta-sha256']) {
+            if(typeof grant.headers[name]!=='string')throw new Error('Upload connection is unavailable. Please retry.');
+            headers[name]=grant.headers[name];
+          }
+          if(headers['Content-Length']!==String(bytes.length)||headers['x-amz-meta-sha256']!==checksum)
+            throw new Error('Upload connection does not match this video. Please retry.');
+          // Never forward API credentials, cookies or redirects to object storage.
+          const uploaded=await fetch(grant.url,{method:'PUT',signal,headers,body:bytes.slice().buffer,
+            credentials:'omit',redirect:'error'});
+          if(!uploaded.ok)throw new Error('Upload connection failed or expired. Tap Resume to retry.');
+          paused(signal);
+          session=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}/part-commit/${grant.grant_id}`,{
+            method:'POST',signal,
+          })) as Session;
+        }
+      } else session=await extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions/${record.sessionId}/parts?offset=${offset}`,{
         method:'PUT',signal,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/octet-stream','X-Chunk-SHA256':checksum},
         body:bytes.slice().buffer,
       })) as Session;

@@ -79,7 +79,11 @@ def cleanup_deleted(limit=100):
             with SessionLocal() as db:
                 sessions=list(db.scalars(select(UploadSession.id).where(UploadSession.job_id==job_id,
                     UploadSession.user_id==owner_id)))
-            for session_id in sessions:remove_private_tree(owner_id,session_id,staging=True)
+            for session_id in sessions:
+                remove_private_tree(owner_id,session_id,staging=True)
+                from .uploads import cleanup_parts
+                if not cleanup_parts(owner_id, session_id):
+                    raise RuntimeError('Upload staging removal deferred')
             success=True
         except (OSError,ValueError,RuntimeError):
             logger.warning('project media cleanup deferred')  # No customer paths.

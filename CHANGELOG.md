@@ -1,5 +1,13 @@
 # Changelog
 
+## Direct resumable storage uploads
+
+- Opt-in signed temporary chunks with verified private sealing, restart-safe
+  acknowledgement and bounded same-key renewal. Default API uploads preserved.
+- Migration 0011, conservative three-source reservations and expiry-aware remote
+  staging cleanup/rescans; mobile never sends API credentials to storage.
+- No new dependency or paid infrastructure.
+
 ## Private object storage foundation
 
 - Opt-in S3 originals and fenced results, bounded checksum-verified worker fetches,

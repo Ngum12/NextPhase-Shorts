@@ -161,3 +161,8 @@ sets data ownership. This avoids relying on the runner UID matching the containe
 UID and keeps the secret private. Early exit/readiness failure prints sanitized
 server-log context. GitHub retains only the redacted server.log artifact for three
 days; generated config and signed links must never be uploaded as artifacts.
+
+The subsequent [direct upload increment](DIRECT_UPLOADS.md) adds opt-in signed
+temporary chunks and private verified sealing. Its migration 0011, three-source
+reservation and expiry-aware cleanup supersede the first increment's direct-upload
+limitations; production deployment/retention/isolation gates remain open.

@@ -80,7 +80,7 @@ def reconcile():
             remaining=max(0,MAX_RENDER_ATTEMPTS-row.attempt_count) if row.status in ('queued','processing') else 0
             row.storage_reserved_bytes=max(total+remaining*cap,reservation(source,cap));row.max_render_bytes=cap;done+=1
         for row in db.scalars(select(UploadSession).where(or_(UploadSession.storage_reserved_bytes.is_(None),UploadSession.max_render_bytes.is_(None)))):
-            row.storage_reserved_bytes=reservation(row.total_bytes,cap);row.max_render_bytes=cap;done+=1
+            row.storage_reserved_bytes=reservation(row.total_bytes * (3 if row.transfer_backend == 'direct-s3' else 1),cap);row.max_render_bytes=cap;done+=1
     return done,missing
 
 

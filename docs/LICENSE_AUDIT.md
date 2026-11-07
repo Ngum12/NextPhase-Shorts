@@ -97,3 +97,10 @@ at docs/licenses/actions-upload-artifact-v4.6.2.txt. Source:
 https://github.com/actions/upload-artifact/tree/ea165f8d65b6e75b540449e92b4886f43607fa02 .
 This is a CI tool, outside the Python/npm inventory scope; no runtime dependency
 or proprietary kit code was added. Metadata/notice review is not legal clearance.
+
+## Direct upload increment
+
+No dependency, third-party asset or reference-kit code was introduced. The existing
+843-record inventory, preserved SDK/server/action notices and unresolved legal/
+security gates remain applicable. Tests use synthetic media and the existing
+local S3 service; signed requests do not activate a paid provider or clear rights.

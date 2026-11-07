@@ -80,6 +80,9 @@ class UploadSession(StorageBudget, RightsRecord, Base):
     job_id: Mapped[str | None] = mapped_column(ForeignKey('render_jobs.id'), nullable=True)
     source_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     parts_cleaned: Mapped[bool] = mapped_column(Boolean, default=False)
+    transfer_backend: Mapped[str] = mapped_column(String(16), server_default='api')
+    object_store_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    direct_cleanup_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class UploadPart(Base):
@@ -88,6 +91,19 @@ class UploadPart(Base):
     offset: Mapped[int] = mapped_column(Integer, primary_key=True)
     size: Mapped[int] = mapped_column(Integer)
     sha256: Mapped[str] = mapped_column(String(64))
+    object_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    direct_grant_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+
+class DirectUploadGrant(Base):
+    __tablename__ = 'direct_upload_grants'
+    __table_args__ = (Index('uq_direct_upload_offset', 'session_id', 'offset', unique=True),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    session_id: Mapped[str] = mapped_column(ForeignKey('upload_sessions.id'), index=True)
+    offset: Mapped[int] = mapped_column(Integer)
+    size: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class AuthSession(Base):

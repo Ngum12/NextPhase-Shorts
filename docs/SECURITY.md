@@ -38,3 +38,10 @@ capabilities and cannot be recalled by logout or tombstoning alone; physical
 removal/expiry limits them. Private bucket policy, TLS, log redaction, version-aware
 erasure, orphan/lifecycle controls and provider isolation remain deployment gates.
 See PRIVATE_OBJECT_STORAGE.md; never treat a successful bucket HEAD as privacy proof.
+
+Opt-in direct PUT capabilities are exact-key/length/checksum scoped to temporary
+incoming objects. The API rehashes and privately seals before acknowledging;
+client capabilities never target verified parts or accepted media. Expiry-aware
+terminal cleanup/rescans and three-source admission reservations limit retained
+staging. Capability revocation, late writes, provider policies, abuse/load and
+full account/backup erasure remain bounded as documented in DIRECT_UPLOADS.md.
