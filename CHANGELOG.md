@@ -116,3 +116,9 @@
 - Reduce decoder environments and enforce a guarded Docker resource profile.
 - Add disposable crash/restart/render proof and bounded 100-submission queue test.
 - No migration or dependency changes; strict Docker runtime acceptance required.
+
+## Windows worker smoke cleanup fix
+
+- Dispose the helper's pooled SQLite handles before temporary-directory cleanup,
+  including failure paths; report success only after cleanup completes.
+- No application behavior, schema, dependency or resource-limit change.
