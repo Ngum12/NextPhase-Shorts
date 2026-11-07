@@ -5,6 +5,76 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — bounded maintenance and offline orphan preview
+
+- Worker expiration now selects a bounded batch (default 100, allowed 1–1000),
+  locks the owner and rechecks status/deadline, instead of expiring an unbounded
+  set. Existing terminal staging/deleted-project cleanup and budget release remain
+  automatic between renders; active/valid paused uploads stay protected.
+- New operator `python -m app.retention` defaults to a nondeleting local/S3 preview.
+  Offline apply requires the reviewed digest from a fresh complete inventory and
+  an explicit assertion that all writers are stopped. This is intentionally not
+  unattended online orphan deletion: an uncommitted upload can have no DB row.
+  No valid saved-project age expiry is introduced.
+- Recognizes only canonical UUID layouts for known owners; removes aged untracked
+  media/upload trees or unreferenced noncurrent failed/lost/cancelled attempt
+  artifacts in terminal projects. All known jobs/sessions, current/winning attempts,
+  source/output/part references (including cross-project references), young/unknown
+  data, symlinks/junctions/hardlinks/special files remain protected. Minimum grace
+  24 hours; local modification/change times and S3 LastModified must qualify.
+- Bounded scans (default 10,000 entries, maximum 50,000; 100 S3 pages per prefix),
+  namespace/DB/root-bound digest, changed/incomplete/nonprogressing inventory refusal,
+  repeated metadata/reference checks and exact-key S3 deletion. Private nonversioned
+  stores only. Group failure is reported without raw provider messages. Offline
+  assertion is not distributed-writer detection; backup/restore reconciliation and
+  no concurrent filesystem/provider writers remain essential safety requirements.
+- No migration, new configuration default, dependency, mobile source or native
+  change. No paid infrastructure/API, AI, billing or reference-kit assets added.
+  Existing 843-record inventory and unresolved license/security/17 last-known npm
+  advisory gates remain; no fresh vulnerability scan or legal clearance claimed.
+- Baseline **168 backend tests passed (30.69 s)**. Final **187 tests passed on
+  SQLite (34.59 s) and PostgreSQL (41.30 s)**, no skips; one existing Starlette/httpx
+  warning each. Adds preview-only behavior, digest/offline/grace/scan protections,
+  every known job state, new data/committed intents, unsafe links/files, cross-project
+  references, stale-winner/source preservation, namespaces, S3 failures/versioning/
+  pagination and bounded expiry/reservation checks. TypeScript and all **30 client
+  tests** passed. No new native/device/build claim; app code was unchanged.
+- Real local/API restart/resume/render/download/deletion smoke passed (baseline
+  1.74 s; 1080×1920/30 fps/4.9 s). After stopping only its own writers, actual CLI
+  preview/offline refusal/empty apply and synthetic old-orphan apply passed while
+  a known source survived. Ignored synthetic evidence:
+  `.data/smoke-c5fd8fa9cf75441086dd6a0bbd158a48/`.
+- Real disposable S3 direct-upload/restart/checksum/expiry/sealing/render/download/
+  project cleanup regression passed, followed by offline exact-object orphan
+  removal and known-source preservation. CLI guards also passed. Baseline 7.88 s
+  includes the six-second signed-download expiry wait, not total stress transfer
+  or container startup. Output 1080×1920/30 fps/4.9 s. Evidence:
+  `.data/nextphase-s3-smoke-6f61f15eee78/workflow/`. Retention fixture advances a test
+  clock two days; it does not claim to have observed a real 24-hour waiting period.
+- Doctor, pip and diff checks passed. CI now triggers for the retention fixture;
+  remote CI remains unobserved. No production deployment or actual owner's media
+  cleanup was performed. Apply testing used only isolated synthetic storage.
+- Owner-reported merged direct-upload acceptance (`2ee5e27`): Windows migration
+  0011, **168 backend tests (375.16 s)**, TypeScript and 30 client tests passed;
+  local smoke passed (63.83 s; `.data/smoke-0d7a76b8e9bc4c6ba0bd984fd98d49d1`).
+  Those slower timings were reported, not diagnosed as a specific hardware issue.
+  Pixel normal-flow checks passed. Owner then configured local SeaweedFS/USB 8333
+  and reported direct resume/render/save, pause over 60 s followed by resume/save,
+  and discard preserving the original all worked. This is owner-reported device
+  acceptance, not independent evidence of a specific HTTP expiry response or
+  physical removal of that owner's server objects. The earlier unquoted PowerShell
+  IP truncation was resolved using quoted argument arrays.
+- Upgrade/runbook and exact remaining limits: [retention](docs/RETENTION.md).
+  No apply is required just to upgrade; start with preview, and stop/back up all
+  writers before any reviewed removal. Remaining: online allocation-aware orphan
+  GC, global capacity/cost and load/soak controls, formal retention policy, full
+  account/version/backup erasure and the rest of Phase 2 security/auth/queue work.
+
+- Delivery: implementation `658f967` pushed to `dev/phase-2-retention-cleanup`.
+  Automatic PR creation returned GitHub GraphQL `Forbidden`; no PR/merge/deployment
+  was performed. Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-retention-cleanup
+
 ## Phase 2 increment — signed direct chunks and verified sealing
 
 - `DIRECT_UPLOADS_ENABLED=false` by default. Updated mobile can negotiate direct
@@ -27,7 +97,7 @@ the reported Android baseline flow, not production readiness or AI functionality
   target/required headers and retains its journal/copy on expired-link/network
   failure. API 401 handling remains separate; original footage is never removed.
   No new native permission/module. Transfers are foreground only; no encoding/AI
-  was moved onto phones. S3 direct native Pixel behavior remains unverified.
+  was moved onto phones. Owner subsequently reported S3 direct Pixel acceptance (see retention follow-up above).
 - Direct admission reserves three source copies plus two render caps; reservation
   transfers once to the job and remains conservative until project deletion.
   Terminal staging removal waits for recorded signed expiry, retries failures and
@@ -725,15 +795,15 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review the signed direct-upload increment; after merge stop services, back up
-   DB/media and migrate 0011. Update API/mobile together; default PC stays local/off.
-   Run normal regression and separate disposable local S3 smoke. See DIRECT_UPLOADS.md.
-2. Observe remote CI and perform consented Pixel default/direct pause/restart,
-   expired-link and discard checks with a reviewed client-reachable S3 endpoint.
-3. Complete security/dependency/license/provider review before commercial use.
-4. Continue remaining Phase 2 retention/orphan/account erasure, secure auth delivery,
-   queue/isolation and observability/load testing under prompt.md; no paid activation
-   without explicit approval.
+1. Review the retention increment and observe CI. After merge restart services for
+   bounded maintenance and run the normal checks. No migration/dependency install
+   or orphan apply is required solely for this upgrade.
+2. Run nondeleting local/S3 previews under the correct server settings; review
+   complete reports. Any apply requires backup, all writers offline and the current
+   digest. See RETENTION.md; do not treat missing DB rows as online deletion proof.
+3. Continue Phase 2 allocation-aware online collection, retention/account/backup
+   erasure, verified recovery/auth delivery, queue/isolation and observability/load
+   work under prompt.md. Complete license/security/provider review before launch.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

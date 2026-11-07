@@ -144,3 +144,9 @@ remain owner acceptance steps. USB testing needs `adb reverse` for the configure
 S3 public port as well as API/Metro. No actual direct Pixel or iOS test, OS background
 transfer, browser CORS test, general-provider certification, production isolation,
 load/soak, paid deployment or full privacy/license clearance is claimed.
+
+Owner subsequently reported direct Pixel resume/render/save, pause beyond the
+60-second link lifetime with successful resume, and discard preserving the original
+all passed using local SeaweedFS and USB ports 8000/8081/8333. This is owner-reported
+acceptance, not independent device evidence. PowerShell Seaweed flags must be quoted
+(or supplied as a quoted string array); unquoted dotted IP flags were truncated.

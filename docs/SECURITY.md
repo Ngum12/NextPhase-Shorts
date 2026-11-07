@@ -45,3 +45,8 @@ client capabilities never target verified parts or accepted media. Expiry-aware
 terminal cleanup/rescans and three-source admission reservations limit retained
 staging. Capability revocation, late writes, provider policies, abuse/load and
 full account/backup erasure remain bounded as documented in DIRECT_UPLOADS.md.
+
+Unknown-orphan deletion is offline-only with minimum 24-hour grace, DB/reference
+protection, namespace-bound preview digest, bounded inventories and metadata
+rechecks. It is not an online race-proof collector or automatic saved-project
+expiry. See RETENTION.md for writer shutdown, backup and deletion boundaries.

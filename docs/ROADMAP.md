@@ -29,3 +29,7 @@ orphans/version-aware erasure and production provider deployment remain. See PRI
 
 Direct chunk protocol and migration 0011: DIRECT_UPLOADS.md. Full provider/edge
 controls, physical direct-phone acceptance and stateless validation remain.
+
+Known upload expiry now uses bounded owner-locked maintenance. Preview-first offline
+orphan/stale-attempt removal is implemented; online allocation-aware GC, saved-project
+retention policy and full account/version/backup erasure remain. See RETENTION.md.

@@ -193,3 +193,7 @@ Direct signed chunk uploads are now opt-in with `DIRECT_UPLOADS_ENABLED=true` an
 S3 storage. The API verifies and seals each chunk before acknowledging progress;
 existing sessions and default local uploads retain their prior path. See
 [migration 0011, protections and validation](docs/DIRECT_UPLOADS.md).
+
+Worker upload expiration is now bounded and owner-locked. A separate preview-first
+offline tool inventories/removes aged recognized orphans and unreferenced stale
+attempts while retaining valid projects. See [retention and safety limits](docs/RETENTION.md).
