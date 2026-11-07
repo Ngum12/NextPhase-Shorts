@@ -19,6 +19,7 @@ from .migrate import require_current_schema
 from .media import MediaError, probe_video
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import ACTIVE_STATUSES, admit_job, lock_owner
+from .storage import reservation, usage
 from .schemas import JobResponse, StyleInfo, UserResponse
 
 settings = get_settings()
@@ -52,6 +53,11 @@ def styles():
 @app.get("/api/v1/me", response_model=UserResponse)
 def me(user: User = Depends(current_user)):
     return user
+
+@app.get('/api/v1/me/storage')
+def storage_usage(user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    lock_owner(db,user.id)
+    return usage(db,user.id)
 
 @app.get("/api/v1/jobs", response_model=list[JobResponse])
 def list_jobs(user: User = Depends(current_user), db: Session = Depends(session_dep)):
@@ -153,6 +159,7 @@ async def create_job(
         candidate = RenderJob(id=job_id, user_id=user.id, title=title, style=style,
                               desired_seconds=desired_seconds, source_duration_seconds=info["duration"],
                               source_path=str(source.resolve()), status="queued",
+                              storage_reserved_bytes=reservation(total,settings.max_render_bytes), max_render_bytes=settings.max_render_bytes,
                               idempotency_key=idempotency_key, request_hash=fingerprint if idempotency_key else None)
         job, replayed = admit_job(db, candidate)
         # Retain a new source if COMMIT acknowledgement is lost: DB outcome may

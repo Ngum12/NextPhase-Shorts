@@ -13,7 +13,7 @@ for path, package in lock['packages'].items():
     items.append({'ecosystem': 'npm', 'name': name, 'version': package['version'],
                   'license': package.get('license', 'REVIEW_REQUIRED'),
                   'source': f'https://www.npmjs.com/package/{name}/v/{package["version"]}',
-                  'license_location': f'apps/mobile/{path}/LICENSE*'})
+                  'license_location': 'docs/licenses/expo-sdk54-MIT.txt (upstream SDK 54)' if name == 'expo-media-library' else f'apps/mobile/{path}/LICENSE*'})
 for distribution in metadata.distributions():
     name = distribution.metadata['Name']
     license_name = distribution.metadata.get('License-Expression')

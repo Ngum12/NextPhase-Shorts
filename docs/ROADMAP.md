@@ -14,3 +14,7 @@ features or present planned styles as implemented.
 | P1, Phase 2 | Attempt timings and aggregate P50/P95/optional cost calculation implemented; full observability/cost baseline remains | Realistic consented dataset, resource measurements, traces and bounded concurrency |
 | Later, Phase 3+ | ASR/EDL/highlights then style engines | Follow master phase gates; provider consent, budgets and licensing first |
 | Later, Phase 9+ | Billing and subscriptions | Explicit owner authorization, legal/store review and verified payment tests |
+
+Save/Share separation and conservative per-account retained-media admission
+budgets are implemented; physical OS save acceptance and production disk/global
+capacity/retention controls remain. See SAVE_AND_STORAGE.md.

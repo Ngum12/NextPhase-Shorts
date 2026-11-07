@@ -34,6 +34,7 @@ def check_api(base_url, output_dir):
             assert response.status_code == 201, response.status_code
             return {'Authorization': 'Bearer ' + response.json()['access_token']}
         owner, other = register(), register()
+        assert client.get('/api/v1/me/storage',headers=owner).json()['known_reserved_bytes']==0
         key = uuid.uuid4().hex
         with source.open('rb') as handle:
             response = client.post('/api/v1/jobs', headers={**owner, 'Idempotency-Key': key},
@@ -41,6 +42,9 @@ def check_api(base_url, output_dir):
                                    data={'title': 'Synthetic smoke test', 'style': 'vlog', 'desired_seconds': '15'})
         assert response.status_code == 201, response.status_code
         job = response.json()
+        stored=client.get('/api/v1/me/storage',headers=owner).json()
+        assert stored['uninventoried_count']==0 and stored['known_reserved_bytes']>source.stat().st_size
+        assert client.get('/api/v1/me/storage',headers=other).json()['known_reserved_bytes']==0
         assert job['status'] == 'queued'
         path = '/api/v1/jobs/' + job['id']
         with source.open('rb') as handle:
@@ -50,6 +54,7 @@ def check_api(base_url, output_dir):
         assert replay.status_code == 200 and replay.json()['id'] == job['id']
         assert replay.headers['Idempotency-Replayed'] == 'true'
         assert len(client.get('/api/v1/jobs', headers=owner).json()) == 1
+        assert client.get('/api/v1/me/storage',headers=owner).json()['known_reserved_bytes']==stored['known_reserved_bytes']
         assert client.get(path, headers=other).status_code == 404
         assert client.get(path + '/download', headers=other).status_code == 404
         states = ['queued']
@@ -142,6 +147,9 @@ def begin_resumable(base_url, output_dir):
         response = client.post('/api/v1/upload-sessions', headers={**owner, 'Idempotency-Key': key}, json=descriptor)
         assert response.status_code == 201, response.text
         session = response.json()
+        usage=client.get('/api/v1/me/storage',headers=owner).json()
+        assert usage['uninventoried_count']==0 and usage['known_reserved_bytes']>len(data)
+        session['_storage_budget']=usage['known_reserved_bytes']
         size = session['chunk_bytes']
         assert len(data) > size*2, 'Synthetic source must span several chunks'
         first = data[:size]
@@ -183,6 +191,7 @@ def finish_resumable(base_url, output_dir, transfer, *, restarted):
         job_id = response.json()['id']
         assert client.post(path+'/complete', headers=owner).json()['id'] == job_id
         assert len(client.get('/api/v1/jobs', headers=owner).json()) == 1
+        assert client.get('/api/v1/me/storage',headers=owner).json()['known_reserved_bytes']==session['_storage_budget']
         assert client.get(path, headers=owner).json()['source_sha256'] == hashlib.sha256(data).hexdigest()
         deadline = time.monotonic()+120
         while time.monotonic()<deadline:
@@ -318,9 +327,9 @@ def main():
                 (args.output_dir/'telemetry-report.json').write_text(json.dumps(telemetry,indent=2)+'\n')
                 print('Render telemetry: measured successful attempts, output bytes and aggregate report passed')
                 subprocess.run([sys.executable,'-m','app.deletion'],cwd=ROOT,env=env,check=True,timeout=30)
-                verification='from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); db.close()'
+                verification='from app.storage import usage; from app.db import SessionLocal; from app.models import RenderJob; from sqlalchemy import select; from pathlib import Path; from app.config import get_settings; db=SessionLocal(); rows=list(db.scalars(select(RenderJob).where(RenderJob.status=="deleted"))); assert rows and all(row.media_deleted_at is not None and usage(db,row.user_id)["known_reserved_bytes"]==0 and not (get_settings().storage_dir/row.user_id/row.id).exists() for row in rows); db.close()'
                 subprocess.run([sys.executable,'-c',verification],cwd=ROOT,env=env,check=True,timeout=30)
-                print('Deleted source/output filesystem cleanup: passed')
+                print('Deleted source/output filesystem cleanup and storage release: passed')
             finally:
                 for process in reversed(processes):
                     process.terminate()

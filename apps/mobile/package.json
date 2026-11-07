@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test:uploads": "node tests/uploads.test.cjs",
-    "test:auth": "node tests/auth.test.cjs"
+    "test:auth": "node tests/auth.test.cjs",
+    "test:exports": "node tests/videoExports.test.cjs"
   },
   "dependencies": {
     "expo": "~54.0.0",
@@ -19,6 +20,7 @@
     "expo-document-picker": "~14.0.0",
     "expo-file-system": "~19.0.0",
     "expo-linking": "~8.0.0",
+    "expo-media-library": "~18.2.1",
     "expo-router": "~6.0.0",
     "expo-secure-store": "~15.0.0",
     "expo-sharing": "~14.0.0",

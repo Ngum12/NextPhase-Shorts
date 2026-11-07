@@ -12,7 +12,7 @@ from sqlalchemy import func, select, update
 from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
-from .media import MediaCancelled, MediaError, render_baseline
+from .media import MediaCancelled, MediaError, OutputLimitExceeded, render_baseline
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner
 
@@ -20,7 +20,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("nextphase.worker")
 stop = False
 settings = get_settings()
-MAX_ATTEMPTS = 2
+from .storage import MAX_RENDER_ATTEMPTS
+MAX_ATTEMPTS = MAX_RENDER_ATTEMPTS
 
 
 def request_stop(*_):
@@ -69,7 +70,7 @@ def claim_job():
         db.add(RenderAttempt(id=token,job_id=job.id,number=job.attempt_count,started_at=now,status='running'))
         return {'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
                 'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
-                'claim_token': token}
+                'claim_token': token, 'max_render_bytes': job.max_render_bytes or settings.max_render_bytes}
 
 
 def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None):
@@ -102,7 +103,7 @@ def process(job):
     began = time.monotonic()
     try:
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
-        info = render_baseline(Path(job['source']), output, duration, should_cancel=lambda: not owns_claim(job))
+        info = render_baseline(Path(job['source']), output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: not owns_claim(job))
         if mark_done(job['id'], token, output_path=output.resolve(), output_duration=info['duration'],
                      wall_seconds=time.monotonic()-began, output_bytes=output.stat().st_size):
             logger.info('render completed job_id=%s seconds=%.2f', job['id'], info['duration'])
@@ -112,6 +113,8 @@ def process(job):
             logger.warning('discarded stale render job_id=%s', job['id'])
     except MediaCancelled:
         logger.info('render cancelled or lease lost job_id=%s', job['id'])
+    except OutputLimitExceeded:
+        mark_done(job['id'], token, error_code='OUTPUT_LIMIT_EXCEEDED', wall_seconds=time.monotonic()-began)
     except MediaError:
         logger.warning('media error job_id=%s', job['id'])
         mark_done(job['id'], token, error_code='RENDER_FAILED', wall_seconds=time.monotonic()-began)
