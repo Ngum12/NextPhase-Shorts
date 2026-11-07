@@ -12,6 +12,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from .auth import current_user
 from .auth_routes import router as auth_router
+from .deletion import router as deletion_router
 from .config import get_settings
 from .db import engine, session_dep
 from .migrate import require_current_schema
@@ -31,12 +32,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="NextPhase Shorts API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
-                   allow_credentials=False, allow_methods=["GET", "POST", "PUT"],
+                   allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Chunk-SHA256"],
                    expose_headers=["Idempotency-Replayed", "Upload-Offset", "X-Chunk-SHA256"])
 
 app.include_router(uploads_router)
 app.include_router(auth_router)
+app.include_router(deletion_router)
 
 @app.get("/health")
 def health():
@@ -53,19 +55,19 @@ def me(user: User = Depends(current_user)):
 
 @app.get("/api/v1/jobs", response_model=list[JobResponse])
 def list_jobs(user: User = Depends(current_user), db: Session = Depends(session_dep)):
-    return db.scalars(select(RenderJob).where(RenderJob.user_id == user.id)
+    return db.scalars(select(RenderJob).where(RenderJob.user_id == user.id, RenderJob.status != 'deleted')
                       .order_by(RenderJob.created_at.desc()).limit(100)).all()
 
 @app.get("/api/v1/jobs/{job_id}", response_model=JobResponse)
 def get_job(job_id: str, user: User = Depends(current_user), db: Session = Depends(session_dep)):
-    job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id))
+    job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id, RenderJob.status != 'deleted'))
     if job is None:
         raise HTTPException(404, "Project not found")
     return job
 
 @app.get("/api/v1/jobs/{job_id}/download")
 def download(job_id: str, user: User = Depends(current_user), db: Session = Depends(session_dep)):
-    job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id))
+    job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id, RenderJob.status != 'deleted'))
     if job is None:
         raise HTTPException(404, "Project not found")
     if job.status != "succeeded" or not job.output_path:
@@ -75,7 +77,8 @@ def download(job_id: str, user: User = Depends(current_user), db: Session = Depe
     output = directory / job.claim_token / "output.mp4" if job.claim_token else directory / "output.mp4"
     if str(output.resolve()) != str(Path(job.output_path).resolve()) or not output.is_file():
         raise HTTPException(404, "Video file is unavailable")
-    return FileResponse(output, media_type="video/mp4", filename="nextphase-short.mp4")
+    return FileResponse(output, media_type="video/mp4", filename="nextphase-short.mp4",
+                        headers={"Cache-Control":"private, no-store"})
 
 @app.post("/api/v1/jobs/{job_id}/cancel", response_model=JobResponse)
 def cancel_job(job_id: str, user: User = Depends(current_user), db: Session = Depends(session_dep)):
@@ -87,7 +90,7 @@ def cancel_job(job_id: str, user: User = Depends(current_user), db: Session = De
             lease_expires_at=None, error_code=None, output_path=None,
             output_duration_seconds=None).returning(RenderJob)).scalar_one_or_none()
     if job is None:
-        job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id))
+        job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id, RenderJob.status != 'deleted'))
         if job is None:
             raise HTTPException(404, 'Project not found')
         if job.status != 'cancelled':

@@ -41,3 +41,8 @@ this auth change does not confer additional licensing or production clearance.
 
 No dependencies, third-party assets or reference-kit code were added. The existing
 835-record inventory and unresolved commercial clearance/advisory gates still apply.
+
+## Project deletion increment
+
+No dependencies, third-party media or reference-kit assets were added. The existing
+835-record inventory and unresolved legal/security dependency gates remain applicable.

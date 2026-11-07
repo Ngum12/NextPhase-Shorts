@@ -44,3 +44,17 @@ test('authenticated 401 reports its token; login failures do not expire sessions
  await api.logoutSession('revoked',true);assert.deepEqual(expired,['older','revoked']);assert(calls.at(-1)[0].endsWith('/logout-all'));
  status=204;await api.changePassword('current','before','after');assert.equal(calls.at(-1)[1].headers.get('Authorization'),'Bearer current');
 });
+
+
+test('project deletion requires explicit server confirmation and preserves auth error handling',async()=>{
+ const events=load('authEvents');const expired=[];events.onUnauthorized(token=>expired.push(token));
+ let status=202,body={status:'deleted'},offline=false;const calls=[];
+ const api=load('api',{'./authEvents':events},{process:{env:{EXPO_PUBLIC_API_URL:'http://localhost'}},Headers,
+   fetch:async(url,init)=>{if(offline)throw Error('offline');calls.push([url,init]);return {status,ok:status<400,json:async()=>body};}});
+ await api.deleteJob('project-one','token');assert.equal(calls.at(-1)[1].method,'DELETE');
+ assert.equal(calls.at(-1)[1].headers.get('Authorization'),'Bearer token');
+ status=200;await assert.rejects(api.deleteJob('project-one','token'),/not confirmed/);
+ status=202;body={};await assert.rejects(api.deleteJob('project-one','token'),/not confirmed/);
+ status=401;body={detail:'Sign in again'};await assert.rejects(api.deleteJob('project-one','old'));
+ assert.deepEqual(expired,['old']);offline=true;await assert.rejects(api.deleteJob('project-one','token'),/offline/);
+});

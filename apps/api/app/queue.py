@@ -35,6 +35,8 @@ def admit_job(db, job, *, upload_session_id=None):
         existing = db.scalar(select(RenderJob).where(RenderJob.user_id == job.user_id,
                              RenderJob.idempotency_key == job.idempotency_key))
         if existing:
+            if existing.status == 'deleted':
+                raise HTTPException(410, 'This project was deleted. Start a new upload with a new key.')
             if existing.request_hash != job.request_hash:
                 raise HTTPException(409, 'This upload key was already used for a different video or settings')
             return existing, True

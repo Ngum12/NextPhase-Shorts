@@ -15,6 +15,7 @@ function fixture() {
   const storage=new Map([['file:///original.mp4',Buffer.from('abcdefghijk')]]);
   const sessions=new Map();
   const offsets=[];
+  let gone=false;
   let openHandles=0,dropPart=false,dropCompletion=false,offline=false,failDeleteCopy=false;
   const root='file:///documents/nextphase-uploads/';
   const disk={documentDirectory:'file:///documents/',
@@ -42,6 +43,7 @@ function fixture() {
     if(offline)throw Error('offline');
     if(options.signal?.aborted)throw Error('aborted');
     const route=new URL(url);
+    if(gone&&route.pathname.startsWith('/api/v1/upload-sessions'))return response({detail:'Deleted project'},410);
     if(route.pathname==='/api/v1/upload-sessions') {
       const key=options.headers['Idempotency-Key'];
       if(!sessions.has(key))sessions.set(key,{id:crypto.randomUUID(),key,status:'uploading',offset:0,parts:[],completeCalls:0});
@@ -87,6 +89,7 @@ function fixture() {
     return exports;
   }
   return {restart,storage,sessions,offsets,root,
+    set gone(value){gone=value;},
     set dropPart(value){dropPart=value;},set dropCompletion(value){dropCompletion=value;},set offline(value){offline=value;},
     set failDeleteCopy(value){failDeleteCopy=value;},get openHandles(){return openHandles;}};
 }
@@ -160,4 +163,17 @@ test('local cleanup failure retains the completed intent rather than creating a 
   assert.equal((await app.resumeUpload(saved,'token',()=>{})).id,'job-one');
   assert.equal([...world.sessions.values()][0].completeCalls,1);
   assert.equal(await app.loadPending('owner-a'),null);
+});
+
+
+test('confirmed discard after remote project deletion removes only its private pending copy',async()=>{
+  const world=fixture();const app=world.restart();const record=await prepared(app);
+  world.dropPart=true;await assert.rejects(app.resumeUpload(record,'token',()=>{}));
+  const saved=await app.loadPending('owner-a');world.gone=true;
+  await assert.rejects(app.resumeUpload(saved,'token',()=>{}));
+  assert(world.storage.has(world.root+saved.localName));
+  assert.equal(await app.discardUpload(saved,'token'),null);
+  assert.equal(await app.loadPending('owner-a'),null);
+  assert(world.storage.has('file:///original.mp4'));
+  assert(!world.storage.has(world.root+saved.localName));
 });

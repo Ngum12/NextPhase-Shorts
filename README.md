@@ -170,3 +170,7 @@ recovery and session refresh remain pending; no email service is enabled.
 Migration 0006 records render-attempt timings and output sizes. Operators can run
 `PYTHONPATH=apps/api python -m app.telemetry` for sample-counted P50/P95 and optional
 partial cost estimates. See [measurement definitions and upgrade](docs/RENDER_TELEMETRY.md).
+
+Project details now offer confirmed owner-only deletion. Access is revoked when
+the request commits; private-volume files are removed by retryable cleanup, with
+active renders deferred past their old lease. See [deletion scope and upgrade](docs/PROJECT_DELETION.md).

@@ -75,3 +75,9 @@ export async function cancelJob(id: string, token: string): Promise<Job> {
     method: 'POST', headers: { Authorization: `Bearer ${token}` },
   })) as Promise<Job>;
 }
+
+export async function deleteJob(id:string,token:string):Promise<void> {
+  const response=await authenticatedFetch(token,`${BASE}/api/v1/jobs/${encodeURIComponent(id)}`,{method:'DELETE'});
+  const body=await extract(response);
+  if(response.status!==202||body.status!=='deleted')throw new Error('Deletion was not confirmed. Please retry.');
+}

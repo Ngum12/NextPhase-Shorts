@@ -7,6 +7,9 @@
 - UUID-based storage paths; fixed command arguments (no `shell=True`); FFprobe media validation.
 - FFmpeg runs in a separate worker process / Docker service; production Docker worker uses unprivileged user.
 - Upload size and format checks, output <= 60 seconds, env-based private JWT secret.
+- Owner-only project deletion immediately revokes access/claims, with retryable
+  private-volume cleanup; backups, account deletion and full retention remain open.
+  See [deletion boundaries](PROJECT_DELETION.md).
 - Billing disabled, AI model disabled, no secret keys in app.
 
 Migration-managed PostgreSQL, private-volume resumable uploads and shared auth

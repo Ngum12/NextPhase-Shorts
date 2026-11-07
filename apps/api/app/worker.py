@@ -128,7 +128,7 @@ def process(job):
             db.execute(update(RenderAttempt).where(RenderAttempt.id == token,
                 RenderAttempt.status.in_(['running','cancelled']),
                 RenderAttempt.wall_seconds.is_(None)).values(finished_at=utcnow(),
-                    status='cancelled' if state == 'cancelled' else 'lease_lost',
+                    status='cancelled' if state in ('cancelled','deleted') else 'lease_lost',
                     wall_seconds=time.monotonic()-began))
 
 
@@ -167,6 +167,8 @@ def main():
             cleanup_uploads()
             from .auth_limits import cleanup_auth
             cleanup_auth()
+            from .deletion import cleanup_deleted
+            cleanup_deleted()
             last_upload_cleanup = time.monotonic()
         recover_stale_jobs()
         job = claim_job()

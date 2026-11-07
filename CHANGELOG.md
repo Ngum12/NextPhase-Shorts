@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased — render attempt telemetry
+## Unreleased — project deletion and media cleanup
+
+- Add migration 0007 with durable owner-only deletion tombstones and retryable cleanup timestamps. Existing media/accounts are not deleted by migration.
+- Hide deleted jobs, revoke active claims, block upload/key replay and scrub title/path/upload metadata; return 202 before physical cleanup, not an erasure claim.
+- Retry/rescan UUID-derived project/staging trees without following symlink parents; defer active work past its prior lease.
+- Add mobile destructive confirmation, explicit server acknowledgement, unavailable-project navigation and safe discard after remote deletion.
+- Verify real synthetic download/deletion/replay denial and filesystem cleanup; record the owner's previous Pixel telemetry acceptance.
+
+## Phase 2 render attempt telemetry
 
 - Add migration 0006 and transactionally recorded attempt start/completion/loss/cancellation with monotonic observed render time and successful output bytes.
 - Add private operator aggregate report with sample-counted P50/P95, unknown/truncated coverage and optional decimal wall-time cost estimates; no provider calls or billing.

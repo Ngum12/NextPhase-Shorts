@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { api, Job } from '../../src/api';
@@ -7,14 +7,17 @@ import { colors as c } from '../../src/theme';
 import { Body, Button, Page, Title, s } from '../../src/ui';
 export default function Projects() {
   const {token} = useAuth(); const [jobs,setJobs]=useState<Job[]>([]);
+  const revision=useRef(0);
   const [loading,setLoading]=useState(true); const [error,setError]=useState('');
   const refresh=useCallback(async()=>{
     if(!token)return;
-    try {setJobs(await api<Job[]>('/api/v1/jobs',token));setError('');}
-    catch(e:any){setError(e.message||'Could not load projects');}
-    finally{setLoading(false);}
+    const request=++revision.current;
+    try {const next=await api<Job[]>('/api/v1/jobs',token);
+      if(request===revision.current){setJobs(next);setError('');}}
+    catch(e:any){if(request===revision.current)setError(e.message||'Could not load projects');}
+    finally{if(request===revision.current)setLoading(false);}
   },[token]);
-  useFocusEffect(useCallback(()=>{refresh();},[refresh]));
+  useFocusEffect(useCallback(()=>{refresh();return()=>{revision.current++;};},[refresh]));
   return <Page safeTop><ScrollView refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} tintColor={c.accent}/>}
     contentContainerStyle={{paddingTop:24,gap:16,paddingBottom:40}}>
     <Title>My Shorts</Title><Body>Your videos are processed in the cloud. Pull down to refresh.</Body>

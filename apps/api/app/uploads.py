@@ -65,6 +65,8 @@ def owned(db, session_id, user_id):
                     UploadSession.user_id == user_id).execution_options(populate_existing=True))
     if row is None:
         raise HTTPException(404, 'Upload session not found')
+    if row.status == 'deleted':
+        raise HTTPException(410, 'This upload belongs to a deleted project.')
     return row
 
 
@@ -123,6 +125,8 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     previous = db.scalar(select(UploadSession).where(UploadSession.user_id == user.id,
                          UploadSession.client_key == idempotency_key))
     if previous:
+        if previous.status == 'deleted':
+            raise HTTPException(410, 'This upload belongs to a deleted project. Start a new upload.')
         if previous.descriptor_hash != digest:
             raise HTTPException(409, 'This upload key was already used with different file details or settings')
         response.status_code = 200
