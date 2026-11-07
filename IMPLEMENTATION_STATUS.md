@@ -53,6 +53,10 @@ the reported Android baseline flow, not production readiness or AI functionality
   real HTTP auth/resume/render/download/deletion smoke passed (baseline 2.45 s),
   followed by cleanup CLI and filesystem/DB read-back confirming both synthetic
   deleted project trees absent. That external API was not restarted by the smoke.
+- Review delivery: implementation `2c2160a` pushed to `dev/phase-2-project-deletion`.
+  Automatic PR creation returned `Post https://api.github.com/graphql: Forbidden`.
+  Manual review link: https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-project-deletion .
+  No merge/deployment was performed; remote CI not independently observed.
 - Physical Pixel deletion/cache/offline/navigation checks remain pending after
   review/merge; automated client tests use native/network adapters, not a device.
 - Scope is known committed project/staging media, not full account/personal-data
