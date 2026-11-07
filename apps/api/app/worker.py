@@ -9,6 +9,7 @@ import uuid
 from datetime import timedelta
 from pathlib import Path
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import SQLAlchemyError
 from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
@@ -37,9 +38,11 @@ def claim_job():
             RenderJob.attempt_count < MAX_ATTEMPTS).correlate(User).scalar_subquery()
         running = select(func.count()).where(RenderJob.user_id == User.id,
             RenderJob.status == 'processing').correlate(User).scalar_subquery()
+        last_claim = select(func.max(RenderAttempt.started_at)).join(RenderJob,
+            RenderAttempt.job_id == RenderJob.id).where(RenderJob.user_id == User.id).correlate(User).scalar_subquery()
         owner_query = select(User.id).where(queued.is_not(None),
             User.deleted_at.is_(None),
-            running < settings.max_processing_jobs_per_user).order_by(queued, User.id).limit(1)
+            running < settings.max_processing_jobs_per_user).order_by(last_claim.asc().nullsfirst(), queued, User.id).limit(1)
         if engine.dialect.name == 'postgresql':
             owner_query = owner_query.with_for_update(skip_locked=True)
         owner_id = db.scalar(owner_query)
@@ -113,6 +116,8 @@ def process(job):
     if remote:
         source = output.parent / 'input.media'
     try:
+        if stop:
+            raise MediaCancelled('Worker stopping')
         if remote:
             object_store.require_namespace(job.get('object_store_id'))
             output.parent.mkdir(parents=True, exist_ok=True)
@@ -120,11 +125,11 @@ def process(job):
             object_store.fetch(job['source'], object_store.source_key(job['user_id'], job['id'], extension),
                                source, settings.max_upload_bytes)
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
-        info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: not owns_claim(job))
+        info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: stop or not owns_claim(job))
         output_bytes = output.stat().st_size
         output_reference = output.resolve()
         if remote:
-            if not owns_claim(job):
+            if stop or not owns_claim(job):
                 raise MediaCancelled('Claim lost before private upload')
             output_reference = object_store.put(output, object_store.output_key(job['user_id'], job['id'], token),
                                                 job.get('max_render_bytes', settings.max_render_bytes))
@@ -151,6 +156,13 @@ def process(job):
         mark_done(job['id'], token, error_code='INTERNAL_ERROR', wall_seconds=time.monotonic()-began)
 
     finally:
+        if stop:
+            # Make this claim eligible for bounded recovery only after render
+            # teardown. A signal cannot revoke a newer attempt or terminal job.
+            with SessionLocal.begin() as db:
+                db.execute(update(RenderJob).where(RenderJob.id==job['id'],
+                    RenderJob.status=='processing',RenderJob.claim_token==token)
+                    .values(lease_expires_at=utcnow()))
         if remote:
             source.unlink(missing_ok=True)
             output.unlink(missing_ok=True)
@@ -165,14 +177,20 @@ def process(job):
                     wall_seconds=time.monotonic()-began))
 
 
-def recover_stale_jobs():
+def recover_stale_jobs(limit=100):
+    if not 1 <= limit <= 1000:
+        raise ValueError('Recovery batch must be 1–1000')
     now = utcnow()
     expired = (RenderJob.status == 'processing', RenderJob.lease_expires_at <= now)
     with SessionLocal.begin() as db:
         # Lock expired jobs before recording loss, so completion cannot win between
         # the attempt record and recovery. SQLite's first write serializes writers.
+        candidates=select(RenderJob.id).where(*expired).order_by(RenderJob.lease_expires_at,RenderJob.id).limit(limit)
         if engine.dialect.name == 'postgresql':
-            db.execute(select(RenderJob.id).where(*expired).with_for_update()).all()
+            candidates=candidates.with_for_update(skip_locked=True)
+        ids=list(db.scalars(candidates))
+        if not ids:return (0,0)
+        expired=(*expired,RenderJob.id.in_(ids))
         db.execute(update(RenderAttempt).where(RenderAttempt.status == 'running',
             RenderAttempt.id.in_(select(RenderJob.claim_token).where(*expired)))
             .values(status='lease_lost',finished_at=now))
@@ -191,27 +209,37 @@ def recover_stale_jobs():
 def main():
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
+    if settings.worker_require_limits:
+        from .worker_limits import require_worker_limits
+        require_worker_limits()
     require_current_schema(engine)
     if settings.media_backend == 's3':
         object_store.check_bucket()
     logger.info('NextPhase worker started (leased baseline FFmpeg, no AI)')
     last_upload_cleanup = 0.0
     while not stop:
-        if time.monotonic() - last_upload_cleanup >= 60:
-            from .upload_cleanup import cleanup_uploads
-            cleanup_uploads()
-            from .auth_limits import cleanup_auth
-            cleanup_auth()
-            from .deletion import cleanup_deleted
-            cleanup_deleted()
-            from .account_deletion import cleanup_accounts
-            cleanup_accounts()
-            last_upload_cleanup = time.monotonic()
-        recover_stale_jobs()
-        job = claim_job()
-        if job:
-            process(job)
-        else:
+        try:
+            if time.monotonic() - last_upload_cleanup >= 60:
+                from .upload_cleanup import cleanup_uploads
+                cleanup_uploads()
+                from .auth_limits import cleanup_auth
+                cleanup_auth()
+                from .deletion import cleanup_deleted
+                cleanup_deleted()
+                from .account_deletion import cleanup_accounts
+                cleanup_accounts()
+                last_upload_cleanup = time.monotonic()
+            recover_stale_jobs()
+            if stop:break
+            job = claim_job()
+            if job:
+                process(job)
+            else:
+                time.sleep(settings.worker_poll_seconds)
+        except SQLAlchemyError:
+            # A failed DB round-trip cannot be acknowledged as completion. The
+            # durable lease and existing retry cap remain the source of truth.
+            logger.warning('worker database unavailable; retrying')
             time.sleep(settings.worker_poll_seconds)
 
 

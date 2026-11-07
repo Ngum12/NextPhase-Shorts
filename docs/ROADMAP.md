@@ -37,3 +37,8 @@ retention policy and full account/version/backup erasure remain. See RETENTION.m
 Account lifecycle increment: password-confirmed disablement, session/claim revocation,
 durable local/S3 media cleanup and lost-response receipts. Full personal-data, backup
 and version-aware erasure remains open; see ACCOUNT_DELETION.md.
+
+Worker reliability now includes durable account-turn fairness, bounded recovery,
+shutdown fencing, decoder containment and fail-closed Compose cgroup validation.
+Broker/heartbeat, per-tenant sandboxing, enforced host caps, representative load/soak
+and production acceptance remain open; see WORKER_RESILIENCE.md.

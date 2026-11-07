@@ -55,3 +55,9 @@ Account deletion requires current-password verification, owner locking and a dur
 receipt; it revokes sessions/claims before retryable media cleanup. Receipt recovery
 is an expiring opaque capability, not identity recovery. Operational records, backups
 and device exports remain. See ACCOUNT_DELETION.md for race/capability boundaries.
+
+Worker containment adds credential-reduced decoder environments, Linux parent-death/
+CPU/open-file limits, POSIX render-group teardown and a strict Compose cgroup guard.
+Read-only/unprivileged containers still share trusted media and network access; this
+is not a per-tenant exploit sandbox. Managed Docker here lacks cgroup enforcement;
+production host acceptance is required. See WORKER_RESILIENCE.md.

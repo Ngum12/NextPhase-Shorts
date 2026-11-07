@@ -38,6 +38,10 @@ class Settings:
         self.max_source_seconds = int(os.getenv("MAX_SOURCE_SECONDS", "600"))
         self.render_timeout_seconds = int(os.getenv("RENDER_TIMEOUT_SECONDS", "1200"))
         self.worker_poll_seconds = float(os.getenv("WORKER_POLL_SECONDS", "2"))
+        self.worker_require_limits = os.getenv('WORKER_REQUIRE_LIMITS','false').lower()=='true'
+        import math
+        if not 1<=self.render_timeout_seconds<=7200 or not math.isfinite(self.worker_poll_seconds) or not .05<=self.worker_poll_seconds<=60:
+            raise RuntimeError('Render timeout must be 1–7200 seconds; worker poll must be 0.05–60 seconds')
         self.max_active_jobs_per_user = int(os.getenv("MAX_ACTIVE_JOBS_PER_USER", "3"))
         self.max_processing_jobs_per_user = int(os.getenv("MAX_PROCESSING_JOBS_PER_USER", "1"))
         if not 1 <= self.max_processing_jobs_per_user <= self.max_active_jobs_per_user:

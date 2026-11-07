@@ -157,7 +157,7 @@ def test_deletion_stops_a_real_running_ffmpeg_attempt(client,monkeypatch):
     original_popen=subprocess.Popen;children=[]
     def record(*args,**kwargs):
         child=original_popen(*args,**kwargs)
-        if args[0][0]=='ffmpeg':children.append(child)
+        if 'ffmpeg' in args[0]:children.append(child)
         return child
     monkeypatch.setattr(worker,'owns_claim',check)
     monkeypatch.setattr('app.media.subprocess.Popen',record)

@@ -5,6 +5,91 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 increment — fair queue and worker containment
+
+- Eligible accounts rotate by durable most-recent attempt claim, never-served
+  accounts first, retaining FIFO inside each account and existing concurrency/
+  disabled-account guards. Retries consume a turn. PostgreSQL keeps SKIP LOCKED;
+  this is turn fairness, not equal CPU time, paid priority or Sybil resistance.
+- Expired-job recovery now handles at most 100 jobs per pass (maximum 1,000),
+  retaining state/expiry fences and the two-attempt cap. SIGINT/SIGTERM cooperates
+  with rendering and expires only its own processing claim after teardown.
+  DB loop failures retry without logging raw exceptions. No broker, heartbeat,
+  immediate crash detection or exactly-once claim; unexpired static leases remain.
+- FFmpeg/FFprobe environments omit server credentials, Python search overrides
+  and proxy/provider configuration. Linux exec launcher enforces parent-death
+  SIGKILL, zero core dumps, 128 descriptors and a bounded CPU rlimit; POSIX render
+  groups are killed/reaped. Fixed media policy, wall/output limits and 9:16 <=60 s
+  output validation remain. Discarded diagnostics avoid unbounded FFmpeg stderr.
+  Windows development retains direct execution/cooperative cancellation; hard
+  Windows worker death can leave a decoder, and three Linux-only tests are skipped.
+- Compose adds init, read-only root, no capabilities/new privileges, 64-MiB /tmp,
+  two CPUs, 2-GiB memory and 128 PIDs. Its worker requires actual cgroup v2 limits
+  and fails before DB/queue work if missing/excessive. Standalone development
+  defaults the guard off. No per-tenant filesystem/network sandbox or production
+  hostile-code isolation is claimed; shared media/provider access remains trusted.
+- **Runtime blocker, explicitly reproduced:** managed Docker reports cgroup
+  driver none and memory/CPU/PID support false. Container view is outer 32 GiB,
+  four CPUs, unlimited PIDs. A bounded synthetic container render, UID 1000,
+  read-only root, zero capabilities and no-new-privileges passed, but requested
+  worker cgroup ceilings cannot be verified/enforced here. The final worker
+  correctly refused startup with the required-limit error before queue work.
+  Strict Docker Desktop/Linux-host acceptance remains open; no guard bypass for
+  production or claim that this managed host enforces those resource ceilings.
+- Baseline **197 tests passed (32.87 s)**. Final **212 tests passed on SQLite
+  (45.76 s) and PostgreSQL (52.01 s)**, no skips, one existing Starlette/httpx
+  deprecation warning each. Covers fairness, bounded recovery/expiry/fencing,
+  shutdown/outage behavior, actual hard-parent-death/process-group/CPU termination,
+  credential reduction and fail-closed cgroup validation, plus prior regressions.
+- Bounded burst: 100 synthetic submissions, ten accounts, up to 16 in flight;
+  exactly 30 admitted/70 capacity refusals and three fair ten-account rounds.
+  This is not 100 simultaneous renders, a long soak or a production SLA/capacity
+  benchmark. Existing multi-process claim/cancellation/deletion races also passed.
+- TypeScript and all **37 client logic tests** passed. Mobile code/dependencies
+  unchanged; no new APK/Android export or independent device acceptance claimed.
+  Doctor, pip, image build, Compose syntax and diff checks passed. No migration:
+  existing **0012** remains current. No new dependency/provider/reference-kit asset,
+  paid API/infrastructure, AI, billing or production deployment. Existing 843-record
+  inventory and last-known 17 npm advisory/legal/security gates remain unresolved.
+- Final isolated HTTP smoke passed restart/auth, 51-MiB interrupted/resumed upload,
+  render/download/decode, deletion and offline retention. Output 1080×1920/30fps/
+  4.9 s, baseline 1.79 s; ignored synthetic evidence:
+  `.data/smoke-60a71d5a130d4c4b9d744858ee976b08/`.
+  New disposable worker proof kills its claimant, advances only that killed fixture's
+  lease, restarts another worker and validates real output plus stale publication
+  refusal and two attempt records. No real production lease-wait observation.
+- Final disposable S3 direct-upload/restart/sealing/render/download/signature/
+  deletion/retention smoke passed (1080×1920/30fps/4.9 s; baseline 7.96 s includes
+  six-second signed-link expiry wait). Synthetic evidence:
+  `.data/nextphase-s3-smoke-9aa313fd5786/workflow/`. Worker crash/restart evidence:
+  `.data/worker-recovery-d18ebac09e394c03978ef25d8f48d08e/` (local) and
+  `.data/worker-recovery-7e263137861c4568b0fafb1b03999755/` (S3-run companion;
+  that companion deliberately uses its own local fixture, not remote crash I/O).
+  Sanitized container observation is `.data/worker-container-proof.log` (ignored).
+  CI triggers include the new crash helper; remote CI remains unobserved.
+- Validation initially hit disk exhaustion; no failed checks were reported as
+  passes. Removed only regenerable 51-MiB synthetic stress inputs from prior smoke
+  runs, unused build cache and two unreferenced worker image revisions. Application
+  volumes/running services and reports/logs/result videos were preserved; checks
+  reran successfully after space recovery. Final container-limit refusal is an
+  expected safety check, separate from that earlier disk failure.
+- Owner-reported merged account-deletion acceptance (`b2caa0e`): migration current,
+  197 Windows tests (125.34 s), TypeScript/37 client tests and S3-backed smoke passed
+  (baseline 5.31 s; `.data\smoke-a36a31c3ab1a47dcb4a8fe68e5a4e7b2`). Owner confirmed
+  all listed disposable-account Pixel checks worked. These are supplied reports,
+  not agent-executed device or kernel-limit verification.
+- Upgrade/Windows versus Linux behavior and precise remaining limits:
+  [WORKER_RESILIENCE.md](docs/WORKER_RESILIENCE.md). Stop/restart native services;
+  no npm/pip installation or migration change is needed solely for this build.
+  Docker must rebuild/recreate and pass enforcement checks first. Remaining Phase 2:
+  strict host acceptance, broker/heartbeat, per-tenant sandbox/egress, global capacity,
+  representative load/soak, verified auth recovery, observability and legal review.
+
+- Delivery: implementation `dcd54ea` pushed to `dev/phase-2-worker-resilience`.
+  Automatic PR creation returned GitHub GraphQL `Forbidden`; no PR, merge or
+  production deployment was performed. Manual owner review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-worker-resilience
+
 ## Phase 2 increment — account deletion and recoverable confirmation
 
 - Migration **0012_account_deletion** preserves live accounts and adds durable
@@ -858,12 +943,12 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge the account deletion branch and observe CI. Stop API/worker, back
-   up DB/media and run migration 0012 before restarting.
-2. Run the normal backend/mobile checks, then disposable-account Pixel acceptance
-   from ACCOUNT_DELETION.md. Preserve main account and original/saved videos.
-3. Continue remaining Phase 2 recovery/auth delivery, queue/isolation, monitoring,
-   capacity/load and backup/version erasure gates before production or AI phases.
+1. Review/merge worker resilience and observe CI; restart updated native API/worker.
+   No migration/dependency change. Check old/new upload/render/save and cancellation.
+2. On Docker Desktop/Linux, build and validate cgroup enforcement before starting
+   the strict worker profile. Do not disable the guard for production.
+3. Continue remaining Phase 2 broker/heartbeat, per-tenant isolation/egress,
+   monitoring, capacity/load, verified recovery and backup/version erasure gates.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

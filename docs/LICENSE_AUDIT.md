@@ -116,3 +116,9 @@ Synthetic local/S3 fixtures are original test data; no real footage is committed
 No dependency, reference-kit code, asset, paid provider or billing integration added.
 The existing 843-record metadata inventory and unresolved licensing/security gates
 remain applicable. Validation uses original synthetic media only.
+
+## Worker resilience increment
+
+No dependency, reference-kit code, media asset or paid provider added. Linux process
+controls use Python standard library/system interfaces and the existing FFmpeg.
+Existing 843-record inventory and unresolved legal/security gates remain applicable.

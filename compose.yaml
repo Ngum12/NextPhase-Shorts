@@ -38,8 +38,19 @@ services:
     build:
       context: ./apps/api
     command: python -m app.worker
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 128
+    tmpfs:
+      - /tmp:size=67108864,mode=1777
+    stop_grace_period: 15s
     env_file: .env
     environment:
+      WORKER_REQUIRE_LIMITS: 'true'
       DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
       STORAGE_DIR: /var/nextphase/media
     volumes:
