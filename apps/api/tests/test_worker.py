@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from app.db import SessionLocal
-from app.models import RenderJob, utcnow
+from app.models import RenderAttempt, RenderJob, utcnow
 from app.worker import claim_job, mark_done, process, recover_stale_jobs, settings
 from test_api import new_user
 
@@ -84,6 +84,9 @@ print(json.dumps(claims))
         with SessionLocal() as db:
             jobs = db.scalars(select(RenderJob).where(RenderJob.id.in_(ids))).all()
             assert all(job.attempt_count == 1 and job.status == 'processing' for job in jobs)
+            attempts=db.scalars(select(RenderAttempt).where(RenderAttempt.job_id.in_(ids))).all()
+            assert len(attempts)==len(ids)
+            assert {a.id for a in attempts}=={job['claim_token'] for job in claims}
     finally:
         for process in processes:
             if process.poll() is None:

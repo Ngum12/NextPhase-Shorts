@@ -88,3 +88,16 @@ class AuthRateBucket(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)  # HMAC identity; no plaintext IP/email
     attempts: Mapped[int] = mapped_column(Integer)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class RenderAttempt(Base):
+    __tablename__ = 'render_attempts'
+    __table_args__ = (Index('uq_render_attempt_number', 'job_id', 'number', unique=True),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'), index=True)
+    number: Mapped[int] = mapped_column(Integer)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default='running')
+    wall_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
+    output_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -166,3 +166,7 @@ For managed Docker builds behind a TLS-inspecting proxy, see
 For migration 0005, one-time re-login, authentication limits and physical-device
 acceptance, see [auth sessions](docs/AUTH_SESSIONS.md). Email verification, secure
 recovery and session refresh remain pending; no email service is enabled.
+
+Migration 0006 records render-attempt timings and output sizes. Operators can run
+`PYTHONPATH=apps/api python -m app.telemetry` for sample-counted P50/P95 and optional
+partial cost estimates. See [measurement definitions and upgrade](docs/RENDER_TELEMETRY.md).

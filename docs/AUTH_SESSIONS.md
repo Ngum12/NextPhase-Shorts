@@ -111,10 +111,10 @@ TLS, secret management/rotation, verified email delivery/recovery, MFA, deletion
 production edge controls and security review are still required. There is no
 unauthenticated password-reset bypass and no claim that email ownership is verified.
 
-## Required physical Pixel acceptance after merge
+## Physical Pixel acceptance (owner reported passed 2026-11-07)
 
-Use only a test account and consented/synthetic media. These new auth checks have
-not been executed on a physical device by the cloud agent.
+Use only a test account and consented/synthetic media. The owner reported all checks below passed after merge. They were not
+executed on a physical device by the cloud agent.
 
 1. Sign in again with the existing account; old projects/downloads must remain.
 2. Sign out, sign in again and confirm server connectivity errors are clear if

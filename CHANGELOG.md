@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased — revocable authentication sessions
+## Unreleased — render attempt telemetry
+
+- Add migration 0006 and transactionally recorded attempt start/completion/loss/cancellation with monotonic observed render time and successful output bytes.
+- Add private operator aggregate report with sample-counted P50/P95, unknown/truncated coverage and optional decimal wall-time cost estimates; no provider calls or billing.
+- Preserve retry fencing and redact raw unexpected-worker exception details. Extend real render smoke to verify durable measurements.
+- Record owner-reported Windows/Pixel acceptance of the previous auth increment.
+
+## Phase 2 revocable authentication sessions
 
 - Add migration 0005 for persistent session revocation and shared atomic auth-rate windows.
 - Add current/all-session logout and authenticated password changes; retain existing accounts, jobs and pending uploads. Existing tokens require one new sign-in.

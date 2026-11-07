@@ -1,9 +1,57 @@
-# Implementation Status — 2026-11-06
+# Implementation Status — 2026-11-07
 
 This is a **developer prototype**, not a production AI editor. Phase 0 engineering
 validation and the server portion of Phase 1 are verified below. The owner has now
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
+
+## Phase 2 increment — render timing records and operator report
+
+- Migration `0006_render_attempts` adds one durable record per newly claimed render
+  attempt, transactionally with the claim. Existing users, auth sessions, completed
+  paths and upload state remain intact; historical measurements are not backfilled.
+- Fenced completion saves monotonic observed render wall time and successful output
+  size. Cancellation records the attempt even if the worker never returns; observed
+  cancellation time can be filled afterward. Lease recovery leaves crashed work
+  unmeasured rather than guessing compute. Retry metrics cannot overwrite a winner.
+- Added private operator CLI `python -m app.telemetry`: nearest-rank P50/P95 and
+  sample counts for observed attempts, first-claim queue wait and successful job
+  turnaround; states/retries/output bytes plus unknown and truncated coverage.
+  Reports omit emails, tokens, IDs, paths and titles. Unexpected worker errors
+  no longer log raw exception text/customer paths.
+- Optional decimal hourly-rate calculation covers observed wall time only. Default
+  cost stays null. It is neither CPU seconds, VM billing, full variable cost nor
+  a provider charge. No provider call, provisioning or billing was introduced.
+- **81 backend tests passed on SQLite (18.61 s) and PostgreSQL (22.39 s)**, no skips,
+  one existing Starlette/httpx deprecation warning each. Includes unique attempt
+  creation under four concurrent claimant processes, failures, cancellation, crash
+  recovery, stale completion, report privacy/coverage/percentiles/rates and additive
+  migration preservation. All prior media/auth/upload/queue regressions passed.
+- Real HTTP smoke passed cancellation, persisted auth limits/revocation across API
+  kill/restart, partial interrupted 51 MiB upload/resume, repeat-safe completion,
+  render/download/whole MP4 decode and owner isolation. Baseline output was
+  1080×1920, 30fps, 4.9 s; baseline workflow 1.89 s. Its aggregate report verified
+  two measured successful attempts and 17,308,533 total accepted output bytes.
+  Synthetic evidence (ignored): `.data/smoke-ed3af74c646c49ddbaa3496cace98a36/`.
+  This tiny synthetic sample is not a production performance/cost baseline or SLA.
+- Backed up and migrated the isolated Compose/PostgreSQL application DB; rebuilt
+  services passed real auth/resume/render/download smoke (baseline 2.28 s). The
+  external API was not restarted by that run. Its operator report confirmed two
+  measured successful attempts and clearly identified 10 older/unclaimed jobs
+  without attempt records. Calculation-only hourly-rate input also passed.
+- Doctor, mobile TypeScript, all 6 upload + 7 auth client tests and pip check passed.
+  No mobile source/dependency changed in this increment; no new native feature or
+  Android bundle test is claimed. Existing 17 dependency advisories and 835-record
+  inventory remain applicable and unresolved; commercial clearance still pending.
+- Review delivery: implementation commit `9a500dd` pushed to
+  `dev/phase-2-render-telemetry`. Automatic PR creation again returned
+  `Post https://api.github.com/graphql: Forbidden`. Create the review PR at
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-render-telemetry .
+  No merge or deployment was performed for this increment; remote CI not observed.
+- See [migration, definitions and operator checks](docs/RENDER_TELEMETRY.md).
+  Full tracing/exporters, CPU/GPU/peak-memory measurement, representative load/soak,
+  cost ceilings, retention/deletion, object storage and verified email recovery
+  remain Phase 2 work. Paid services, AI processing and billing remain disabled.
 
 ## Phase 2 increment — revocable authentication sessions
 
@@ -56,9 +104,14 @@ the reported Android baseline flow, not production readiness or AI functionality
   `dev/phase-2-auth-sessions`. Automatic PR creation is blocked by GitHub API
   access returning `Forbidden`; the owner can create it from
   https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-auth-sessions .
-  No merge or deployment was performed.
-- **Remaining gates:** physical Pixel acceptance of these new account controls;
-  verified email delivery, forgot-password recovery, refresh rotation, notices,
+  The owner subsequently merged this auth increment into main (`c191c53`).
+  No cloud deployment was performed.
+- **Owner-reported Windows/Pixel acceptance passed 2026-11-07:** 68 backend tests
+  (65.40 s), all 13 mobile client tests, TypeScript and restart/resume/render smoke
+  (baseline 2.31 s). The owner confirmed the listed Pixel sign-in, current/all-session
+  sign-out, password-change and upload/render/download checks all worked. These
+  are user-supplied results, not device tests executed by the cloud agent.
+- **Remaining gates:** verified email delivery, forgot-password recovery, refresh rotation, notices,
   admin MFA, edge abuse/body limits and production security/retention review.
   No mail credentials are configured, so no unauthenticated recovery bypass or
   simulated email verification is supplied. Phase 2 remains in progress. AI and
@@ -266,13 +319,13 @@ quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge this Phase 2 increment; stop services and back up the actual Windows
-   DB before the documented migration, install mobile dependencies and run the
-   interrupted-upload/force-stop/resume Pixel workflow in RESUMABLE_UPLOADS.md.
+1. Review/merge the render telemetry increment; stop services and back up the actual
+   Windows DB before migration 0006. Run tests/smoke, render through the app and
+   inspect the normal database report as documented in RENDER_TELEMETRY.md.
 2. Restore GitHub API access to create the review PR and observe remote CI.
 3. Complete dependency/license review before merging for commercial use.
-4. Next Phase 2 work: auth hardening, complete retention/telemetry, private object
-   storage adapters and further queue fairness, according to the master gates.
+4. Next Phase 2 work: verified auth delivery/recovery, retention/deletion, private
+   object storage, full tracing/resource accounting and queue fairness under the master gates.
    See `docs/ROADMAP.md`; follow the later phases in `prompt.md` in order.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
