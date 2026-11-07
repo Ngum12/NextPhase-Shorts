@@ -70,6 +70,11 @@ the reported Android baseline flow, not production readiness or AI functionality
   GC, global capacity/cost and load/soak controls, formal retention policy, full
   account/version/backup erasure and the rest of Phase 2 security/auth/queue work.
 
+- Delivery: implementation `658f967` pushed to `dev/phase-2-retention-cleanup`.
+  Automatic PR creation returned GitHub GraphQL `Forbidden`; no PR/merge/deployment
+  was performed. Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-retention-cleanup
+
 ## Phase 2 increment — signed direct chunks and verified sealing
 
 - `DIRECT_UPLOADS_ENABLED=false` by default. Updated mobile can negotiate direct
