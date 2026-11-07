@@ -85,6 +85,11 @@ the reported Android baseline flow, not production readiness or AI functionality
   erasure, verified auth delivery/recovery, robust broker/isolation, observability
   and representative load/soak. Later AI styles and payments stay disabled.
 
+- Delivery: implementation `3311468` pushed to `dev/phase-2-direct-uploads`.
+  GitHub GraphQL PR creation returned `Forbidden`; no PR was created or merged.
+  Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-direct-uploads
+
 ## CI follow-up — private S3 startup permissions
 
 - Owner supplied a failing GitHub SQLite job: the pinned image pulled successfully,
