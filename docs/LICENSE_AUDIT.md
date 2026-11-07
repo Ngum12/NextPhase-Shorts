@@ -87,3 +87,13 @@ Apache-2.0 permits commercial use subject to its license/notice conditions. This
 records the upstream project license, not a complete OS/container/transitive SBOM,
 patent clearance, cloud-provider terms approval or production hosting decision.
 No proprietary reference kit/media, paid provider or billing activation was added.
+
+## CI diagnostic artifact action
+
+Official actions/upload-artifact v4.6.2 is pinned to commit
+`ea165f8d65b6e75b540449e92b4886f43607fa02` for sanitized failure logs only. Its
+MIT notice was retrieved from the exact upstream commit's LICENSE and preserved
+at docs/licenses/actions-upload-artifact-v4.6.2.txt. Source:
+https://github.com/actions/upload-artifact/tree/ea165f8d65b6e75b540449e92b4886f43607fa02 .
+This is a CI tool, outside the Python/npm inventory scope; no runtime dependency
+or proprietary kit code was added. Metadata/notice review is not legal clearance.

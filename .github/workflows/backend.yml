@@ -37,3 +37,12 @@ jobs:
       - name: Private S3 originals, renders, signed access and deletion
         if: matrix.database == 'sqlite'
         run: python scripts/smoke_object_store.py
+      - name: Retain sanitized local S3 startup diagnostics
+        if: failure() && matrix.database == 'sqlite'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: s3-startup-diagnostics
+          path: .data/nextphase-s3-smoke-*/server.log
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 3

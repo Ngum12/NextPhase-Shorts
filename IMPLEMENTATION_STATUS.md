@@ -5,6 +5,33 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## CI follow-up — private S3 startup permissions
+
+- Owner supplied a failing GitHub SQLite job: the pinned image pulled successfully,
+  then the S3 readiness check exhausted retries. The supplied output did not include
+  its server log; remote CI success is not claimed here.
+- Found and reproduced a runner-dependent permission defect: the pinned image's
+  entrypoint drops to seaweed UID 1000, but host-created 0600 config can belong to
+  UID 1001 on GitHub. Verified UID-1001-owned 0600 data is unreadable to seaweed;
+  copying into the private data directory and setting seaweed ownership restores
+  access while retaining mode 0600. No broad secret permissions or privileged
+  server workaround were introduced.
+- Smoke startup now creates the container, copies its generated config into /data
+  before start, and lets the official entrypoint assign data ownership. No host
+  secret bind mount remains. Readiness reports only a safe error type/service code
+  and detects early container exit. Failure prints redacted log tail; CI retains
+  only sanitized server.log for three days, excluding credentials and workflow data.
+- **158 backend tests passed on SQLite (31.68 s)**, including two new diagnostics
+  privacy regressions (credentials, signed URL parameters, response-less connection
+  errors and unsafe service messages). One existing Starlette/httpx warning.
+  Full real S3 restart/resume/render/download/signature/expiry/physical-delete smoke
+  passed with the corrected startup, 1080×1920/30 fps/4.9 s output; baseline 8.76 s
+  includes the six-second signature expiry wait. Synthetic ignored evidence:
+  `.data/nextphase-s3-smoke-f2a5bc37de52/workflow/`.
+- No API/mobile/schema/dependency change. Prior PostgreSQL validation remains as
+  recorded below; not rerun for this script/workflow-only correction. GitHub rerun
+  must establish remote acceptance after this branch update. No paid services.
+
 ## Phase 2 increment — private S3 originals/results and signed downloads
 
 - Optional `MEDIA_BACKEND=s3` stores validated originals and fenced rendered MP4s

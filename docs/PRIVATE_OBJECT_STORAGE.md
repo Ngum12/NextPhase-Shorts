@@ -152,3 +152,12 @@ remote CI success must be observed separately.
 
 License metadata/notices: see LICENSE_AUDIT.md. Local server evaluation is not full
 OS/container/transitive, cloud policy, patent, privacy or commercial legal clearance.
+
+### CI startup diagnostics
+
+The pinned image drops to seaweed UID 1000. The smoke copies generated 0600 config
+into the created container's /data before starting it; the official entrypoint
+sets data ownership. This avoids relying on the runner UID matching the container
+UID and keeps the secret private. Early exit/readiness failure prints sanitized
+server-log context. GitHub retains only the redacted server.log artifact for three
+days; generated config and signed links must never be uploaded as artifacts.
