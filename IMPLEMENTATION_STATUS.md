@@ -38,6 +38,11 @@ the reported Android baseline flow, not production readiness or AI functionality
 - After review/merge: pull and rerun `python scripts/smoke_e2e.py` from the root
   with the existing venv/server configuration. No migration or reinstall needed.
 
+- Delivery: `0857f57` pushed to `fix/windows-worker-smoke-cleanup`. GitHub
+  GraphQL returned `Forbidden` creating the PR; no PR or merge was performed.
+  Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/windows-worker-smoke-cleanup
+
 ## Phase 2 increment — fair queue and worker containment
 
 - Eligible accounts rotate by durable most-recent attempt claim, never-served
