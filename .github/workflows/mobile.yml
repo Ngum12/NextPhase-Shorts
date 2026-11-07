@@ -26,6 +26,9 @@ jobs:
       - name: Test separate Save and Share video actions
         working-directory: apps/mobile
         run: npm run test:exports
+      - name: Test account deletion recovery
+        working-directory: apps/mobile
+        run: npm run test:account
       - name: Check Expo SDK versions
         working-directory: apps/mobile
         run: EXPO_OFFLINE=1 npx expo install --check

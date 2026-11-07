@@ -183,6 +183,12 @@ def remove_upload_session(owner, session):
     _remove_prefix(upload_prefix(owner, session))
 
 
+def remove_owner(owner):
+    if str(uuid.UUID(owner))!=owner:raise ValueError('Noncanonical owner identity')
+    _remove_prefix('media/'+owner+'/')
+    _remove_prefix('uploads/'+owner+'/')
+
+
 def _remove_prefix(private_prefix):
     try:
         bucket = get_settings().s3_bucket

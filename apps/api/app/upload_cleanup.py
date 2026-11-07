@@ -15,7 +15,7 @@ def cleanup_uploads(limit=100):
             .order_by(UploadSession.expires_at,UploadSession.id).limit(limit)))
     for session_id,user_id in expired:
         with SessionLocal.begin() as db:
-            lock_owner(db,user_id)
+            lock_owner(db,user_id,allow_deleted=True)
             db.execute(update(UploadSession).where(UploadSession.id==session_id,
                 UploadSession.status=='uploading',UploadSession.expires_at<=utcnow()).values(status='expired'))
     with SessionLocal() as db:

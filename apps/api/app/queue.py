@@ -8,11 +8,14 @@ from .storage import require_capacity
 ACTIVE_STATUSES = ('queued', 'processing')
 
 
-def lock_owner(db, user_id):
+def lock_owner(db, user_id, *, allow_deleted=False):
     # SQLite has no FOR UPDATE. A no-op UPDATE acquires its write lock; PostgreSQL
     # acquires the owner row lock. Never hold this across upload or render I/O.
-    db.execute(update(User).where(User.id == user_id).values(id=User.id),
+    query=update(User).where(User.id==user_id)
+    if not allow_deleted:query=query.where(User.deleted_at.is_(None))
+    result=db.execute(query.values(id=User.id),
                execution_options={'synchronize_session': False})
+    if result.rowcount!=1:raise HTTPException(401,'Account is unavailable. Sign in again.')
 
 
 def active_count(db, user_id):

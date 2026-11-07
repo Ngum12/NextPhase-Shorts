@@ -38,13 +38,16 @@ def claim_job():
         running = select(func.count()).where(RenderJob.user_id == User.id,
             RenderJob.status == 'processing').correlate(User).scalar_subquery()
         owner_query = select(User.id).where(queued.is_not(None),
+            User.deleted_at.is_(None),
             running < settings.max_processing_jobs_per_user).order_by(queued, User.id).limit(1)
         if engine.dialect.name == 'postgresql':
             owner_query = owner_query.with_for_update(skip_locked=True)
         owner_id = db.scalar(owner_query)
         if owner_id is None:
             return None
-        lock_owner(db, owner_id)
+        lock_owner(db, owner_id, allow_deleted=True)
+        if db.get(User, owner_id).deleted_at is not None:
+            return None
         # Recheck after acquiring the lock: another claimant may have won first.
         count = db.scalar(select(func.count()).select_from(RenderJob).where(
             RenderJob.user_id == owner_id, RenderJob.status == 'processing'))
@@ -201,6 +204,8 @@ def main():
             cleanup_auth()
             from .deletion import cleanup_deleted
             cleanup_deleted()
+            from .account_deletion import cleanup_accounts
+            cleanup_accounts()
             last_upload_cleanup = time.monotonic()
         recover_stale_jobs()
         job = claim_job()

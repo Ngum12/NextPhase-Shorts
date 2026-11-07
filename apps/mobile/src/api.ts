@@ -84,3 +84,16 @@ export async function deleteJob(id:string,token:string):Promise<void> {
   const body=await extract(response);
   if(response.status!==202||body.status!=='deleted')throw new Error('Deletion was not confirmed. Please retry.');
 }
+
+export async function requestAccountDeletion(token:string,password:string,key:string) {
+  const response=await authenticatedFetch(token,`${BASE}/api/v1/account/delete`,{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:password,receipt_key:key})});
+  const body=await extract(response);
+  if(response.status!==202||body.status!=='account_disabled')throw new Error('Account deletion was not confirmed');
+  return body;
+}
+export async function accountDeletionReceipt(key:string) {
+  // Recovery does not use a login token and must never expire a newer session.
+  return extract(await fetch(`${BASE}/api/v1/account/deletion-receipt`,{method:'POST',credentials:'omit',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({receipt_key:key})}));
+}

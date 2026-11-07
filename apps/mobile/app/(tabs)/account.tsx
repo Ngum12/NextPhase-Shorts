@@ -38,6 +38,7 @@ export default function Account() {
       'All sessions for this account will be revoked. Your projects and saved uploads remain.',[
         {text:'Keep sessions',style:'cancel'},{text:'Sign out all',style:'destructive',onPress:()=>leave(true)},
       ])}/>
+    <Button title="Delete account" secondary disabled={busy} onPress={()=>router.push('/delete-account')}/>
     <Body>Signing out requires a connection to the server.</Body>
   </ScrollView></Page>;
 }
