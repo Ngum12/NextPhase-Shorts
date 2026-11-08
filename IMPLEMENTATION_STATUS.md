@@ -5,6 +5,29 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Windows SDK 58 tooling assertion correction
+
+Owner upgraded merged main **145044a**: Docker API/database/queue healthy, worker
+started, clean Windows npm ci reports **zero vulnerabilities**, TypeScript passed,
+and **65 of 66** mobile/tooling tests passed. The sole failure compared native
+Windows glob output `app\index.tsx` with a hardcoded POSIX `app/index.tsx`.
+Metro started successfully on **8082**, which requires USB forwarding of 8082
+in addition to API 8000. Physical SDK 58 acceptance is still pending.
+
+- Dedicated branch `fix/windows-toolchain-paths` changes both async/sync traversal
+  expectations to `path.join('app','index.tsx')`, preserving native glob behavior,
+  ignore/version/cancellation checks and all production dependencies/application code.
+- Added a focused Windows CI job on Node 24 for actual installed consumer tests.
+  Its remote result is pending; Linux tests are not claimed as Windows execution.
+- Local validation: both tooling checks, all **66 mobile tests**, TypeScript and
+  diff checks passed. No backend changes, migration, dependency reinstall, server
+  rebuild or repeated backend regression required for this assertion-only fix.
+- Next: review/merge, `git pull --ff-only`, `npm run test:toolchain` from apps/mobile;
+  keep Metro running and forward its actual **8082** port, then perform the existing
+  focused Pixel navigation/upload/pause/resume/render/Save/play/Share check.
+- Phase 2 staging/security/privacy gates remain open. No paid service, outgoing
+  email, billing, AI or public deployment activated.
+
 ## Phase 2 package 6 preparation — dependency remediation and staging evidence
 
 Review delivery: implementation **bf409a1** pushed to

@@ -1,5 +1,9 @@
 # Changelog
 
+## Windows SDK 58 tooling assertion fix
+
+- Expect native path separators in async/sync glob tests and add focused Windows CI coverage. Application behavior and dependencies are unchanged.
+
 ## Phase 2 package 6 preparation — mobile security and staging evidence
 
 - Upgrade to SDK-matched Expo 58 / RN 0.88 / React 19.3, adapt asynchronous file

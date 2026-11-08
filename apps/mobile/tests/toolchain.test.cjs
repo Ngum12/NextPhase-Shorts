@@ -14,8 +14,8 @@ test('both Expo tool consumers load patched CommonJS glob with expected traversa
   for(const consumer of [fingerprintRequire,cliRequire]){
    assert.equal(consumer('glob/package.json').version,'14.0.4');
    const {glob,globSync}=consumer('glob');
-   assert.deepEqual(await glob('**/*.tsx',{cwd:root,ignore:['ignored/**'],nodir:true}),['app/index.tsx']);
-   assert.deepEqual(globSync('**/*.tsx',{cwd:root,ignore:['ignored/**'],nodir:true}),['app/index.tsx']);
+   assert.deepEqual(await glob('**/*.tsx',{cwd:root,ignore:['ignored/**'],nodir:true}),[path.join('app','index.tsx')]);
+   assert.deepEqual(globSync('**/*.tsx',{cwd:root,ignore:['ignored/**'],nodir:true}),[path.join('app','index.tsx')]);
    const controller=new AbortController();controller.abort();
    await assert.rejects(glob('**/*',{cwd:root,signal:controller.signal}));
   }
