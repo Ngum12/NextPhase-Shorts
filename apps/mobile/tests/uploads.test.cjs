@@ -25,13 +25,19 @@ function fixture(options={}) {
     getInfoAsync:async uri=>({exists:storage.has(uri)}),
     readAsStringAsync:async uri=>{if(!storage.has(uri))throw Error('missing');return storage.get(uri).toString();},
     writeAsStringAsync:async(uri,text)=>{storage.set(uri,Buffer.from(text));},
-    copyAsync:async({from,to})=>{assert(storage.has(from));storage.set(to,Buffer.from(storage.get(from)));},
+    copyAsync:async()=>{throw Error('Legacy copy must not read picker files');},
     deleteAsync:async uri=>{if(failDeleteCopy&&uri.startsWith(root)&&uri.endsWith('.mp4')){failDeleteCopy=false;throw Error('storage busy');}storage.delete(uri);},
   };
   class File {
     constructor(uri){this.uri=uri;}
     get exists(){return storage.has(this.uri);}
     get size(){return storage.get(this.uri)?.length||0;}
+    async copy(destination){
+      assert(storage.has(this.uri));
+      await Promise.resolve();
+      storage.set(destination.uri,Buffer.from(storage.get(this.uri)));
+      if(options.copyError)throw Error('native provider copy failed');
+    }
     open(){
       openHandles++;
       const bytes=storage.get(this.uri);
@@ -310,4 +316,56 @@ test('SDK 58 asynchronous chunk read respects pause before sending and closes it
   await assert.rejects(app.resumeUpload(record,'token',()=>{},controller.signal),/paused/);
   assert.deepEqual(world.offsets,[]);assert.equal(world.openHandles,0);
   assert(world.storage.has(world.root+record.localName));assert(await app.loadPending('owner-a'));
+});
+
+
+test('provider URI is copied asynchronously into private storage before journaling and survives restart',async()=>{
+  const world=fixture();const app=world.restart();
+  const uri='content://com.android.providers.media.documents/document/video%3A42';
+  world.storage.set(uri,Buffer.from('abcdefghijk'));
+  const record=await app.prepareUpload('owner-a',{uri,name:'source.mp4'},'Test','vlog',15,true);
+  assert.equal(world.storage.get(world.root+record.localName).toString(),'abcdefghijk');
+  world.storage.delete(uri); // Later resume must use only the durable private copy.
+  const restarted=world.restart();
+  const saved=await restarted.loadPending('owner-a');
+  assert.equal(saved.key,record.key);
+  assert.equal((await restarted.resumeUpload(saved,'token',()=>{})).id,'job-one');
+  assert(world.storage.has('file:///original.mp4'));
+});
+
+test('failed picker copy removes only its incomplete private file and never creates an upload intent',async()=>{
+  const world=fixture({copyError:true});const app=world.restart();
+  await assert.rejects(prepared(app),/Could not save the selected video/);
+  assert.equal(await app.loadPending('owner-a'),null);
+  assert.equal([...world.storage.keys()].filter(key=>key.startsWith(world.root)).length,0);
+  assert(world.storage.has('file:///original.mp4'));assert.equal(world.sessions.size,0);
+});
+
+const pickerCode=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/videoPicker.ts'),'utf8'),{
+  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
+}).outputText;
+function picker(platform,result){
+  const exports={};let called=false;
+  vm.runInNewContext(pickerCode,{exports,require:name=>{
+    if(name==='react-native')return {Platform:{OS:platform}};
+    assert.equal(name,'expo-document-picker');return {getDocumentAsync:async options=>{
+      called=true;assert.equal(options.type,'video/*');assert.equal(options.multiple,false);
+      assert.equal(options.copyToCacheDirectory,platform!=='android');return result;
+    }};
+  }});
+  return {run:exports.pickVideo,called:()=>called};
+}
+
+test('Android picker retains the selected provider URI; iOS retains picker cache copying',async()=>{
+  for(const platform of ['android','ios']){
+    const asset={uri:platform==='android'?'content://provider/video/42':'file:///cache/video.mp4',name:'source.mp4'};
+    const fixture=picker(platform,{canceled:false,assets:[asset]});
+    assert.equal(await fixture.run(),asset);assert(fixture.called());
+  }
+});
+
+test('cancelled or empty picker result returns no new selection',async()=>{
+  for(const result of [{canceled:true,assets:null},{canceled:false,assets:[]}]){
+    assert.equal(await picker('android',result).run(),null);
+  }
 });

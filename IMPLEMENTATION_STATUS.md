@@ -5,6 +5,38 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## SDK 58 Android picker/private-copy correction
+
+The owner supplied a Pixel screenshot showing `ExponentFileSystem.copyAsync`
+rejecting the selected `cache/DocumentPicker` file as unreadable before upload.
+Inspected installed SDK sources: Android DocumentPicker writes its cached copy
+under the host context cache directory, while FileSystem experience permissions
+reject that unscoped path in Expo Go. Switching only copy APIs would retain that
+source-path issue; do not broaden permissions or bypass storage isolation.
+
+- `fix/sdk58-picker-copy` includes the preceding Windows tooling assertion fix.
+  Android now requests the user-granted document-provider URI with picker cache
+  copying disabled. iOS retains its existing picker cache-copy behavior.
+- Preparation awaits modern `File.copy` into the existing UUID private upload path
+  before size validation/journaling. Subsequent resume reads only the durable
+  private file. No base64/whole-video JS read, encoding, network fallback, broad
+  gallery permission, arbitrary path rewriting or original-file deletion.
+- Failed copy removes its incomplete private destination and creates no saved
+  intent/server session. Copy errors now explain reselecting the video without
+  displaying the native source path. Cancel preserves the existing selection;
+  selecting again clears the previous error and requires rights reconfirmation.
+- Added four adapter regressions: Android vs iOS picker options, cancellation,
+  async provider-to-private copy/restart/resume without provider access, and failed
+  copy cleanup preserving originals. These are not Android native execution.
+- All **70 mobile/tooling tests passed**, including 20 upload/picker tests;
+  TypeScript and Android Hermes export (3.1MB) passed. Physical Pixel provider
+  permission/copy acceptance remains pending. Backend/schema/dependencies unchanged;
+  no backend rebuild, migration, npm reinstall or paid service activation needed.
+- After review/merge: pull, restart Metro on its actual forwarded port, **choose
+  the video again** (the previous selection points at the inaccessible cache),
+  acknowledge rights and check upload/pause/resume/render/Save/playback. Keep app
+  data and originals; do not uninstall Expo Go or change media permissions.
+
 ## Windows SDK 58 tooling assertion correction
 
 Implementation **ce97d3d** pushed. PR creation returned GitHub API **Forbidden**;

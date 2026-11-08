@@ -1,5 +1,9 @@
 # Changelog
 
+## SDK 58 Android picker/private-copy fix
+
+- Copy Android user-selected provider URIs directly into private upload storage with awaited modern File.copy; preserve iOS cache behavior, failed-copy cleanup and resumable journals. Includes the Windows tooling-path test correction.
+
 ## Windows SDK 58 tooling assertion fix
 
 - Expect native path separators in async/sync glob tests and add focused Windows CI coverage. Application behavior and dependencies are unchanged.
