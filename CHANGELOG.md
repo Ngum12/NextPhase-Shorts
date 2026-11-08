@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 2 package 6 preparation — mobile security and staging evidence
+
+- Upgrade to SDK-matched Expo 58 / RN 0.88 / React 19.3, adapt asynchronous file
+  reads and explicit legacy Save API, retain bounded upload/pause recovery.
+- Scope patched glob/minimatch to Expo consumers; clean audit drops 17 findings
+  to zero, with tool/API/Android/config regression coverage and retained notices.
+- Bind Docker API to loopback, add private read-only local image inventory, draft
+  unpublished privacy/preview terms and map remaining staging approval/work gates.
+- Record owner package 5 strict host/Pixel acceptance; no paid/public deployment,
+  billing, mail or AI enabled. Phase 2 remains open pending real acceptance gates.
+
 ## Phase 2 package 5 — capacity, cleanup and security review
 
 - Migration 0019 adds shared slot/storage/processing and in-flight intake budgets;

@@ -1,0 +1,306 @@
+{
+  "scope": "Direct updated mobile/framework dependencies and patched tool notices; not all transitive/OS/native legal clearance",
+  "packages": [
+    {
+      "name": "@expo/metro-runtime",
+      "version": "58.0.17",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/metro-runtime/v/58.0.17",
+      "preserved_notices": [
+        "docs/licenses/sdk58/@expo-metro-runtime-58.0.17/LICENSE"
+      ]
+    },
+    {
+      "name": "@expo/ui",
+      "version": "58.0.27",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/ui/v/58.0.27",
+      "preserved_notices": [
+        "docs/licenses/expo-sdk58-MIT.txt"
+      ],
+      "upstream_license_source": "https://raw.githubusercontent.com/expo/expo/sdk-58/LICENSE"
+    },
+    {
+      "name": "@types/react",
+      "version": "19.3.0",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/@types/react/v/19.3.0",
+      "preserved_notices": [
+        "docs/licenses/sdk58/@types-react-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "name": "expo",
+      "version": "58.0.23",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo/v/58.0.23",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-58.0.23/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-constants",
+      "version": "58.0.15",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-constants/v/58.0.15",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-constants-58.0.15/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-crypto",
+      "version": "58.0.7",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-crypto/v/58.0.7",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-crypto-58.0.7/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-document-picker",
+      "version": "58.0.4",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-document-picker/v/58.0.4",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-document-picker-58.0.4/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-file-system",
+      "version": "58.0.13",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-file-system/v/58.0.13",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-file-system-58.0.13/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-linking",
+      "version": "58.0.16",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-linking/v/58.0.16",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-linking-58.0.16/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-media-library",
+      "version": "58.0.13",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-media-library/v/58.0.13",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-media-library-58.0.13/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-router",
+      "version": "58.0.30",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-router/v/58.0.30",
+      "preserved_notices": [
+        "docs/licenses/expo-sdk58-MIT.txt"
+      ],
+      "upstream_license_source": "https://raw.githubusercontent.com/expo/expo/sdk-58/LICENSE"
+    },
+    {
+      "name": "expo-secure-store",
+      "version": "58.0.2",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-secure-store/v/58.0.2",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-secure-store-58.0.2/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-sharing",
+      "version": "58.0.22",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-sharing/v/58.0.22",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-sharing-58.0.22/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-status-bar",
+      "version": "58.0.4",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-status-bar/v/58.0.4",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-status-bar-58.0.4/LICENSE"
+      ]
+    },
+    {
+      "name": "expo-symbols",
+      "version": "58.0.4",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-symbols/v/58.0.4",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-symbols-58.0.4/LICENSE"
+      ]
+    },
+    {
+      "name": "glob",
+      "version": "14.0.4",
+      "declared_license": "BlueOak-1.0.0",
+      "source": "https://www.npmjs.com/package/glob/v/14.0.4",
+      "preserved_notices": [
+        "docs/licenses/sdk58/glob-14.0.4/LICENSE.md"
+      ]
+    },
+    {
+      "name": "minimatch",
+      "version": "11.0.5",
+      "declared_license": "BlueOak-1.0.0",
+      "source": "https://www.npmjs.com/package/minimatch/v/11.0.5",
+      "preserved_notices": [
+        "docs/licenses/sdk58/minimatch-11.0.5/LICENSE.md"
+      ]
+    },
+    {
+      "name": "postcss",
+      "version": "8.5.32",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/postcss/v/8.5.32",
+      "preserved_notices": [
+        "docs/licenses/sdk58/postcss-8.5.32/LICENSE"
+      ]
+    },
+    {
+      "name": "react",
+      "version": "19.3.0",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react/v/19.3.0",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.0",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-dom/v/19.3.0",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-dom-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "name": "react-native",
+      "version": "0.88.1",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native/v/0.88.1",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-native-0.88.1/LICENSE"
+      ]
+    },
+    {
+      "name": "react-native-gesture-handler",
+      "version": "3.3.0",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-gesture-handler/v/3.3.0",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-native-gesture-handler-3.3.0/LICENSE"
+      ]
+    },
+    {
+      "name": "react-native-reanimated",
+      "version": "4.7.1",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-reanimated/v/4.7.1",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-native-reanimated-4.7.1/LICENSE"
+      ]
+    },
+    {
+      "name": "react-native-safe-area-context",
+      "version": "5.11.1",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-safe-area-context/v/5.11.1",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-native-safe-area-context-5.11.1/LICENSE"
+      ]
+    },
+    {
+      "name": "react-native-screens",
+      "version": "4.30.1",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-screens/v/4.30.1",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-native-screens-4.30.1/LICENSE"
+      ]
+    },
+    {
+      "name": "react-native-worklets",
+      "version": "0.13.0",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-worklets/v/0.13.0",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-native-worklets-0.13.0/LICENSE"
+      ]
+    },
+    {
+      "name": "typescript",
+      "version": "5.9.3",
+      "declared_license": "Apache-2.0",
+      "source": "https://www.npmjs.com/package/typescript/v/5.9.3",
+      "preserved_notices": [
+        "docs/licenses/sdk58/typescript-5.9.3/LICENSE.txt"
+      ]
+    },
+    {
+      "name": "@expo-google-fonts/material-symbols",
+      "version": "0.4.53",
+      "declared_license": "MIT AND Apache-2.0",
+      "source": "https://www.npmjs.com/package/@expo-google-fonts/material-symbols/v/0.4.53",
+      "preserved_notices": [
+        "docs/licenses/sdk58/@expo-google-fonts-material-symbols-0.4.53/LICENSE_FONT",
+        "docs/licenses/sdk58/@expo-google-fonts-material-symbols-0.4.53/LICENSE"
+      ],
+      "bundled_asset": {
+        "path": "400Regular/MaterialSymbols_400Regular.ttf",
+        "sha256": "a9b1a69436286079baf5839cef351fe45f85f7d4527e45277aa3f3af80b5bdb2",
+        "use": "Expo Router navigation font; not a video-render font or reference-kit asset"
+      }
+    },
+    {
+      "name": "@react-navigation/elements",
+      "version": "2.9.45",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/@react-navigation/elements/v/2.9.45",
+      "preserved_notices": [
+        "docs/licenses/sdk58/react-navigation-elements-2.9.45/LICENSE"
+      ],
+      "scope": "Upstream React Navigation MIT notice retained for forked Router navigation assets; source archive comparison found no exact-byte matches, so exact fork revision remains part of transitive provenance review",
+      "asset_comparison": {
+        "search-icon@3x.android.png": false,
+        "search-icon@2x.android.png": false,
+        "clear-icon@1x.png": false,
+        "search-icon@2x.ios.png": false,
+        "search-icon@1x.android.png": false,
+        "clear-icon@4x.png": false,
+        "close-icon@2x.png": false,
+        "back-icon@1x.ios.png": false,
+        "back-icon@3x.android.png": false,
+        "back-icon@4x.android.png": false,
+        "search-icon@1x.ios.png": false,
+        "close-icon@4x.png": false,
+        "close-icon.png": false,
+        "clear-icon@2x.png": false,
+        "search-icon@3x.ios.png": false,
+        "clear-icon.png": false,
+        "close-icon@3x.png": false,
+        "back-icon@4x.ios.png": false,
+        "back-icon@2x.ios.png": false,
+        "back-icon@1x.android.png": false,
+        "search-icon.png": false,
+        "back-icon-mask.png": false,
+        "clear-icon@3x.png": false,
+        "search-icon@4x.ios.png": false,
+        "search-icon@4x.android.png": false,
+        "back-icon.png": false,
+        "close-icon@1x.png": false,
+        "back-icon@3x.ios.png": false,
+        "back-icon@2x.android.png": false
+      }
+    }
+  ]
+}

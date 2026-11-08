@@ -4,6 +4,20 @@ This is an engineering review and explicit launch gate, **not** owner/legal
 acceptance of unresolved risks or a penetration-test certification. No restricted
 reference ZIP code/assets, paid API, billing or real customer media was introduced.
 
+## Current mobile remediation update
+
+Package 6 preparation resolves the historical 17 npm findings with the SDK 58
+upgrade and narrowly scoped, consumer-tested glob/minimatch patches. Clean install,
+current audit (zero findings), TypeScript, app/tool tests, native config/fingerprint
+and Android export passed. Physical SDK 58 acceptance remains pending. The owner's
+package 5 updated strict hostcheck and actual render/save/playback passed.
+
+The npm and old containment rows below record the earlier review state and are
+superseded by this evidence; image/OS, post-snapshot journal, privacy/legal, real
+staging/quotas/cost/collector and remote CI gates remain open. A zero advisory count
+is not a risk waiver or a complete security/rights certification. See
+[remaining gates and concrete resolution steps](STAGING_BLOCKERS.md).
+
 ## Reproducible review scope
 
 - `npm --prefix apps/mobile audit --json`: current locked tree, 17 findings

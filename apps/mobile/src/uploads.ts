@@ -119,7 +119,8 @@ async function resumeUploadImpl(record:PendingUpload,token:string,onProgress:(se
       paused(signal);
       const offset=session.received_bytes;
       handle.offset=offset;
-      const bytes=handle.readBytes(Math.min(session.chunk_bytes,record.totalBytes-offset));
+      const bytes=await handle.readBytes(Math.min(session.chunk_bytes,record.totalBytes-offset));
+      paused(signal);
       if(bytes.length!==Math.min(session.chunk_bytes,record.totalBytes-offset))throw new Error('Could not read the next video chunk');
       const digest=await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256,bytes);
       const checksum=Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,'0')).join('');

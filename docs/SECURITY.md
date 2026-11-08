@@ -127,3 +127,12 @@ A disposable PostgreSQL/media restore and 100-request/steady-soak exercise are
 implemented. See CAPACITY_SECURITY.md and SECURITY_REVIEW_2026-11-08.md: unresolved
 17 npm findings, image/legal/privacy/backup-journal and real staging quotas remain
 public-launch blockers, not accepted production risks.
+
+Package 6 preparation resolves the historical mobile npm graph to zero current
+advisories via SDK 58 and reviewed scoped tool patches, with async-upload/legacy
+Save API fixes and SDK/native-config/bundle tests. SDK 58 Pixel acceptance remains
+open. Docker API now defaults to loopback; private image inventory does not imply
+a completed vulnerability/legal scan. The owner's package 5 updated strict-host/
+render/Save/playback checks passed. Remaining engineering/owner/provider gates and
+unpublished policy draft are in STAGING_BLOCKERS.md / PRIVACY_TERMS_DRAFT.md; no
+public staging, paid resource, real mail, billing, AI or legal signoff was enabled.

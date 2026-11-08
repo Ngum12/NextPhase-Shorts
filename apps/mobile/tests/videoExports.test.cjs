@@ -8,7 +8,7 @@ function fixture(){
   'expo-file-system/legacy':{cacheDirectory:'file:///cache/',documentDirectory:null,
    downloadAsync:async(url,dest,init)=>{calls.push(['download',init.headers.Authorization]);if(state.downloadError)throw Error('offline');return {uri:dest,status:state.status};},
    getInfoAsync:async()=>({exists:true,size:state.size})},
-  'expo-media-library':{requestPermissionsAsync:async(writeOnly,types)=>{calls.push(['permission',writeOnly,...types]);return {granted:state.granted};},
+  'expo-media-library/legacy':{requestPermissionsAsync:async(writeOnly,types)=>{calls.push(['permission',writeOnly,...types]);return {granted:state.granted};},
    saveToLibraryAsync:async uri=>{calls.push(['save',uri]);if(state.saveError)throw Error('storage full');}},
   'expo-sharing':{isAvailableAsync:async()=>state.shareAvailable,shareAsync:async uri=>{calls.push(['share',uri]);}},
   './api':{downloadUrl:id=>'http://localhost/'+id},'./authEvents':{prepareToken:async token=>token,recoverToken:async token=>{calls.push(['expired',token]);return null;}},

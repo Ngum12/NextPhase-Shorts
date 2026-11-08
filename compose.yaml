@@ -19,7 +19,7 @@ services:
       DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
       STORAGE_DIR: /var/nextphase/media
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - media:/var/nextphase/media
     depends_on:
