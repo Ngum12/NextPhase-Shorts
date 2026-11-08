@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from . import object_store as store
-from .auth import current_user
+from .auth import upload_user
 from .config import get_settings
 from .db import session_dep
 from .models import DirectUploadGrant, UploadPart, User, utcnow
@@ -35,7 +35,7 @@ def require_direct(row):
 
 @router.post('/{session_id}/part-url')
 def part_url(session_id: str, payload: PartIntent, response: Response,
-             user: User = Depends(current_user), db: Session = Depends(session_dep)):
+             user: User = Depends(upload_user), db: Session = Depends(session_dep)):
     lock_owner(db, user.id)
     row = owned(db, session_id, user.id)
     require_direct(row)
@@ -72,7 +72,7 @@ def part_url(session_id: str, payload: PartIntent, response: Response,
 
 
 @router.post('/{session_id}/part-commit/{grant_id}')
-def commit_part(session_id: str, grant_id: str, user: User = Depends(current_user),
+def commit_part(session_id: str, grant_id: str, user: User = Depends(upload_user),
                 db: Session = Depends(session_dep)):
     lock_owner(db, user.id)
     row = owned(db, session_id, user.id)

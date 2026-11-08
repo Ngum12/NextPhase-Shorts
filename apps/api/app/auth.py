@@ -88,3 +88,12 @@ def current_auth(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
 
 def current_user(auth: AuthContext = Depends(current_auth)) -> User:
     return auth.user
+
+
+def upload_user(user: User = Depends(current_user)) -> User:
+    # Recovery, sign-in, existing-project reads and deletion stay accessible.
+    if get_settings().auth_require_verified_email and not (
+            user.email_verified_at and user.email_verification_method=='resend'):
+        raise HTTPException(403,'Confirm your email in Account before starting or resuming uploads.',
+            headers={'Cache-Control':'no-store'})
+    return user

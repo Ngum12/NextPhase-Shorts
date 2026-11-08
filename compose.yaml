@@ -61,6 +61,25 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+  mail-worker:
+    profiles: [email]
+    build:
+      context: ./apps/api
+    command: python -m app.mail_worker
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:size=33554432,mode=1777
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
+      STORAGE_DIR: /tmp/nextphase-mail
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: on-failure
   db:
     image: postgres:16-alpine
     environment:

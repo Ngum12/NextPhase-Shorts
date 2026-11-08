@@ -141,3 +141,21 @@ No dependency, native module, reference-kit source/asset or paid service added.
 Uses existing Python HMAC/JWT/DB stack and Expo SecureStore/Crypto. Existing
 843-record inventory, notices and unresolved licensing/advisory gates remain;
 no new commercial legal clearance is claimed.
+
+## Phase 2 package 2 — authenticated outbox encryption
+
+Added cryptography **50.0.2** (declared `Apache-2.0 OR BSD-3-Clause`), installed
+transitives cffi **2.1.1** (`MIT-0`) and pycparser **3.12** (`BSD-3-Clause`). Sources:
+https://pypi.org/project/cryptography/50.0.2/ ,
+https://pypi.org/project/cffi/2.1.1/ , https://pypi.org/project/pycparser/3.12/ .
+Exact packaged LICENSE/Apache/BSD notices are preserved verbatim under
+`docs/licenses/mail-crypto/<package-version>/`; installed license metadata is in
+the regenerated **846-record** inventory. Retain applicable copyright/license
+notices in distributions. This is upstream metadata/notice review, not independent
+legal clearance, a full bundled OpenSSL/Rust/OS audit or dependency-security signoff.
+
+Resend transport uses existing httpx; no Resend SDK or reference-kit code/assets
+were added. Provider terms, privacy/DPA/subprocessors, current plan/Forge behavior
+and sender-owner approval remain real-channel acceptance gates; local transport
+fixtures do not establish these. No provider request, outgoing real email, paid
+resource/API or billing activation was performed during automated validation.

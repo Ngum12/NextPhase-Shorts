@@ -303,3 +303,17 @@ def test_refresh_migration_preserves_existing_session_and_password(migration_eng
         row=connection.execute(sa.text('SELECT id,family_id,revoked_at FROM auth_sessions')).one()
         assert tuple(row)==('a'*64,None,None)
         assert connection.scalar(sa.text('SELECT count(*) FROM refresh_families'))==0
+
+
+def test_mail_outbox_preserves_local_proof_meaning_and_existing_account(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0015_refresh_sessions')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at,email_verified_at,email_verification_method) VALUES ('mail-owner','keep@example.com','keep-hash',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'local_file')"))
+        connection.execute(sa.text("INSERT INTO auth_actions (id,user_id,purpose,token_hash,account_digest,created_at,expires_at) VALUES ('mail-action','mail-owner','verify',:token,:digest,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"),{'token':'a'*64,'digest':'b'*64})
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        assert tuple(connection.execute(sa.text("SELECT password_hash,email_verification_method FROM users WHERE id='mail-owner'")).one())==('keep-hash','local_file')
+        assert connection.scalar(sa.text("SELECT delivery_method FROM auth_actions WHERE id='mail-action'"))=='local_file'
+        assert connection.scalar(sa.text('SELECT count(*) FROM mail_outbox'))==0

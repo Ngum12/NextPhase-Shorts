@@ -14,7 +14,7 @@ from starlette.background import BackgroundTask
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from .auth import current_user
+from .auth import current_user,upload_user
 from .auth_routes import router as auth_router
 from .auth_actions import router as auth_actions_router
 from .deletion import router as deletion_router
@@ -188,7 +188,7 @@ async def create_job(
     desired_seconds: Annotated[int, Form(ge=5, le=60)] = 30,
     title: Annotated[str, Form(min_length=1, max_length=120)] = "My Short",
     idempotency_key: Annotated[str | None, Header(min_length=8, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")] = None,
-    user: User = Depends(current_user),
+    user: User = Depends(upload_user),
     db: Session = Depends(session_dep),
 ):
     source = directory = None

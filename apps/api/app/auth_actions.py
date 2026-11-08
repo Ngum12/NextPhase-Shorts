@@ -1,4 +1,4 @@
-"""Local-development proof flows. Real email delivery remains disabled/unimplemented."""
+"""One-use proof flows; real delivery is an explicitly enabled durable outbox."""
 from datetime import timedelta,timezone
 import hmac,logging,secrets
 from fastapi import APIRouter,BackgroundTasks,Depends,HTTPException,Request,Response
@@ -16,8 +16,10 @@ from .db import SessionLocal,session_dep
 from .models import AuthAction,AuthSession,User,utcnow
 from .queue import lock_owner
 from .refresh import revoke_families
+from .mail_outbox import real_enabled,enqueue
+from .models import MailOutbox
 
-router=APIRouter(prefix='/api/v1/auth',tags=['local email actions'])
+router=APIRouter(prefix='/api/v1/auth',tags=['email actions'])
 logger=logging.getLogger('nextphase.auth-actions')
 INVALID='Invalid or expired code. Request a new one.'
 
@@ -28,7 +30,7 @@ def local_enabled():
 
 
 def require_enabled():
-    if not local_enabled():raise HTTPException(503,'Email actions are disabled in this preview',headers={'Cache-Control':'no-store'})
+    if not (local_enabled() or real_enabled()):raise HTTPException(503,'Email actions are disabled in this preview',headers={'Cache-Control':'no-store'})
 
 
 def accepted(response):
@@ -85,7 +87,8 @@ class ResetRequest(CodeRequest):
 @router.get('/recovery-capabilities')
 def capabilities(response:Response):
     response.headers['Cache-Control']='no-store'
-    return {'delivery':'local_file' if local_enabled() else 'disabled','verification_enforced':False}
+    return {'delivery':'email' if real_enabled() else 'local_file' if local_enabled() else 'disabled',
+        'verification_enforced':get_settings().auth_require_verified_email}
 
 
 @router.post('/password-reset/request',status_code=202)
@@ -94,6 +97,9 @@ def request_reset(payload:EmailRequest,request:Request,response:Response,tasks:B
     consume_limits([('reset-request-ip',peer(request),settings.auth_login_ip_limit),
                     ('reset-request-email',email,settings.auth_action_email_limit)])
     if local_enabled():tasks.add_task(deliver,'reset',email=email)
+    elif real_enabled():
+        try:enqueue('reset',email=email)
+        except Exception:logger.warning('authentication delivery preparation deferred')
     return accepted(response)
 
 
@@ -103,6 +109,9 @@ def request_verification(request:Request,response:Response,tasks:BackgroundTasks
     consume_limits([('verify-request-ip',peer(request),settings.auth_login_ip_limit),
                     ('verify-request-email',auth.user.email,settings.auth_action_email_limit)])
     if local_enabled():tasks.add_task(deliver,'verify',owner_id=auth.user.id,session_id=auth.session.id)
+    elif real_enabled():
+        try:enqueue('verify',owner_id=auth.user.id,session_id=auth.session.id)
+        except Exception:logger.warning('authentication delivery preparation deferred')
     return accepted(response)
 
 
@@ -114,6 +123,11 @@ def action_owner(db,code,purpose):
     db.refresh(action);user=db.get(User,action.user_id);db.refresh(user)
     expiry=action.expires_at if action.expires_at.tzinfo else action.expires_at.replace(tzinfo=timezone.utc)
     if action.used_at is not None or expiry<=utcnow() or not hmac.compare_digest(action.account_digest,account_digest(user)):
+        raise HTTPException(400,INVALID,headers={'Cache-Control':'no-store'})
+    expected='resend' if real_enabled() else 'local_file'
+    if action.delivery_method!=expected:
+        raise HTTPException(400,INVALID,headers={'Cache-Control':'no-store'})
+    if expected=='resend' and not db.scalar(select(MailOutbox.id).where(MailOutbox.action_id==action.id,MailOutbox.state=='accepted')):
         raise HTTPException(400,INVALID,headers={'Cache-Control':'no-store'})
     return action,user
 
@@ -138,7 +152,7 @@ def confirm_reset(payload:ResetRequest,request:Request,db:Session=Depends(sessio
 @router.post('/email-verification/confirm',status_code=204)
 def confirm_verification(payload:CodeRequest,request:Request,db:Session=Depends(session_dep)):
     require_enabled();limit_confirmation(request,payload.code,'verify')
-    _,user=action_owner(db,payload.code,'verify')
-    user.email_verified_at=utcnow();user.email_verification_method='local_file'
+    action,user=action_owner(db,payload.code,'verify')
+    user.email_verified_at=utcnow();user.email_verification_method=action.delivery_method
     invalidate_actions(db,user.id,'verify');db.commit()
     return Response(status_code=204,headers={'Cache-Control':'no-store'})

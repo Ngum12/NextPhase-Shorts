@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import {recoveryCapabilities,requiresEmailVerification} from '../src/emailActions';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
@@ -17,6 +18,7 @@ export default function Create() {
   const {token}=useAuth();
   const [rights,setRights]=useState(false);
   const [ownerId,setOwnerId]=useState('');
+  const [verificationNeeded,setVerificationNeeded]=useState(false);
   const [recovery,setRecovery]=useState(0);
   const [asset,setAsset]=useState<DocumentPicker.DocumentPickerAsset|null>(null);
   const [style,setStyle]=useState('vlog');
@@ -35,9 +37,10 @@ export default function Create() {
     const recover=async()=>{
       try {
         if(!token)return;
-        const user=await api<{id:string}>('/api/v1/me',token);
+        const [user,caps]=await Promise.all([
+          api<{id:string;email_verified_at:string|null;email_verification_method:string|null}>('/api/v1/me',token),recoveryCapabilities()]);
         const saved=await loadPending(user.id);
-        if(mounted){setOwnerId(user.id);setPending(saved);setRights(saved?.rightsVersion===RIGHTS_VERSION);setMessage(saved?'A saved upload is ready to resume.':'');}
+        if(mounted){setVerificationNeeded(requiresEmailVerification(caps,user));setOwnerId(user.id);setPending(saved);setRights(saved?.rightsVersion===RIGHTS_VERSION);setMessage(saved?'A saved upload is ready to resume.':'');}
       }catch(error:any){if(mounted)setMessage(error.message||'Connect to the server to recover uploads.');}
       finally{if(mounted)setLoading(false);}
     };
@@ -51,7 +54,7 @@ export default function Create() {
     }catch(error:any){Alert.alert('Could not select video',error.message||'Try again');}
   };
   const submit=async()=>{
-    if(!rights||!token||!ownerId||running.current||(!pending&&!asset))return;
+    if(verificationNeeded||!rights||!token||!ownerId||running.current||(!pending&&!asset))return;
     running.current=true;setBusy(true);setMessage('Preparing your upload…');
     const abort=new AbortController();controller.current=abort;
     try {
@@ -87,6 +90,8 @@ export default function Create() {
   return <Page><ScrollView contentContainerStyle={{gap:16,paddingBottom:50}}>
     <Title>Create a Short</Title>
     <Body>Rendering runs on the server. Use only consented test footage in this development preview.</Body>
+    {verificationNeeded&&<View style={s.card}><Body>Confirm your email before starting or resuming uploads. Your saved upload is preserved.</Body>
+      <Button title="Confirm email" onPress={()=>router.push({pathname:'/recover',params:{mode:'verify'}})} secondary/></View>}
     {!!message&&<Body>{message}</Body>}
     {loading&&<Body>Checking for a saved upload…</Body>}
     {!loading&&!ownerId&&<Button title="Retry connection" onPress={()=>{setLoading(true);setRecovery(n=>n+1);}} secondary/>}
@@ -102,7 +107,7 @@ export default function Create() {
       <Body>{progress===null?'Progress will be checked with the server when you resume.':`Upload: ${Math.floor(progress*100)}% received`}</Body>
       <Body>Resume after a connection interruption or app restart. Keep this app’s data. Transfers run while the app is active.</Body>
       {busy&&controller.current?<Button title="Pause upload" onPress={()=>controller.current?.abort()} secondary/>:
-        <Button title="Resume upload" onPress={submit} disabled={busy||!rights}/>}
+        <Button title="Resume upload" onPress={submit} disabled={busy||!rights||verificationNeeded}/>}
       <Button title="Discard upload" onPress={discard} disabled={busy} secondary/>
     </View>:<>
       <View style={s.card}><Text style={s.cardTitle}>1. Choose your video</Text>
@@ -125,7 +130,7 @@ export default function Create() {
           <Text style={{color:seconds===n?c.bg:c.text,fontWeight:'800'}}>{n}s</Text>
         </Pressable>)}</View>
       </View>
-      <Button title={busy?'Saving your upload…':'Upload and start cloud render'} disabled={busy||loading||!rights||!ownerId||!asset||!title.trim()} onPress={submit}/>
+      <Button title={busy?'Saving your upload…':'Upload and start cloud render'} disabled={busy||loading||verificationNeeded||!rights||!ownerId||!asset||!title.trim()} onPress={submit}/>
     </>}
   </ScrollView></Page>;
 }

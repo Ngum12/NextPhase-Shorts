@@ -12,7 +12,7 @@ export default function Account() {
   useFocusEffect(useCallback(()=>{
     let active=true;setStorage(null);setEmailCheck('Loading email status…');
     if(token)api<{email_verified_at:string|null;email_verification_method:string|null}>('/api/v1/me',token)
-      .then(value=>{if(active)setEmailCheck(value.email_verification_method==='local_file'&&value.email_verified_at?'Local test confirmed; real email delivery is not enabled.':'Email confirmation has not been completed.');})
+      .then(value=>{if(active)setEmailCheck(value.email_verified_at&&value.email_verification_method==='resend'?'Email address confirmed.':value.email_verification_method==='local_file'&&value.email_verified_at?'Local test confirmed; real email ownership is not established.':'Email confirmation has not been completed.');})
       .catch(()=>{if(active)setEmailCheck('Email status unavailable. Reopen Account to retry.');});
     if(token)api<any>('/api/v1/me/storage',token).then(value=>{if(active){setStorage(value);setStorageError('');}})
       .catch(()=>{if(active)setStorageError('Storage usage is unavailable. Reopen Account to retry.');});
@@ -37,7 +37,7 @@ export default function Account() {
       </>:<Body>Loading storage usage…</Body>}
     </View>
     <View style={s.card}><Text style={s.cardTitle}>Email confirmation</Text><Body>{emailCheck}</Body></View>
-    <Button title="Email confirmation (local preview)" secondary onPress={()=>router.push({pathname:'/recover',params:{mode:'verify'}})}/>
+    <Button title="Email confirmation" secondary onPress={()=>router.push({pathname:'/recover',params:{mode:'verify'}})}/>
     <Button title="Change password" onPress={()=>router.push('/security')} disabled={busy} secondary/>
     <Button title={busy?'Please wait…':'Sign out'} onPress={()=>leave()} disabled={busy} secondary/>
     <Button title="Sign out all sessions" disabled={busy} secondary onPress={()=>Alert.alert('Sign out everywhere?',

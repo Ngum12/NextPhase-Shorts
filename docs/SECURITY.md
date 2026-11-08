@@ -82,3 +82,12 @@ same-key recovery window handles lost replies; consumed hashes remain to absolut
 expiry. Mobile uses SecureStore, durable intent and generation guards. See
 SESSION_REFRESH.md for retry/theft/cleanup boundaries. HTTPS, real email, MFA and
 production security gates remain open.
+
+Package 2 implements disabled-by-default fixed-origin Resend delivery with a
+separate sender, encrypted bound outbox, owner-ordered/fenced claims, stable
+idempotency, conservative shared attempt caps, expiry/terminal payload erasure and
+credential/deletion cancellation. Opt-in verified-email admission rejects local
+test proofs while keeping sign-in/recovery/deletion and existing-project reads
+reachable. Provider acceptance is not inbox delivery; in-flight mail cannot be
+recalled. Real inbox/provider/privacy/Pixel acceptance remains unobserved. See
+EMAIL_DELIVERY.md for activation, key rotation, external copies and cleanup scope.

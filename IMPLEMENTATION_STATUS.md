@@ -5,6 +5,119 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 package 2 — optional Resend delivery and verified-email policy
+
+- Implementation on `dev/phase-2-email-delivery`, based on confirmed merge
+  **f200dc3**. Owner selected Resend, reports `auth.techskillnow.com`/DKIM/Forge
+  records verified in Ireland and a sending-only API key prepared privately.
+  No key was shared with this environment. Dashboard/DNS verification is an owner
+  report, not an independent real-provider/inbox acceptance observation.
+- **Real sending remains disabled by default and no real email was sent here.**
+  No paid API/infrastructure, subscription billing or AI activated. Optional Resend
+  adapter uses fixed HTTPS origin, verified TLS, no redirects, bounded IO/reply
+  handling and a stable per-outbox idempotency key with a frozen message body.
+  Provider terms/current free limits/Forge/idempotency behavior could not be checked
+  from this environment (provider-site proxy Forbidden); account review remains.
+- Migration **0016_email_outbox** adds method-tagged actions, encrypted outbox and
+  persistent attempt budgets. It preserves legacy local proof meaning/accounts/
+  passwords/sessions/uploads/jobs/media. Action hash and encrypted envelope commit
+  atomically; no best-effort background gap for real delivery. No plaintext proof
+  or recipient is stored in outbox columns; existing users.email remains account
+  data. Envelope binding/expiry/credentials/deletion are checked before dispatch.
+- Separate mail sender: owner-first locks, 90-second fenced leases, crash recovery,
+  <=5 attempts, backoff/Retry-After, permanent failure states and no raw provider
+  errors/log payloads. Network calls hold no owner lock. Concurrent senders share
+  UTC day/month caps and one reservation/second. Defaults 20/day, 500/month; QA
+  helper 5/day, 20/month, one owned recipient. Reservations/retries/crashes count
+  conservatively, not provider billing units. Other apps' quota is not included.
+- Accepted/terminal ciphertext is removed immediately; <=1,000-row maintenance
+  wipes expired payloads and removes metadata after expiry plus one day. Existing
+  render auth maintenance also cleans mail. CLI supports private aggregate reports,
+  cleanup and bounded/cursor-based key re-encryption. Separate Fernet key ring,
+  backup/rotation procedure; loss of keys fails those messages closed. No wall-clock
+  purge SLA while processes are stopped; provider copies/backups/inboxes are outside
+  this cleanup. Password/reset/deletion cancel queued/claimed mail transactionally;
+  an already in-flight send may arrive, but its proof is revoked and completion fenced.
+- Opt-in `AUTH_REQUIRE_VERIFIED_EMAIL` gates multipart upload/session creation/
+  parts/completion/direct grants/commits. Only method `resend` from an accepted
+  outbox establishes trusted verification. Local proofs cannot be promoted or
+  redeemed across channels. Login/refresh/recovery/deletion, existing-project
+  reads/downloads and abort/discard remain available; previously queued renders
+  may finish. Default preview policy remains false until reviewed real-channel QA.
+- Mobile distinguishes disabled/local/real delivery, avoids claiming delivery
+  from generic request acceptance, displays actual verification state and blocks
+  upload/resume with a route to confirmation when policy requires it. Paused upload
+  state is preserved. No permission/native module/mobile key added.
+- Baseline **264 tests passed (49.15 s)**. Final **294 backend tests passed on
+  SQLite (57.25 s) and PostgreSQL (70.62 s)**; no skips, one existing Starlette/
+  httpx warning each. Covers atomic encrypted issuance/failure, secret-free generic
+  requests, concurrent/stale claims, exact retry bodies/keys, network/4xx/5xx/rate
+  failures, caps/clock reversal/max attempts, payload/key/expiry cleanup, reset/
+  deletion races and refresh revocation, trusted-upload routes and additive legacy
+  proof migration. Extended existing live decoder check separately passed: new
+  RESEND_API_KEY/AUTH_MAIL_ENCRYPTION_KEYS are stripped from child environments.
+- **63 mobile logic tests**, TypeScript and Android Hermes export passed:
+  **1,016 modules / 2.73 MB**. Offline Expo check reports dependencies up to date,
+  with its explicit offline-validation limitation; this is not a new registry audit.
+  Doctor/pip consistency/diff checks passed. Compose email profile parses correctly;
+  it was not deployed or claimed to have enforced production host limits.
+- Full local HTTP upload/resume/queue/server-render/download/operations/deletion/
+  retention/crash/auth regressions passed: 1080×1920/30 fps/4.9 s, baseline **2.00 s**.
+  Evidence: `.data/smoke-731512b82ea541daad99303c41783f70/`. Separate real HTTP API
+  plus mail-process fixture restarted API before sending, killed sender after mock
+  provider acceptance, advanced only its stopped disposable lease and recovered
+  the exact message. Verification admission, one-use reset/all refresh revocation,
+  other-owner isolation, ciphertext removal and secret-free logs passed. **Transport
+  was local MockTransport only, not Resend.** Private temp data was removed.
+  Evidence: `.data/email-delivery-smoke-0e9f3487bb2946168505e337cc71b6a5/` (standalone
+  earlier proof `.data/email-delivery-smoke-e29b097bd18b443d817c9b9c39881d2f/`).
+- Private S3/direct-upload full regression also passed, same valid output, baseline
+  **8.02 s** includes signed-link expiry wait; staging/original/output cleanup and
+  separate mock email proof passed. Evidence:
+  `.data/nextphase-s3-smoke-126d8547688f/workflow/` and
+  `.data/email-delivery-smoke-d0fd93af96374bfbbc0c1902c708d117/`.
+  Normal smokes force real email/enforcement off regardless of inherited settings;
+  full smoke/CI includes the explicit disposable mock proof.
+- Added pinned cryptography **50.0.2**, installed cffi **2.1.1**/pycparser **3.12**;
+  packaged license notices preserved and metadata inventory regenerated to **846**.
+  No restricted reference-kit code/assets. Existing last-known 17 npm advisories,
+  full dependency/OS/wheel audit and legal/privacy signoff remain open; metadata
+  review is not commercial production clearance.
+- Private setup helper uses a hidden terminal key prompt, preserves encryption
+  keys, atomically saves ignored local configuration and leaves sending/policy off.
+  Upgrade requires Python requirements installation, backup/migration 0016 and
+  restart. Runbook [EMAIL_DELIVERY.md](docs/EMAIL_DELIVERY.md) specifies one owned-
+  inbox Pixel verification/reset/upload/save check under conservative free-plan
+  caps, then restores disabled preview settings. No repeated manual test suite
+  requested. Remote CI/actual provider/inbox/Pixel/privacy acceptance remain pending;
+  package 2 is **not closed** and package 3 has not been started. Production cgroup
+  host enforcement remains open and was not bypassed. No production deployment.
+- Delivery: implementation **7e12d27** pushed to `dev/phase-2-email-delivery`.
+  GitHub GraphQL returned **Forbidden** creating the review PR; no PR or merge was
+  performed here. Manual review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-email-delivery
+
+## Owner acceptance and package 2 preparation
+
+- Confirmed upstream main **f200dc3**, merge of PR **#20** (session refresh).
+  Owner reports all five focused Pixel checks passed: fresh sign-in, app reopen,
+  access renewal after the 70-second check, upload/resume/render/save, and sign-out/
+  sign-in. These are owner-supplied device results, not independent observations.
+- Package 1 local automated proof remains 264 SQLite/264 PostgreSQL tests, 61
+  client logic tests, TypeScript/Android export and full HTTP/private-S3 workflows.
+  Remote CI lookup returned GitHub API **Forbidden**; its status is unobserved,
+  not passed. This gate remains explicit rather than being silently dropped.
+- Started `dev/phase-2-email-delivery` from the confirmed merge. Inspected current
+  auth-mail/actions/client capabilities: only disabled/private local-file delivery
+  is implemented; no durable real-delivery outbox, SMTP/provider or verified-email
+  policy is present. Package 2 is not complete. Its preparation checklist is in
+  [EMAIL_DELIVERY_PLAN.md](docs/EMAIL_DELIVERY_PLAN.md).
+- Asked only for provider/sender-domain names (or a request for a recommendation),
+  never passwords/API keys. No configured environment secrets are available.
+  Delivery stays disabled; no real email/provider, paid resource or billing was
+  activated. No runtime code/dependencies/schema changed in this acceptance note;
+  only documentation verification is required, not another device regression run.
+
 ## Fixed remaining Phase 2 scope — package 1 session refresh
 
 The owner approved the [six-package checklist](docs/PHASE_2_CHECKLIST.md), in order,

@@ -67,7 +67,7 @@ def main():
         port = run('port',name,'8333/tcp',capture_output=True,text=True,timeout=10).stdout.strip().rsplit(':',1)[1]
         endpoint = f'http://127.0.0.1:{port}'
         env = os.environ.copy()
-        env.update(APP_ENV='test',MEDIA_BACKEND='s3',S3_ENDPOINT=endpoint,S3_PUBLIC_ENDPOINT=endpoint,
+        env.update(APP_ENV='test',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',MEDIA_BACKEND='s3',S3_ENDPOINT=endpoint,S3_PUBLIC_ENDPOINT=endpoint,
             S3_BUCKET='nextphase-smoke',S3_ACCESS_KEY_ID=access,S3_SECRET_ACCESS_KEY=secret,
             SIGNED_DOWNLOAD_SECONDS='5',NEXTPHASE_SMOKE_S3_CHECKS='1',
             DIRECT_UPLOADS_ENABLED='true',SIGNED_UPLOAD_SECONDS='5',NEXTPHASE_SMOKE_DIRECT='1',
