@@ -47,3 +47,8 @@ Operational visibility foundation: migration 0013 process-liveness pulses, minim
 DB/schema readiness, private aggregate queue/failure snapshot and structured worker
 events. Job lease renewal, broker/watchdog, full tracing/exporters, alerts, metadata
 retention and production load/security acceptance remain open. See OPERATIONS.md.
+
+Local recovery foundation: migration 0014 one-use expiring proofs, private file-only
+test delivery and mobile request/confirmation screens. Real email delivery, verified
+channel enforcement, durable outbox, refresh/MFA and privacy/security acceptance
+remain open; local_file state is not production email authority. See AUTH_RECOVERY.md.

@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from .auth import AuthContext,current_auth,verify_password,unauthorized
 from .auth_routes import peer
 from .auth_limits import consume_limits
+from .auth_action_tokens import invalidate_actions
 from .config import get_settings
 from .db import SessionLocal,engine,session_dep
 from .models import User,AuthSession,AccountDeletion,RenderJob,RenderAttempt,UploadSession,UploadPart,DirectUploadGrant,utcnow
@@ -71,6 +72,8 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
         namespaces=json.dumps(sorted(namespaces)))
     db.add(row)
     auth.user.deleted_at=now;auth.user.email='!deleted:'+uid;auth.user.password_hash='!disabled'
+    auth.user.email_verified_at=None;auth.user.email_verification_method=None
+    invalidate_actions(db,uid)
     db.execute(update(AuthSession).where(AuthSession.user_id==uid,AuthSession.revoked_at.is_(None)).values(revoked_at=now))
     # Revoke all claims in the same owner transaction, before any media I/O.
     db.execute(update(RenderJob).where(RenderJob.user_id==uid).values(status='deleted',deleted_at=now,

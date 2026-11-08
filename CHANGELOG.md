@@ -135,3 +135,11 @@
 - Add minimal DB/schema readiness and private queue/failure/worker operator reports.
 - Add allowlisted JSON worker events and live/shutdown/expired-claim smoke checks.
 - No dependency, mobile, paid-service or billing change.
+
+## Local authentication recovery increment (2026-11-08)
+
+- Add migration 0014, local proof metadata and one-use credential-bound email actions.
+- Add disabled-by-default private development inbox; no email provider activated.
+- Add mobile Forgot password/local email proof screens and sanitized auth validation.
+- Reset/change/delete revoke pending proofs; reset revokes all account sessions.
+- No dependency, paid-service or real email-owner verification/enforcement change.

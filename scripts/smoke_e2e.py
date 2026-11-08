@@ -360,7 +360,7 @@ def main():
     processes = []
     with tempfile.TemporaryDirectory(prefix='nextphase-smoke-') as temporary:
         env = os.environ.copy()
-        env.update(APP_ENV='test', PYTHONPATH=str(ROOT / 'apps/api'),
+        env.update(APP_ENV='test',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_DIR=temporary+'/auth-mail', PYTHONPATH=str(ROOT / 'apps/api'),
                    DATABASE_URL='sqlite:///' + temporary + '/db.sqlite3', STORAGE_DIR=temporary + '/media',
                    JWT_SECRET=secrets.token_urlsafe(48), AI_PROVIDER='disabled', BILLING_PROVIDER='disabled',
                    WORKER_POLL_SECONDS='0.1', WORKER_HEARTBEAT_SECONDS='1', AUTH_LOGIN_ACCOUNT_LIMIT='5', AUTH_LOGIN_IP_LIMIT='30',
@@ -451,6 +451,7 @@ def main():
         print('Operations shutdown/failure detection:',result.strip())
     subprocess.run([sys.executable,str(ROOT/'scripts/smoke_account_deletion.py')],cwd=ROOT,check=True,timeout=120)
     subprocess.run([sys.executable,str(ROOT/'scripts/smoke_worker_recovery.py')],cwd=ROOT,check=True,timeout=120)
+    subprocess.run([sys.executable,str(ROOT/'scripts/smoke_auth_recovery.py')],cwd=ROOT,check=True,timeout=120)
     print('Evidence:', args.output_dir)
 
 

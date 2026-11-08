@@ -17,6 +17,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(256))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    email_verification_method: Mapped[str | None] = mapped_column(String(24),nullable=True)
     jobs: Mapped[list["RenderJob"]] = relationship(back_populates="user")
 
 class StorageBudget:
@@ -156,3 +158,15 @@ class WorkerPulse(Base):
     stopped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
     phase: Mapped[str] = mapped_column(String(24))
     heartbeat_seconds: Mapped[float] = mapped_column(Float)
+
+
+class AuthAction(Base):
+    __tablename__='auth_actions'
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'),index=True)
+    purpose: Mapped[str] = mapped_column(String(16))
+    token_hash: Mapped[str] = mapped_column(String(64),unique=True)
+    account_digest: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)

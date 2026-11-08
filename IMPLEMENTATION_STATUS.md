@@ -1,9 +1,90 @@
-# Implementation Status — 2026-11-07
+# Implementation Status — 2026-11-08
 
 This is a **developer prototype**, not a production AI editor. Phase 0 engineering
 validation and the server portion of Phase 1 are verified below. The owner has now
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
+
+## Phase 2 increment — local authentication recovery proofs
+
+- Migration **0014_auth_actions** adds expiring one-use action hashes, HMAC
+  account/credential binding and nullable method-tagged email-proof fields.
+  Existing accounts are not backfilled as verified or locked out. Login/upload
+  verification enforcement remains false. No dependency or native module added.
+- **Real email delivery remains disabled/unimplemented.** The sole opt-in adapter
+  writes a private local inbox only for development/test; staging/production
+  reject it. No SMTP/provider request, funded infrastructure or email send occurred.
+  local_file proof is not evidence of real-world email ownership and must not
+  become production verification authority. Public confirmations are unavailable
+  by default; there is no unauthenticated reset bypass or API-returned debug code.
+- Requests use uniform generic acceptance for known/unknown/failed/disabled
+  delivery, with shared IP/email rate limits. Local preparation runs after the
+  response; action commit precedes private atomic message publication. This is
+  best-effort development delivery, not a durable production outbox. File failures
+  invalidate undelivered actions without logging email/code/path/exception text.
+- Reset requires a 256-bit random 5–30 minute proof and commits password update,
+  competing-proof consumption and all-session revocation together. No JWT or
+  automatic login is returned. Owner locking serializes competing resets and
+  password/deletion races. Email confirmation records only local method/time.
+  Password change/reset/delete invalidate pending proofs; re-registering an email
+  cannot recover the deleted owner. Expired DB proofs are cleaned in <=1,000-row
+  batches by auth maintenance; private local message files require operator cleanup.
+- Mobile adds Forgot password and Account local email confirmation with clear
+  disabled/test-only copy, secure inputs and no persisted code/password. Public
+  requests send no bearer/cookies and do not expire another login on failure.
+  Post-reset validation uses existing originating-token guards. Auth 422 validation
+  responses now avoid echoing input passwords/codes. No new permissions/API keys.
+- Baseline **233 tests passed (44.68 s)**. Final **248 tests passed on SQLite
+  (58.37 s) and PostgreSQL (68.52 s)**, no skips, one existing Starlette/httpx
+  warning each. Covers private opt-in/production rejection, uniform requests,
+  secret-free validation/delivery failures, hashed proofs, purpose/expiry/single
+  use, parallel competing resets, revoked sessions/changed credentials/deletion,
+  private-folder restrictions, bounded expiry cleanup, commit-before-publication
+  and additive legacy-account/password preservation, plus all prior regressions.
+- TypeScript and **44 client logic tests** passed (seven new recovery tests plus
+  prior 37). Android Hermes export passed: **1,016 modules / 2.72 MB**. Tests use
+  adapters; no new native Windows/Pixel/iOS acceptance is claimed. Doctor, pip and
+  diff checks passed. No new dependencies/assets: existing 843-record inventory
+  and last-known 17 npm advisories remain unresolved; no new legal/audit clearance.
+- Real private local HTTP proof restarted the API with a pending reset code,
+  confirmed one-use reset/same account, old-session revocation, other-account
+  preservation, credential-change invalidation, local method tagging, secret-free
+  access logs and complete temporary inbox/DB cleanup. Default full HTTP and S3
+  workflows keep delivery disabled, then run this separate disposable file fixture.
+  No actual email address was contacted and no existing account DB was modified.
+- Full HTTP upload/resume/queue/server-render/download/operations/deletion/retention/
+  crash regression passed: 1080×1920/30fps/4.9 s, baseline 2.32 s. Evidence:
+  `.data/smoke-4566f84040ef475aa001d13ac92cac29/` and
+  `.data/auth-recovery-smoke-d18726c45d804f3ab8d399bec84f25b0/`.
+  Disposable private S3 workflow also passed, baseline 7.95 s includes six-second
+  signed-link expiry wait; same valid output, original/output/staging cleanup and
+  separate local email-action proof. Evidence:
+  `.data/nextphase-s3-smoke-fe4e1e45c3c4/workflow/` and
+  `.data/auth-recovery-smoke-df26a060b0f84306a945816c121739bb/`.
+- Owner-reported merged operations acceptance (`80d7d0e`): migration current,
+  **230 Windows tests passed, three expected Linux-only skips (190.70 s)**; full
+  S3-backed smoke passed (baseline 4.41 s; `.data\smoke-4783d10e820f4468820cfa22cdd7c028`).
+  Windows hard termination correctly had zero stopped records in that fixture;
+  stale classification used only the documented synthetic observation clock.
+  Subsequent live readiness returned true, operations status ok, one fresh idle
+  worker, zero expired/missing claims. Owner then confirmed listed Pixel upload/
+  render/save checks. These are supplied results, not independent device tests.
+- Upgrade: stop API/workers, back up DB/media, migrate 0014, restart server and
+  Metro; no pip/npm reinstall needed solely for this build. First verify disabled
+  behavior; optional file QA uses a disposable account and private operator inbox.
+  Never paste codes/messages into chat/issues/screenshots or expose that folder.
+  Runbook/protocol/retention boundaries: [AUTH_RECOVERY.md](docs/AUTH_RECOVERY.md).
+- Remaining Phase 2: owner-approved real email delivery, verified-channel policy,
+  durable encrypted outbox/cleanup/notifications, refresh/MFA, broker/lease renewal,
+  per-tenant isolation/egress, monitoring/retention, load and privacy/legal signoff.
+  Strict Docker cgroup-host acceptance remains open (managed driver none); it was
+  not bypassed. Paid services, AI and billing remain disabled; remote CI and new
+  native acceptance remain unobserved. No production deployment performed.
+
+- Delivery: implementation `3181744` pushed to `dev/phase-2-auth-recovery`.
+  GitHub GraphQL returned `Forbidden` creating the PR; no PR, merge or production
+  deployment was performed. Manual owner review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-auth-recovery
 
 ## Phase 2 increment — operational visibility
 
@@ -1087,13 +1168,13 @@ subscription quotas, legal/store signoffs and commercial production hosting.
 
 ## Next steps
 
-1. Review/merge operational visibility and observe the new CI run. Stop API/workers,
-   back up DB/media and migrate 0013 before restarting updated server processes.
-2. Verify /ready, a fresh worker in app.operations, new/old uploads/render/save and
-   structured completion events. No dependency/mobile install is needed.
-3. Continue remaining Phase 2 broker/lease renewal, isolation/egress, external
-   monitoring/retention, capacity/load and verified recovery/legal gates. Strict
-   Docker cgroup-host acceptance remains required; paid services stay disabled.
+1. Review/merge local recovery and observe the new CI run. Stop API/workers,
+   back up DB/media and migrate 0014 before restarting server/mobile.
+2. Check disabled delivery copy and normal old/new project behavior. Optional
+   disposable-account file QA is in AUTH_RECOVERY.md; it sends no email.
+3. Keep real delivery disabled pending an approved provider/channel plan and
+   production privacy/security review. Continue remaining Phase 2 refresh/MFA,
+   broker/lease renewal, isolation/monitoring/capacity gates before later AI work.
 
 No paid APIs, paid infrastructure, real billing or subscription collection were
 activated. Heavy rendering remains on the server; no private keys were put in mobile.

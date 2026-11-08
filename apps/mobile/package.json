@@ -12,7 +12,8 @@
     "test:uploads": "node tests/uploads.test.cjs",
     "test:auth": "node tests/auth.test.cjs",
     "test:exports": "node tests/videoExports.test.cjs",
-    "test:account": "node tests/accountDeletion.test.cjs"
+    "test:account": "node tests/accountDeletion.test.cjs",
+    "test:recovery": "node tests/emailActions.test.cjs"
   },
   "dependencies": {
     "expo": "~54.0.0",

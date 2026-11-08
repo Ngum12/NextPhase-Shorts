@@ -271,3 +271,16 @@ def test_worker_pulses_migration_preserves_accounts_and_media_paths(migration_en
         assert connection.scalar(sa.text('SELECT count(*) FROM worker_pulses'))==0
         row=connection.execute(sa.text("SELECT received_bytes,rights_version,client_key FROM upload_sessions WHERE id='ops-upload'")).one()
         assert tuple(row)==(8,'upload-rights-v1','keep-ops-key')
+
+
+def test_auth_actions_migration_preserves_unverified_legacy_account(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0013_worker_pulses')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at) VALUES ('recovery-owner','keep-recovery@example.com','keep-password-hash',CURRENT_TIMESTAMP)"))
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT email,password_hash,email_verified_at,email_verification_method FROM users WHERE id='recovery-owner'")).one()
+        assert tuple(row)==('keep-recovery@example.com','keep-password-hash',None,None)
+        assert connection.scalar(sa.text('SELECT count(*) FROM auth_actions'))==0

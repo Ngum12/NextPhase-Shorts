@@ -218,3 +218,11 @@ Migration 0013 adds independent worker liveness pulses. `/ready` checks API DB/s
 readiness; private `python -m app.operations` reports backlog, expired claims, recent
 failures and observed worker states. Worker events use validated JSON fields. No
 public metrics/admin endpoint or paid monitoring service. See [upgrade and checks](docs/OPERATIONS.md).
+
+### Local authentication recovery preview
+
+Migration 0014 adds expiring one-use password-reset/email-proof actions. Delivery is
+disabled by default; an explicit private local-file inbox is available only for
+development/testing. No SMTP/provider, real-world email-owner verification or
+verification enforcement was activated. Forgot password/Account screens show this
+state honestly. See [upgrade and disposable-account QA](docs/AUTH_RECOVERY.md).

@@ -29,6 +29,9 @@ jobs:
       - name: Test account deletion recovery
         working-directory: apps/mobile
         run: npm run test:account
+      - name: Test local email action privacy and session handling
+        working-directory: apps/mobile
+        run: npm run test:recovery
       - name: Check Expo SDK versions
         working-directory: apps/mobile
         run: EXPO_OFFLINE=1 npx expo install --check

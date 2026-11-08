@@ -5,12 +5,12 @@ import math
 from datetime import timedelta, timezone
 
 from fastapi import HTTPException
-from sqlalchemy import case, delete
+from sqlalchemy import case, delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from .config import get_settings
 from .db import SessionLocal, engine
-from .models import AuthRateBucket, AuthSession, utcnow
+from .models import AuthRateBucket, AuthSession, AuthAction, utcnow
 
 
 def consume_limits(identities):
@@ -44,3 +44,5 @@ def cleanup_auth():
     with SessionLocal.begin() as db:
         db.execute(delete(AuthRateBucket).where(AuthRateBucket.expires_at <= now))
         db.execute(delete(AuthSession).where(AuthSession.expires_at <= now))
+        expired=select(AuthAction.id).where(AuthAction.expires_at<=now).order_by(AuthAction.expires_at,AuthAction.id).limit(1000)
+        db.execute(delete(AuthAction).where(AuthAction.id.in_(expired)))

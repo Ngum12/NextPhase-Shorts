@@ -5,6 +5,8 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+os.environ["AUTH_MAIL_BACKEND"] = "disabled"
+os.environ["AUTH_MAIL_DIR"] = str(ROOT / "auth-mail")
 os.environ['MEDIA_BACKEND'] = 'local'
 os.environ['DIRECT_UPLOADS_ENABLED'] = 'false'
 # Regression suites create many isolated accounts behind one test-client IP.

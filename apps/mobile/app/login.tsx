@@ -26,6 +26,7 @@ export default function LoginScreen() {
     {isNew&&<Body>Use at least 12 characters for your new password.</Body>}
     <Button title={busy ? 'Please wait…' : isNew ? 'Create account' : 'Sign in'} onPress={submit} disabled={busy || !email || password.length<(isNew?12:1)}/>
     <Button title={isNew ? 'Already have an account? Sign in' : 'New here? Create an account'} onPress={()=>setIsNew(!isNew)} secondary />
+    <Button title="Forgot password?" secondary onPress={()=>router.push('/recover')}/>
     <Button title="Finish account deletion" secondary onPress={()=>router.push('/delete-account')}/>
     <Body>Preview build: cloud trimming is functional; AI style effects and subscriptions will be added in later stages.</Body>
   </KeyboardAvoidingView></Page>;

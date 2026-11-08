@@ -1,7 +1,8 @@
 # Phase 2 increment: revocable sessions and authentication limits
 
-This is a partial auth-hardening increment. Email verification, verified password
-recovery, refresh-token rotation, security notices and admin MFA remain open.
+This is a partial auth-hardening increment. Local email-proof/reset handling is now
+implemented in AUTH_RECOVERY.md, with delivery disabled by default. Production email
+verification/recovery, refresh-token rotation, security notices and admin MFA remain open.
 No mail service, paid API, cloud infrastructure or real billing is activated.
 
 ## Upgrade an existing Windows installation
