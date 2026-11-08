@@ -49,6 +49,8 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     user: Mapped["User"] = relationship(back_populates="jobs")
+    trace_id: Mapped[str | None] = mapped_column(String(32),nullable=True)
+    parent_span_id: Mapped[str | None] = mapped_column(String(16),nullable=True)
     title: Mapped[str] = mapped_column(String(120))
     style: Mapped[str] = mapped_column(String(48))
     desired_seconds: Mapped[int] = mapped_column(Integer)
@@ -240,3 +242,26 @@ class MailBudget(Base):
     daily_attempts: Mapped[int] = mapped_column(Integer)
     monthly_attempts: Mapped[int] = mapped_column(Integer)
     next_send_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class Observation(Base):
+    __tablename__='observations'
+    id: Mapped[str] = mapped_column(String(16),primary_key=True)
+    trace_id: Mapped[str] = mapped_column(String(32),index=True)
+    parent_id: Mapped[str | None] = mapped_column(String(16),nullable=True)
+    job_id: Mapped[str | None] = mapped_column(ForeignKey('render_jobs.id'),nullable=True,index=True)
+    attempt_id: Mapped[str | None] = mapped_column(ForeignKey('render_attempts.id'),nullable=True)
+    stage: Mapped[str] = mapped_column(String(32))
+    started_ns: Mapped[int] = mapped_column(BigInteger,index=True)
+    ended_ns: Mapped[int] = mapped_column(BigInteger)
+    outcome: Mapped[str] = mapped_column(String(16))
+    attributes: Mapped[str] = mapped_column(Text)
+
+
+class ArtifactMeasure(Base):
+    __tablename__='artifact_measures'
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uuid_str)
+    job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'),index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    bytes: Mapped[int] = mapped_column(BigInteger)
+    stored_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

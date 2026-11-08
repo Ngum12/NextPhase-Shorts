@@ -5,6 +5,109 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 package 4 — monitoring, secrets and measured-cost coverage
+
+Implementation branch `dev/phase-2-monitoring-secrets-costs`, based on confirmed
+merged main **017bf20 / PR #22**. Locally verified for review; owner check and
+remote CI remain unobserved for this package. Packages 5–6 have not been skipped.
+No paid service/API/infrastructure, real email sending, AI, billing or public
+monitoring endpoint was activated.
+
+- Additive migration **0018_observations** preserves users, passwords, sessions,
+  projects, media, upload offsets/rights, claims and broker state. It adds nullable
+  job trace/parent IDs, fixed-schema observations and known-artifact measurements.
+  No historical resource/byte/cost values are fabricated or backfilled.
+- API admission → queue/attempt/encode/QA/publication correlation uses server-created
+  trace IDs. Retries retain the job trace and separate attempt spans. Authorized
+  downloads bind to the project trace; earlier resumable-part requests have their
+  own request traces/aggregate bytes rather than invented per-job attribution.
+  Broker payload remains strict JSON containing only the generation UUID.
+- Monotonic stage wall times, Linux decoder CPU lower-bound/sampled maximum RSS,
+  derived encode throughput and observed API/worker storage bytes. These are not
+  exact CPU, true peak memory, instant progress or TCP/client-save confirmation.
+- Bounded private OTLP/HTTP JSON and Prometheus text exports, local queue/failure/
+  liveness/truncation/optional cost alerts and explicit CLI exits. Create-only
+  private UTF-8 export files refuse overwrite. No external collector, network
+  exporter, scheduler or alert recipient was configured or contacted.
+- Monetary defaults remain **null**. Explicit validated USD rates estimate observed
+  attempt allocation, known original/successful-output lifetime and API/storage
+  transfer components, with sample counts/partial per-job P50/P95 and missing
+  coverage. Cost thresholds alert on observed estimates, not total provider spend.
+  Direct signed traffic, failed transfers, staging/orphans/backups, idle/API/DB/
+  broker costs and provider fees/taxes remain unknown and clearly reported.
+- Mounted `_FILE` secret adapter for JWT/DB/S3/broker/Resend/mail keys rejects
+  ambiguity, links/junctions, unsafe file types/permissions, oversize/multiline input.
+  Values are not printed or copied into decoder environments. Reports show source
+  type only. Rotation runbook covers restart, deliberate JWT re-login, retained
+  mail decrypt keys, broker coordination and external provider revocation. No cloud
+  vault provisioning or provider/IAM rotation is claimed.
+- Raw Uvicorn target/query access strings are replaced with fixed content-free
+  request events. Unexpected request errors return sanitized 500 responses without
+  exception payload/traceback. Existing lost-commit recovery tests retain durable
+  source/offset/one-job checks under that safe HTTP failure contract. Decoder import
+  remains independent of validating server secrets. Telemetry loss is best effort,
+  emits fixed warnings and never rolls back accepted work.
+
+### Verification
+
+- Clean unchanged baseline snapshot: **317 backend tests passed (70.08s)**.
+- Final complete suites: **339 passed on SQLite (81.71s)** and **339 passed on
+  PostgreSQL (101.67s)**, no Linux skips, one existing Starlette/httpx deprecation
+  warning each. Includes real decoder correlation/resource/byte measurement,
+  nested failure privacy, rates/known-lifetime exact arithmetic, unknown/truncated
+  coverage/alerts, secret-file failure/rotation and additive migration preservation.
+- **63 mobile logic tests and TypeScript passed**; no mobile source/native/dependency
+  change or new Hermes/device build is claimed. Doctor, pip consistency and diff
+  checks passed. No dependency added; 849-record inventory and notices unchanged.
+- Complete local HTTP restart/auth/resume/upload/queue/server-render/download/
+  deletion/retention/crash checks passed; observed baseline **2.33s**, output
+  **1080×1920, 30fps, 4.9s**. Monitoring companion checked stage/resource/byte data,
+  actual private OTLP export and explicit unknown/no-price reporting. Evidence:
+  `.data/smoke-d504714de8e843ac9bad8cd639e0baef/`.
+- Complete **real Valkey/Arq + private S3** regression passed, including AOF hard
+  restart persistence, signed direct transfer/expiry/sealing, actual render/save
+  download/decode, remote cleanup, account/worker/auth proofs and new monitoring
+  export/counters. Same valid output; observed baseline **9.56s** includes signed
+  expiry wait and is not a capacity/SLA benchmark. Evidence:
+  `.data/nextphase-s3-smoke-61692c11f142/workflow/` and
+  `.data/nextphase-queue-smoke-a73ecd24c02b/`.
+- An earlier full S3 run completed the render/monitoring checks but later failed
+  creating a disposable account fixture due to disk exhaustion; it is not counted
+  as a full pass. Removed only 31 exact known generated 53,554,551-byte resumable
+  stress inputs from agent smoke directories, reclaiming 1.66GB. Reports, result
+  videos, application volumes and unrelated data were preserved; complete rerun
+  then passed. No production stack was rebuilt on the unsupported managed host.
+
+### Explicit remaining gates and focused acceptance
+
+- Review/merge and remote CI; then rebuild the owner's existing Docker stack,
+  perform one Pixel render/save and run `docker compose exec -T worker python -m
+  app.monitoring --check`. See [runbook](docs/MONITORING_SECRETS_COSTS.md). No repeated
+  owner regression suite is required. Back up the **active PostgreSQL DB/media**;
+  the earlier Windows SQLite backup does not back up the Docker database.
+- External collector/alert routing, real secret-manager mounts/IAM revocation and
+  provider billing/physical-inventory reconciliation require the reviewed staging
+  environment and approved rates/credentials. They are not claimed complete by
+  this local export/adapter. No secret value needs to be supplied in chat.
+- Observation/operational metadata retention/global admission, complete storage/
+  egress cost coverage, representative load/soak/restore/security and production
+  hard cost ceiling remain the explicit packages 5–6 gates. Last-known 17 npm
+  advisories, complete OS/transitive license/security and privacy/legal review
+  remain unresolved. No external protocol collector acceptance or total cost/
+  production security certification is inferred from passing local tests.
+
+### Owner-reported package 3 acceptance — 2026-11-08
+
+Confirmed PR **#22** merged at **017bf20**. Owner supplied Docker Desktop worker
+build and host report: unprivileged user, cgroup limits, filesystem/network
+isolation all **enforced**, **ready: true**. Full Docker DB/broker/API were healthy;
+worker and supervisor started, `/ready` returned true. Operations snapshot showed
+one succeeded job/attempt, one fresh idle worker, zero expired/missing claims and
+status ok with no issues. Owner explicitly confirmed Pixel save and playback worked.
+These are owner-supplied host/device results, not this managed host's containment
+or cloud-agent device execution. This supersedes package 3's historical host/device
+pending notes below; managed kernel/runtime remains unsupported, remote CI unobserved.
+
 ## Phase 2 package 3 — durable queue and worker supervision
 
 Implementation branch: `dev/phase-2-queue-reliability`, based on merged main

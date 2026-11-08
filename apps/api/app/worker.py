@@ -79,7 +79,7 @@ def claim_job():
         if job is None:
             return None
         db.add(RenderAttempt(id=token,job_id=job.id,number=job.attempt_count,started_at=now,status='running',deadline_at=job.claim_deadline_at))
-        return {'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
+        return {'trace_id':job.trace_id,'parent_span_id':job.parent_span_id,'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
                 'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
                 'claim_token': token, 'media_backend': job.media_backend,
                 'object_store_id': job.object_store_id,
@@ -121,8 +121,28 @@ def owns_claim(job):
 
 def process(job):
     from .job_supervision import ClaimSupervisor
-    with ClaimSupervisor(job) as supervisor:
-        _process(job,supervisor)
+    from .observability import Recorder,current,stage,save
+    recorder=Recorder(trace_id=job.get('trace_id') or job['id'].replace('-',''),
+        parent_id=job.get('parent_span_id'),job_id=job['id'],attempt_id=job['claim_token'])
+    context=current.set(recorder)
+    try:
+        with stage('attempt'):
+            with ClaimSupervisor(job) as supervisor:
+                _process(job,supervisor)
+    finally:
+        current.reset(context)
+        # The process handles media errors internally; root span follows durable attempt state.
+        try:
+            with SessionLocal() as db:
+                state=db.get(RenderAttempt,job['claim_token'])
+                for row in recorder.rows:
+                    if row['stage']=='attempt' and (state is None or state.status!='succeeded'):row['outcome']='error'
+        except SQLAlchemyError:
+            from .observability import logger
+            logger.warning('observation_state_unavailable')
+            for row in recorder.rows:
+                if row['stage']=='attempt':row['outcome']='error'
+        save(recorder)
 
 
 def _process(job,supervisor):
@@ -140,8 +160,11 @@ def _process(job,supervisor):
             object_store.require_namespace(job.get('object_store_id'))
             output.parent.mkdir(parents=True, exist_ok=True)
             extension = Path(job['source'].split('#', 1)[0]).suffix
-            object_store.fetch(job['source'], object_store.source_key(job['user_id'], job['id'], extension),
-                               source, settings.max_upload_bytes)
+            from .observability import stage
+            with stage('source_fetch') as observed:
+                object_store.fetch(job['source'], object_store.source_key(job['user_id'], job['id'], extension),
+                                   source, settings.max_upload_bytes)
+                observed['storage_read_bytes']=source.stat().st_size
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
         info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: stop or supervisor.lost.is_set() or not owns_claim(job))
         output_bytes = output.stat().st_size
@@ -149,10 +172,15 @@ def _process(job,supervisor):
         if remote:
             if stop or not owns_claim(job):
                 raise MediaCancelled('Claim lost before private upload')
-            output_reference = object_store.put(output, object_store.output_key(job['user_id'], job['id'], token),
-                                                job.get('max_render_bytes', settings.max_render_bytes))
+            from .observability import stage
+            with stage('output_publish') as observed:
+                output_reference = object_store.put(output, object_store.output_key(job['user_id'], job['id'], token),
+                                                    job.get('max_render_bytes', settings.max_render_bytes))
+                observed['storage_write_bytes']=output_bytes
         if mark_done(job['id'], token, output_path=output_reference, output_duration=info['duration'],
                      wall_seconds=time.monotonic()-began, output_bytes=output_bytes):
+            from .costs import measure_artifact
+            measure_artifact(job['id'],'output',output_bytes)
             emit('render_completed',job_id=job['id'],output_seconds=info['duration'])
         else:
             # A recovered attempt can never replace or remove the winner's artifact.

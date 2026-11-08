@@ -29,6 +29,10 @@ from .consent import RIGHTS_VERSION, require_rights
 from . import object_store
 from .schemas import JobResponse, StyleInfo, UserResponse
 
+# Uvicorn access strings contain raw targets/query text; use the content-free
+# request event from TraceMiddleware instead. No customer URL reaches access logs.
+import logging
+logging.getLogger('uvicorn.access').disabled=True
 settings = get_settings()
 from .catalog import STYLES, STYLE_IDS
 from .uploads import router as uploads_router
@@ -47,6 +51,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="NextPhase Shorts API", version="0.1.0", lifespan=lifespan)
+from .observability import TraceMiddleware,bind_job
+app.add_middleware(TraceMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                    allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Chunk-SHA256"],
@@ -109,6 +115,7 @@ def download(job_id: str, user: User = Depends(current_user), db: Session = Depe
     job = db.scalar(select(RenderJob).where(RenderJob.id == job_id, RenderJob.user_id == user.id, RenderJob.status != 'deleted'))
     if job is None:
         raise HTTPException(404, "Project not found")
+    bind_job(job)
     if job.status != "succeeded" or not job.output_path:
         raise HTTPException(409, "Video is not ready")
     if job.media_backend == 's3':
@@ -249,7 +256,7 @@ async def create_job(
                               source_path=source_reference, status="queued",
                               storage_reserved_bytes=reservation(total,settings.max_render_bytes), max_render_bytes=settings.max_render_bytes,
                               idempotency_key=idempotency_key, request_hash=fingerprint if idempotency_key else None)
-        job, replayed = admit_job(db, candidate)
+        job, replayed = admit_job(db, candidate,source_bytes=total)
         # Retain a new source if COMMIT acknowledgement is lost: DB outcome may
         # be unknown. An orphan is safer than deleting an accepted job's input.
         committed_new_job = not replayed

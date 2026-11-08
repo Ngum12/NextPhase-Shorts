@@ -102,3 +102,18 @@ does not pass cgroups/Landlock, so production containment is not accepted. Share
 kernel/runtime paths are not a VM or exploit certification. Native development
 mode remains explicitly weaker. See QUEUE_RELIABILITY.md for exact limits, TLS,
 RPO/reconciliation and remote-store late-write/erasure boundaries.
+
+Package 3 owner acceptance update (2026-11-08): supplied Docker Desktop report
+shows unprivileged user/cgroup/filesystem/network protections enforced and ready
+true; owner confirmed protected-stack Pixel render/save/playback and a healthy
+operations report. This does not change the managed cloud host's unsupported
+status or constitute a production security certification.
+
+Package 4 adds fixed-schema correlated observations, content-free request/error
+logs, operator-only OTLP/Prometheus exports and explicit partial-cost coverage.
+Mounted secret files reject ambiguous values, unsafe types/links/permissions and
+oversize input; values are not copied into decoder environments or logs. Restart
+consumers on rotation; JWT rotation deliberately requires re-login. External vault,
+collector/alert routing, edge logs, provider billing reconciliation, metadata
+retention and privacy/security signoff remain deployment/capacity gates. See
+MONITORING_SECRETS_COSTS.md; no public metrics endpoint or telemetry network sender.

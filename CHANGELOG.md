@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 2 package 4 — monitoring, secrets and measured costs
+
+- Migration 0018 preserves media/auth state and adds private observations, known
+  artifact measurements and durable job trace correlation without historical guesses.
+- Record stage timing, decoder CPU/RSS samples and transfer bytes; export bounded
+  OTLP JSON/Prometheus text and evaluate private local queue/failure/cost alerts.
+- Add mounted secret-file loading, rotation guidance and content-free request/error
+  logging. Monetary estimates require explicit rates and disclose unknown coverage.
+- Record owner-supplied package 3 host/Docker/Pixel acceptance after PR #22.
+  No paid provider, billing, real mail, public metrics or automatic network exporter.
+
 ## Phase 2 package 3 — durable queue and worker supervision
 
 - Add Valkey/Arq durable dispatch with transactional SQL signals, strict JSON,

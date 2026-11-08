@@ -5,6 +5,8 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+# Isolated tests never read operator-mounted credentials or dotenv file bindings.
+for key in ['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE']:os.environ[key]=''
 os.environ["AUTH_MAIL_BACKEND"] = "disabled"
 os.environ['AUTH_MAIL_SEND_ENABLED']='false'
 os.environ['AUTH_REQUIRE_VERIFIED_EMAIL']='false'

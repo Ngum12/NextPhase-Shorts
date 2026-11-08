@@ -2,13 +2,14 @@ import os
 from functools import lru_cache
 from pathlib import Path
 from dotenv import load_dotenv
+from .secret_config import read_secret
 
 load_dotenv()
 
 class Settings:
     def __init__(self):
         self.env = os.getenv("APP_ENV", "development")
-        self.database_url = os.getenv("DATABASE_URL", "sqlite:///./.data/nextphase.db")
+        self.database_url = read_secret("DATABASE_URL", "sqlite:///./.data/nextphase.db")
         self.storage_dir = Path(os.getenv("STORAGE_DIR", "./.data/media")).resolve()
         # Opt-in only. Existing rows retain their own backend across config changes.
         self.media_backend = os.getenv('MEDIA_BACKEND', 'local')
@@ -16,8 +17,8 @@ class Settings:
         self.s3_public_endpoint = os.getenv('S3_PUBLIC_ENDPOINT', self.s3_endpoint)
         self.s3_bucket = os.getenv('S3_BUCKET', '')
         self.s3_region = os.getenv('S3_REGION', 'us-east-1')
-        self.s3_access_key = os.getenv('S3_ACCESS_KEY_ID', '')
-        self.s3_secret_key = os.getenv('S3_SECRET_ACCESS_KEY', '')
+        self.s3_access_key = read_secret('S3_ACCESS_KEY_ID', '')
+        self.s3_secret_key = read_secret('S3_SECRET_ACCESS_KEY', '')
         self.signed_download_seconds = int(os.getenv('SIGNED_DOWNLOAD_SECONDS', '60'))
         self.direct_uploads_enabled = os.getenv('DIRECT_UPLOADS_ENABLED', 'false').lower() == 'true'
         self.signed_upload_seconds = int(os.getenv('SIGNED_UPLOAD_SECONDS', '60'))
@@ -34,9 +35,9 @@ class Settings:
         self.auth_action_minutes=int(os.getenv('AUTH_ACTION_MINUTES','15'))
         self.auth_action_email_limit=int(os.getenv('AUTH_ACTION_EMAIL_LIMIT','3'))
         self.auth_mail_send_enabled=os.getenv('AUTH_MAIL_SEND_ENABLED','false').lower()=='true'
-        self.resend_api_key=os.getenv('RESEND_API_KEY','')
+        self.resend_api_key=read_secret('RESEND_API_KEY','')
         self.auth_mail_from=os.getenv('AUTH_MAIL_FROM','')
-        self.auth_mail_keys=[part.strip() for part in os.getenv('AUTH_MAIL_ENCRYPTION_KEYS','').split(',') if part.strip()]
+        self.auth_mail_keys=[part.strip() for part in read_secret('AUTH_MAIL_ENCRYPTION_KEYS','').split(',') if part.strip()]
         self.auth_mail_recipients=tuple(part.strip().lower() for part in os.getenv('AUTH_MAIL_RECIPIENTS','').split(',') if part.strip())
         self.auth_mail_daily_limit=int(os.getenv('AUTH_MAIL_DAILY_LIMIT','20'))
         self.auth_mail_monthly_limit=int(os.getenv('AUTH_MAIL_MONTHLY_LIMIT','500'))
@@ -70,7 +71,7 @@ class Settings:
             raise RuntimeError('Authentication mail must be outside media storage')
         if not 5<=self.auth_action_minutes<=30 or not 1<=self.auth_action_email_limit<=20:
             raise RuntimeError('Auth actions require 5–30 minute expiry and 1–20 requests per email window')
-        self.jwt_secret = os.getenv("JWT_SECRET", "")
+        self.jwt_secret = read_secret("JWT_SECRET", "")
         if self.jwt_secret and self.jwt_secret in self.auth_mail_keys:
             raise RuntimeError('Mail encryption keys must be separate from the session secret')
         self.max_upload_bytes = int(os.getenv("MAX_UPLOAD_BYTES", "314572800"))
@@ -89,7 +90,7 @@ class Settings:
         self.queue_backend=os.getenv('QUEUE_BACKEND','database')
         self.queue_host=os.getenv('QUEUE_HOST','127.0.0.1')
         self.queue_port=int(os.getenv('QUEUE_PORT','6379'))
-        self.queue_password=os.getenv('QUEUE_PASSWORD','')
+        self.queue_password=read_secret('QUEUE_PASSWORD','')
         self.queue_tls=os.getenv('QUEUE_TLS','false').lower()=='true'
         self.worker_lease_seconds=int(os.getenv('WORKER_LEASE_SECONDS','45'))
         self.worker_renew_seconds=int(os.getenv('WORKER_RENEW_SECONDS','10'))

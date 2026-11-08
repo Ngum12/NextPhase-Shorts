@@ -223,8 +223,9 @@ def test_lost_commit_ack_retains_accepted_source_and_replays(client, valid_probe
         raise RuntimeError('simulated lost commit acknowledgement')
     with monkeypatch.context() as patch:
         patch.setattr(Session, 'commit', lose_ack)
-        with pytest.raises(RuntimeError, match='lost commit'):
-            upload(client, owner, key)
+        failed=upload(client, owner, key)
+        assert failed.status_code==500
+        assert failed.json()=={'detail':'Request temporarily unavailable'}
     jobs = client.get('/api/v1/jobs', headers=owner).json()
     assert len(jobs) == 1
     with SessionLocal() as db:

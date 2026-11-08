@@ -244,13 +244,18 @@ access-only logins need a new sign-in to enable refresh. No paid service, real e
 or billing is enabled. See [upgrade and focused Pixel check](docs/SESSION_REFRESH.md).
 
 Package 2 implements opt-in Resend delivery, an encrypted durable outbox and
-verified-email upload policy. Default delivery/enforcement remain disabled; actual
-provider/inbox/Pixel acceptance is pending. Stop/back up, install updated Python
+verified-email upload policy. Default delivery/enforcement remain disabled; the
+owner reports inbox/verification/reset/Pixel acceptance passed; production privacy
+and provider-terms review remain open. Stop/back up, install updated Python
 requirements and migrate **0016** before restarting. A private setup helper keeps
 keys out of chat/history/Git and leaves sending off. See [email delivery runbook](docs/EMAIL_DELIVERY.md).
 
 Package 3 adds free local Valkey/Arq dispatch, renewable bounded claims, retry/dead
 letters and strict decoder filesystem/network isolation. Back up and migrate
 **0017** before restarting; install updated Python requirements. The managed cloud
-host cannot pass required containment, so package 3 host acceptance stays open.
+host cannot pass required containment; the owner supplied a passing Docker Desktop
+host report and confirmed the focused Pixel render/save/playback checks after PR #22.
 See [queue upgrade and the one host check](docs/QUEUE_RELIABILITY.md).
+
+Package 4 adds private trace/metrics exports, local alert evaluation, mounted secret
+files and explicit measured-cost coverage. See [monitoring, secrets and costs](docs/MONITORING_SECRETS_COSTS.md).

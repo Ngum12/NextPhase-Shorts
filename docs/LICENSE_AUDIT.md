@@ -181,3 +181,12 @@ OS/image/transitive audit, security certification or production/legal signoff.
 Landlock/seccomp use standard Linux interfaces and Python ctypes; no external
 sandbox code, restricted reference-kit source/assets or paid provider added.
 Shared-kernel/kernel-version/host acceptance and existing legal/advisory gates remain.
+
+## Phase 2 package 4 — private observations and mounted secrets
+
+No runtime/native dependency, external collector, secret-manager provider, paid
+service, reference-kit code or media asset was added. OTLP JSON and Prometheus
+text mappings are independently authored from their public protocol conventions;
+no SDK/collector image was incorporated. Existing 849-record dependency inventory,
+notices and unresolved OS/transitive/security/legal gates remain. Protocol-shaped
+export is not an external collector, commercial-policy or privacy signoff.

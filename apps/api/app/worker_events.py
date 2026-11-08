@@ -29,6 +29,11 @@ def emit(event,**fields):
     level,message=EVENTS[event]
     record={'schema_version':1,'timestamp':utcnow().isoformat(),'component':'worker',
             'event':event,'level':logging.getLevelName(level),'message':message}
+    from .observability import current
+    context=current.get()
+    if context:
+        record['trace_id']=context.trace_id
+        if context.parent_id:record['span_id']=context.parent_id
     for name,value in fields.items():
         if name in ('job_id','worker_id'):
             if not isinstance(value,str) or str(uuid.UUID(value))!=value:raise ValueError('Invalid event identity')

@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     evidence=ROOT/'.data'/('worker-recovery-'+uuid.uuid4().hex);evidence.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix='nextphase-worker-smoke-') as temporary, ExitStack() as cleanup:
-        env=os.environ.copy();env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',AUTH_MAIL_DIR=temporary+'/auth-mail',PYTHONPATH=str(ROOT/'apps/api'),
+        env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE'], '')};env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',AUTH_MAIL_DIR=temporary+'/auth-mail',PYTHONPATH=str(ROOT/'apps/api'),
             DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',STORAGE_DIR=temporary+'/media',
             JWT_SECRET=secrets.token_urlsafe(48),MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false')
         os.environ.update(env);sys.path.insert(0,str(ROOT/'apps/api'))

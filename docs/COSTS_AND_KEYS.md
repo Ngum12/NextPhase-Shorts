@@ -38,3 +38,11 @@ Instrument per job: source seconds, output seconds, AI tokens, GPU/CPU seconds, 
 - Flutterwave Mobile Money: https://www.flutterwave.com/rw/support/payment-methods/pay-with-mobile-money
 - Google Play payments: https://support.google.com/googleplay/android-developer/answer/9858738
 - Apple App Review: https://developer.apple.com/app-store/review/guidelines/
+
+## Implemented measurement boundary (Phase 2 package 4)
+
+Use [monitoring, secrets and costs](MONITORING_SECRETS_COSTS.md) for measured
+attempt/stage resources, known artifact lifetime, transfer bytes, explicit unknown
+coverage, approved rate cards and local alerts. Monetary defaults stay null. The
+older example provider prices above are dated research, not current quotes; no
+provider billing, AI call, monitoring account or secret manager is activated.
