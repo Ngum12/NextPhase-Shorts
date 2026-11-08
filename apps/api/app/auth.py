@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .config import get_settings
 from .db import session_dep
-from .models import AuthSession, User, utcnow
+from .models import AuthSession, RefreshFamily, User, utcnow
 
 bearer = HTTPBearer(auto_error=False)
 ISSUER = 'nextphase-shorts'
@@ -56,7 +56,7 @@ class AuthContext:
 
 
 def unauthorized():
-    return HTTPException(401, 'Invalid or expired session. Sign in again.', headers={'WWW-Authenticate': 'Bearer'})
+    return HTTPException(401, 'Invalid or expired session. Sign in again.', headers={'WWW-Authenticate': 'Bearer', 'Cache-Control': 'no-store'})
 
 
 def current_auth(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -74,6 +74,11 @@ def current_auth(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
             AuthSession.id == session_id, AuthSession.user_id == claims['sub'],
             User.deleted_at.is_(None),
             AuthSession.revoked_at.is_(None), AuthSession.expires_at > utcnow())).first()
+        if result and result[1].family_id:
+            family = db.scalar(select(RefreshFamily.id).where(RefreshFamily.id == result[1].family_id,
+                RefreshFamily.user_id == result[0].id, RefreshFamily.revoked_at.is_(None), RefreshFamily.expires_at > utcnow()))
+            if not family:
+                raise unauthorized()
         if result:
             return AuthContext(*result)
     except (jwt.PyJWTError, KeyError, TypeError, ValueError):

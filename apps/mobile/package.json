@@ -13,7 +13,9 @@
     "test:auth": "node tests/auth.test.cjs",
     "test:exports": "node tests/videoExports.test.cjs",
     "test:account": "node tests/accountDeletion.test.cjs",
-    "test:recovery": "node tests/emailActions.test.cjs"
+    "test:recovery": "node tests/emailActions.test.cjs",
+    "test:refresh": "node tests/refreshSession.test.cjs",
+    "test": "npm run test:uploads && npm run test:auth && npm run test:exports && npm run test:account && npm run test:recovery && npm run test:refresh"
   },
   "dependencies": {
     "expo": "~54.0.0",

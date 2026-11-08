@@ -1,5 +1,6 @@
 import {RIGHTS_VERSION} from './uploadRights';
-import { unauthorized } from './authEvents';
+import { prepareToken, recoverToken } from './authEvents';
+import {validPair, TokenPair} from './refreshSession';
 export const BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8000').replace(/\/$/, '');
 
 export type ShortStyle = { id: string; name: string; description: string; available: boolean };
@@ -23,24 +24,47 @@ export async function extract(res: Response) {
   return json;
 }
 
-export async function login(email: string, password: string, register = false): Promise<string> {
+export async function login(email: string, password: string, register = false): Promise<TokenPair|string> {
   const response = await fetch(`${BASE}/api/v1/auth/${register ? 'register' : 'login'}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email.trim(), password }),
   });
   const body = await extract(response);
-  return body.access_token as string;
+  if(validPair(body))return body;
+  if(typeof body.access_token==='string'&&!body.refresh_token)return body.access_token;
+  throw new Error('Invalid session response. Try again.');
+}
+
+export async function refreshSession(refresh_token:string,rotation_key:string):Promise<TokenPair> {
+  const body=await extract(await fetch(`${BASE}/api/v1/auth/refresh`,{method:'POST',credentials:'omit',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token,rotation_key})}));
+  if(!validPair(body))throw new Error('Invalid session response. Try again.');return body;
+}
+export async function revokeRefreshSession(refresh_token:string):Promise<void> {
+  const response=await fetch(`${BASE}/api/v1/auth/refresh/logout`,{method:'POST',credentials:'omit',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token})});
+  if(response.status!==204)await extract(response);
 }
 
 export async function authenticatedFetch(token:string, url:string, init:RequestInit={}) {
-  const headers=new Headers(init.headers);headers.set('Authorization',`Bearer ${token}`);
-  const response=await fetch(url,{...init,headers});
-  if(response.status===401)unauthorized(token);
+  if(!url.startsWith(BASE+'/'))throw new Error('Authenticated requests must stay on the API origin.');
+  const actual=await prepareToken(token);
+  const headers=new Headers(init.headers);headers.set('Authorization',`Bearer ${actual}`);
+  let response=await fetch(url,{...init,headers});
+  if(response.status===401) {
+    const next=await recoverToken(actual);
+    // Do not automatically replay writes or native multipart streams.
+    if(next&&['GET','HEAD'].includes((init.method||'GET').toUpperCase())) {
+      headers.set('Authorization',`Bearer ${next}`);response=await fetch(url,{...init,headers});
+    }
+  }
   return response;
 }
 export async function logoutSession(token:string, all=false) {
   const response=await authenticatedFetch(token,`${BASE}/api/v1/auth/${all?'logout-all':'logout'}`,{method:'POST'});
-  if(response.status!==204&&response.status!==401)await extract(response);
+  // A 401 can have renewed this family's access without executing logout-all.
+  // Require server confirmation; do not clear storage and claim all devices left.
+  if(response.status!==204)await extract(response);
 }
 export async function changePassword(token:string,current:string,next:string) {
   const response=await authenticatedFetch(token,`${BASE}/api/v1/auth/password`,{method:'POST',

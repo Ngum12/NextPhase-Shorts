@@ -32,6 +32,9 @@ jobs:
       - name: Test local email action privacy and session handling
         working-directory: apps/mobile
         run: npm run test:recovery
+      - name: Test refresh rotation and network recovery
+        working-directory: apps/mobile
+        run: npm run test:refresh
       - name: Check Expo SDK versions
         working-directory: apps/mobile
         run: EXPO_OFFLINE=1 npx expo install --check

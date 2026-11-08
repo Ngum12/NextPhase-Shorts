@@ -1,10 +1,10 @@
 """First auth-hardening slice: revocable sessions, bounded login and password change."""
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, UUID4
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from .auth import AuthContext, DUMMY_HASH, current_auth, unauthorized, make_password_hash, make_token, verify_password
+from .auth import AuthContext, DUMMY_HASH, current_auth, unauthorized, make_password_hash, verify_password
 from .auth_limits import consume_limits
 from .auth_action_tokens import invalidate_actions
 from .config import get_settings
@@ -12,6 +12,7 @@ from .db import session_dep
 from .models import AuthSession, User, utcnow
 from .queue import lock_owner
 from .schemas import RegisterRequest, TokenResponse
+from .refresh import issue_pair, rotate, revoke_families, revoke_by_refresh, digest
 
 router = APIRouter(prefix='/api/v1/auth', tags=['authentication'])
 
@@ -23,11 +24,43 @@ def peer(request):
 
 
 def token_result(user_id, db, response):
-    token = make_token(user_id, db)
+    tokens = issue_pair(db, user_id)
     db.commit()
     response.headers['Cache-Control'] = 'no-store'
     response.headers['Pragma'] = 'no-cache'
-    return TokenResponse(access_token=token, expires_in=get_settings().auth_session_hours*3600)
+    return TokenResponse(**tokens)
+
+
+class RefreshRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    refresh_token: str = Field(min_length=43, max_length=43, pattern=r'^[A-Za-z0-9_-]{43}$')
+
+
+class RotationRequest(RefreshRequest):
+    rotation_key: UUID4
+
+
+def refresh_limit(request, raw):
+    consume_limits([('refresh-ip', peer(request), get_settings().auth_refresh_ip_limit),
+                    ('refresh-token', digest('refresh-rate', raw), 20)])
+
+
+@router.post('/refresh', response_model=TokenResponse)
+def refresh(payload: RotationRequest, request: Request, response: Response, db: Session = Depends(session_dep)):
+    refresh_limit(request, payload.refresh_token)
+    tokens = rotate(db, payload.refresh_token, str(payload.rotation_key))
+    db.commit()
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Pragma'] = 'no-cache'
+    return tokens
+
+
+@router.post('/refresh/logout', status_code=204)
+def refresh_logout(payload: RefreshRequest, request: Request, db: Session = Depends(session_dep)):
+    refresh_limit(request, payload.refresh_token)
+    revoke_by_refresh(db, payload.refresh_token)
+    db.commit()
+    return Response(status_code=204, headers={'Cache-Control': 'no-store'})
 
 
 @router.post('/register', response_model=TokenResponse, status_code=201)
@@ -69,6 +102,8 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
 @router.post('/logout', status_code=204)
 def logout(auth: AuthContext = Depends(current_auth), db: Session = Depends(session_dep)):
     lock_owner(db, auth.user.id)
+    if auth.session.family_id:
+        revoke_families(db, auth.user.id, auth.session.family_id)
     db.execute(update(AuthSession).where(AuthSession.id == auth.session.id,
         AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))
     db.commit()
@@ -78,6 +113,7 @@ def logout(auth: AuthContext = Depends(current_auth), db: Session = Depends(sess
 @router.post('/logout-all', status_code=204)
 def logout_all(auth: AuthContext = Depends(current_auth), db: Session = Depends(session_dep)):
     lock_owner(db, auth.user.id)
+    revoke_families(db, auth.user.id)
     db.execute(update(AuthSession).where(AuthSession.user_id == auth.user.id,
         AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))
     db.commit()
@@ -106,6 +142,7 @@ def change_password(data: PasswordChange, request: Request, auth: AuthContext = 
         raise HTTPException(400, 'Current password is incorrect')
     auth.user.password_hash = make_password_hash(data.new_password)
     invalidate_actions(db,auth.user.id)
+    revoke_families(db,auth.user.id)
     db.execute(update(AuthSession).where(AuthSession.user_id == auth.user.id,
         AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))
     db.commit()

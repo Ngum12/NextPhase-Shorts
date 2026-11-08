@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from .config import get_settings
 from .db import SessionLocal, engine
-from .models import AuthRateBucket, AuthSession, AuthAction, utcnow
+from .models import AuthRateBucket, AuthSession, AuthAction, RefreshFamily, RefreshGrant, utcnow
 
 
 def consume_limits(identities):
@@ -46,3 +46,9 @@ def cleanup_auth():
         db.execute(delete(AuthSession).where(AuthSession.expires_at <= now))
         expired=select(AuthAction.id).where(AuthAction.expires_at<=now).order_by(AuthAction.expires_at,AuthAction.id).limit(1000)
         db.execute(delete(AuthAction).where(AuthAction.id.in_(expired)))
+        # Retain consumed grants until absolute family expiry for replay detection.
+        families=list(db.scalars(select(RefreshFamily.id).where(RefreshFamily.expires_at<=now)
+            .order_by(RefreshFamily.expires_at,RefreshFamily.id).limit(1000)))
+        if families:
+            db.execute(delete(RefreshGrant).where(RefreshGrant.family_id.in_(families)))
+            db.execute(delete(RefreshFamily).where(RefreshFamily.id.in_(families)))

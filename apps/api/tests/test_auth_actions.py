@@ -43,7 +43,8 @@ def test_disabled_delivery_never_issues_code_or_allows_reset(client):
 
 def test_reset_generic_requests_hash_only_single_use_and_all_sessions_revoked(client,inbox):
     token=new_user(client);me=profile(client,token)
-    other_session=client.post('/api/v1/auth/login',json={'email':me['email'],'password':PASSWORD}).json()['access_token']
+    other_pair=client.post('/api/v1/auth/login',json={'email':me['email'],'password':PASSWORD}).json()
+    other_session=other_pair['access_token']
     known=reset_request(client,me['email']);unknown=reset_request(client,'absent-'+uuid.uuid4().hex+'@example.com')
     assert known.status_code==unknown.status_code==202 and known.json()==unknown.json()=={'status':'accepted'}
     assert known.headers['cache-control']=='no-store'
@@ -53,6 +54,7 @@ def test_reset_generic_requests_hash_only_single_use_and_all_sessions_revoked(cl
         action=db.scalar(select(AuthAction).where(AuthAction.user_id==me['id']))
         assert action.token_hash==token_hash(code) and code not in action.token_hash
     assert confirm(client,code).status_code==204
+    assert client.post('/api/v1/auth/refresh',json={'refresh_token':other_pair['refresh_token'],'rotation_key':str(uuid.uuid4())}).status_code==401
     for access in (token,other_session):assert client.get('/api/v1/me',headers=headers(access)).status_code==401
     assert confirm(client,code).status_code==400
     assert client.post('/api/v1/auth/login',json={'email':me['email'],'password':PASSWORD}).status_code==401

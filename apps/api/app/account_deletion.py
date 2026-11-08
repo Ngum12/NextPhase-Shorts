@@ -18,6 +18,7 @@ from .config import get_settings
 from .db import SessionLocal,engine,session_dep
 from .models import User,AuthSession,AccountDeletion,RenderJob,RenderAttempt,UploadSession,UploadPart,DirectUploadGrant,utcnow
 from .queue import lock_owner
+from .refresh import revoke_families
 from . import object_store as store
 
 router=APIRouter(prefix='/api/v1/account',tags=['account deletion'])
@@ -74,6 +75,7 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
     auth.user.deleted_at=now;auth.user.email='!deleted:'+uid;auth.user.password_hash='!disabled'
     auth.user.email_verified_at=None;auth.user.email_verification_method=None
     invalidate_actions(db,uid)
+    revoke_families(db,uid)
     db.execute(update(AuthSession).where(AuthSession.user_id==uid,AuthSession.revoked_at.is_(None)).values(revoked_at=now))
     # Revoke all claims in the same owner transaction, before any media I/O.
     db.execute(update(RenderJob).where(RenderJob.user_id==uid).values(status='deleted',deleted_at=now,

@@ -30,7 +30,7 @@ def test_session_metadata_and_hashed_storage(client):
     assert response.status_code==200
     assert response.headers['cache-control']=='no-store'
     assert response.headers['pragma']=='no-cache'
-    assert response.json()['expires_in']==get_settings().auth_session_hours*3600
+    assert 0 < response.json()['expires_in'] <= get_settings().auth_access_minutes*60
     claims=jwt.decode(token,get_settings().jwt_secret,algorithms=['HS256'],audience=AUDIENCE,issuer=ISSUER)
     with SessionLocal() as db:
         session=db.get(AuthSession,hashlib.sha256(claims['jti'].encode()).hexdigest())

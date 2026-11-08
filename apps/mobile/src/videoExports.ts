@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import {downloadUrl} from './api';
-import {unauthorized} from './authEvents';
+import {prepareToken,recoverToken} from './authEvents';
 
 export async function exportVideo(action:'save'|'share',id:string,token:string):Promise<void> {
   if(action==='save' && !(Platform.OS==='android' && Number(Platform.Version)>=33)) {
@@ -15,8 +15,12 @@ export async function exportVideo(action:'save'|'share',id:string,token:string):
   const root=FileSystem.cacheDirectory||FileSystem.documentDirectory;
   if(!root)throw new Error('App storage is unavailable.');
   const destination=root+`nextphase-${encodeURIComponent(id)}.mp4`;
-  const result=await FileSystem.downloadAsync(downloadUrl(id),destination,{headers:{Authorization:`Bearer ${token}`}});
-  if(result.status===401)unauthorized(token);
+  const actual=await prepareToken(token);
+  let result=await FileSystem.downloadAsync(downloadUrl(id),destination,{headers:{Authorization:`Bearer ${actual}`}});
+  if(result.status===401) {
+    const next=await recoverToken(actual);
+    if(next)result=await FileSystem.downloadAsync(downloadUrl(id),destination,{headers:{Authorization:`Bearer ${next}`}});
+  }
   if(result.status!==200)throw new Error('The video could not be downloaded. Refresh its status and try again.');
   const info=await FileSystem.getInfoAsync(result.uri);
   if(!info.exists||!('size' in info)||info.size===0)throw new Error('The downloaded video is empty or unavailable.');

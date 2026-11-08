@@ -5,6 +5,75 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Fixed remaining Phase 2 scope — package 1 session refresh
+
+The owner approved the [six-package checklist](docs/PHASE_2_CHECKLIST.md), in order,
+with one review and focused native acceptance where needed. This is the current
+remaining scope; older increment notes below are historical evidence. Packages
+2–6 remain pending: real delivery, queue/host enforcement, observability/secrets/
+costs, capacity/security and staging. No blocked gate is waived; no Phase 3 started.
+
+- Implementation: `dev/phase-2-session-refresh`, based on merged main `295428d`.
+  Migration **0015_refresh_sessions** adds hashed grants, absolute-expiry families
+  and nullable indexed access-family linkage. Existing accounts/passwords/access
+  sessions/media/uploads remain preserved. Sign in once for refresh credentials.
+- New access default 15 minutes, refresh idle seven days/absolute 30 days.
+  Owner-locked rotation, domain-separated keyed hashes, shared IP/token budgets
+  and default 120-second same-key response recovery. Different-key reuse commits
+  family revocation before 401; matching late retry fails without revoking newer
+  credentials. Other login families survive. Theft of both old token and key
+  permits recovery within the bounded window; this is not device identity proof.
+  Old access remains valid until its short expiry after normal rotation.
+- Logout-current/refresh logout revoke family access; logout-all, password change,
+  reset and account deletion revoke every owner family atomically. Consumed refresh
+  grants support logout even with expired access and remain to absolute expiry
+  for replay detection. Maintenance removes <=1,000 expired families per batch,
+  with grant count dependent on activity; global metadata limits remain package 5.
+- Mobile uses one versioned SecureStore pair/retry intent, persistence before
+  sending/using replacements, single-flight refresh and serialized storage.
+  Stale replies cannot overwrite/borrow newer account credentials. Stable UI
+  generation handles prevent rotation cancelling uploads. GET/native download
+  retries once; writes/multipart are not replayed. Offline failures retain intent;
+  definitive refresh 401 requires sign-in. All-device logout requires server
+  confirmation. Direct S3 transfers remain free of API credentials/cookies.
+- Baseline **248 backend tests passed (46.72 s)**. Final **264 tests passed on
+  SQLite (57.87 s) and PostgreSQL (67.83 s)**, no skips, one existing Starlette/
+  httpx warning each. Covers rotation/retry/reuse, concurrent same/different keys,
+  logout scopes, password/reset/deletion revocation, idle/absolute/access expiry,
+  secret-free validation/rate limits, consumed-hash retention/cleanup and additive
+  legacy-session/password preservation, plus all prior regressions.
+- **61 mobile logic tests**, TypeScript and SDK alignment passed, including
+  expiry single-flight, restart/lost-reply journal, failed intent/replacement writes,
+  stale login/rejection/write races, logout confirmation, legacy restore, API-origin
+  isolation, native download renewal and prior upload/direct-S3/auth regressions.
+  Android Hermes export passed: **1,016 modules / 2.73 MB**. These are adapter and
+  bundler checks; no new physical Pixel/Windows/iOS acceptance is claimed.
+- Full local HTTP upload/resume/queue/render/download/operations/retention/deletion/
+  crash regression passed: 1080×1920/30 fps/4.9 s, baseline **1.83 s**. Evidence:
+  `.data/smoke-ea385da976844feab4c572a00a8f714f/`. Separate real HTTP refresh proof
+  restarted API after rotation, recovered exact pair, rejected different-key
+  reuse, preserved another login and revoked via consumed refresh. It checked
+  secret-free logs and temporary DB cleanup. Expired-access proof signs a past-
+  expiry fixture JWT; it does not change a live application's clock/DB. Evidence:
+  `.data/session-refresh-smoke-ad0d6094ca834f798b5627824c26036b/`.
+- Disposable private S3/direct-upload full workflow also passed, same valid output;
+  baseline **8.03 s** includes signed-link expiry wait. Original/output/staging
+  cleanup, retention and separate local recovery/refresh proofs passed. Evidence:
+  `.data/nextphase-s3-smoke-73deceeadf11/workflow/` and
+  `.data/session-refresh-smoke-6500659d9505424eaa9bb83e95fb9761/`.
+  Backend CI includes refresh proof via full smoke; mobile CI adds refresh tests.
+  `npm test` now runs every client regression script in one command.
+- Doctor, pip consistency and diff checks passed. No dependency/native module,
+  reference-kit source/assets, email sending, paid API/infrastructure or billing
+  activated. Existing 843-record inventory and last-known 17 npm advisories remain
+  unresolved; no new security/license/privacy clearance is claimed.
+- **Package 1: locally verified; review/remote CI/focused Pixel acceptance pending.**
+  Runbook: [SESSION_REFRESH.md](docs/SESSION_REFRESH.md). Stop/back up/migrate/
+  restart, sign in once, then one local short-expiry/app-reopen/upload/save/sign-out
+  check. No repeated manual regression suite requested. Production cgroup-host
+  acceptance remains package 3; managed Docker driver `none` was not bypassed.
+  No production deployment performed. Delivery result follows after push/PR attempt.
+
 ## Phase 2 increment — local authentication recovery proofs
 
 - Migration **0014_auth_actions** adds expiring one-use action hashes, HMAC

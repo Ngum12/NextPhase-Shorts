@@ -41,7 +41,7 @@ test('authenticated 401 reports its token; login failures do not expire sessions
  const events=load('authEvents'),expired=[];events.onUnauthorized(token=>expired.push(token));let status=401;const calls=[];
  const api=load('api',{'./authEvents':events},{process:{env:{EXPO_PUBLIC_API_URL:'http://localhost'}},Headers,fetch:async(url,init)=>{calls.push([url,init]);return {status,ok:status<400,json:async()=>({detail:'denied'})};}});
  await assert.rejects(api.api('/api/v1/me','older'));assert.deepEqual(expired,['older']);await assert.rejects(api.login('test@example.com','wrong'));assert.deepEqual(expired,['older']);
- await api.logoutSession('revoked',true);assert.deepEqual(expired,['older','revoked']);assert(calls.at(-1)[0].endsWith('/logout-all'));
+ await assert.rejects(api.logoutSession('revoked',true));assert.deepEqual(expired,['older','revoked']);assert(calls.at(-1)[0].endsWith('/logout-all'));
  status=204;await api.changePassword('current','before','after');assert.equal(calls.at(-1)[1].headers.get('Authorization'),'Bearer current');
 });
 

@@ -9,6 +9,8 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int = Field(gt=0)
+    refresh_token: str
+    refresh_expires_in: int = Field(gt=0)
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
