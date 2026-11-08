@@ -81,6 +81,11 @@ the reported Android baseline flow, not production readiness or AI functionality
   not bypassed. Paid services, AI and billing remain disabled; remote CI and new
   native acceptance remain unobserved. No production deployment performed.
 
+- Delivery: implementation `3181744` pushed to `dev/phase-2-auth-recovery`.
+  GitHub GraphQL returned `Forbidden` creating the PR; no PR, merge or production
+  deployment was performed. Manual owner review link:
+  https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-auth-recovery
+
 ## Phase 2 increment — operational visibility
 
 - Migration **0013_worker_pulses** adds minimal per-process liveness metadata:
