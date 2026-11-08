@@ -8,6 +8,9 @@ the reported Android baseline flow, not production readiness or AI functionality
 ## Phase 2 package 6 — independent journal and protected restore
 
 Development branch `dev/phase-2-restore-journal`, based on merged main **e4789df**.
+Implementation **d1e482a** pushed. Automatic PR creation returned GitHub API
+**Forbidden**; no PR number or remote CI result is claimed.
+[Open the branch for review](https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-restore-journal).
 Owner reported the corrected SDK 58 Pixel selection/upload/render/save flow worked
 very well. That is owner device acceptance, not a cloud-executed phone test.
 Mobile source/lockfile unchanged in this increment; no repeated phone suite needed.
