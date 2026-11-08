@@ -116,3 +116,15 @@ activation and legal approvals are separate decisions after concrete configurati
 and evidence exist. Do not treat a merge, zero audit, passing host check or this
 plan as Phase 2/public production signoff. The remaining engineering rows above
 are work, not completed features; they are not skipped by this dependency repair.
+
+
+### SDK 58 Android picker follow-up
+
+If Expo Go reports that `cache/DocumentPicker` is unreadable, use the reviewed
+picker-copy correction: Android skips the picker host-cache copy and retains its
+user-granted content URI, then awaits modern File.copy into the private UUID
+upload file before saving an intent. iOS still requests picker cache copying.
+No broader media permission or sandbox bypass is required. Pull the fix, restart
+Metro and choose the video again; a previously selected host-cache URI remains
+unreadable. Keep original footage/app data. This changes no backend/schema or
+lockfile, so no backend rebuild/migration/npm reinstall is necessary.

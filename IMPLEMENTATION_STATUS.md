@@ -5,6 +5,70 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## SDK 58 Android picker/private-copy correction
+
+Implementation **a1feb3e** pushed; this branch includes the Windows test fix.
+GitHub PR creation returned **Forbidden**;
+[open the combined fix for review](https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/sdk58-picker-copy).
+Remote CI/native device results remain unobserved.
+
+The owner supplied a Pixel screenshot showing `ExponentFileSystem.copyAsync`
+rejecting the selected `cache/DocumentPicker` file as unreadable before upload.
+Inspected installed SDK sources: Android DocumentPicker writes its cached copy
+under the host context cache directory, while FileSystem experience permissions
+reject that unscoped path in Expo Go. Switching only copy APIs would retain that
+source-path issue; do not broaden permissions or bypass storage isolation.
+
+- `fix/sdk58-picker-copy` includes the preceding Windows tooling assertion fix.
+  Android now requests the user-granted document-provider URI with picker cache
+  copying disabled. iOS retains its existing picker cache-copy behavior.
+- Preparation awaits modern `File.copy` into the existing UUID private upload path
+  before size validation/journaling. Subsequent resume reads only the durable
+  private file. No base64/whole-video JS read, encoding, network fallback, broad
+  gallery permission, arbitrary path rewriting or original-file deletion.
+- Failed copy removes its incomplete private destination and creates no saved
+  intent/server session. Copy errors now explain reselecting the video without
+  displaying the native source path. Cancel preserves the existing selection;
+  selecting again clears the previous error and requires rights reconfirmation.
+- Added four adapter regressions: Android vs iOS picker options, cancellation,
+  async provider-to-private copy/restart/resume without provider access, and failed
+  copy cleanup preserving originals. These are not Android native execution.
+- All **70 mobile/tooling tests passed**, including 20 upload/picker tests;
+  TypeScript and Android Hermes export (3.1MB) passed. Physical Pixel provider
+  permission/copy acceptance remains pending. Backend/schema/dependencies unchanged;
+  no backend rebuild, migration, npm reinstall or paid service activation needed.
+- After review/merge: pull, restart Metro on its actual forwarded port, **choose
+  the video again** (the previous selection points at the inaccessible cache),
+  acknowledge rights and check upload/pause/resume/render/Save/playback. Keep app
+  data and originals; do not uninstall Expo Go or change media permissions.
+
+## Windows SDK 58 tooling assertion correction
+
+Implementation **ce97d3d** pushed. PR creation returned GitHub API **Forbidden**;
+[create review from the branch](https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/windows-toolchain-paths).
+No remote Windows CI result is claimed.
+
+Owner upgraded merged main **145044a**: Docker API/database/queue healthy, worker
+started, clean Windows npm ci reports **zero vulnerabilities**, TypeScript passed,
+and **65 of 66** mobile/tooling tests passed. The sole failure compared native
+Windows glob output `app\index.tsx` with a hardcoded POSIX `app/index.tsx`.
+Metro started successfully on **8082**, which requires USB forwarding of 8082
+in addition to API 8000. Physical SDK 58 acceptance is still pending.
+
+- Dedicated branch `fix/windows-toolchain-paths` changes both async/sync traversal
+  expectations to `path.join('app','index.tsx')`, preserving native glob behavior,
+  ignore/version/cancellation checks and all production dependencies/application code.
+- Added a focused Windows CI job on Node 24 for actual installed consumer tests.
+  Its remote result is pending; Linux tests are not claimed as Windows execution.
+- Local validation: both tooling checks, all **66 mobile tests**, TypeScript and
+  diff checks passed. No backend changes, migration, dependency reinstall, server
+  rebuild or repeated backend regression required for this assertion-only fix.
+- Next: review/merge, `git pull --ff-only`, `npm run test:toolchain` from apps/mobile;
+  keep Metro running and forward its actual **8082** port, then perform the existing
+  focused Pixel navigation/upload/pause/resume/render/Save/play/Share check.
+- Phase 2 staging/security/privacy gates remain open. No paid service, outgoing
+  email, billing, AI or public deployment activated.
+
 ## Phase 2 package 6 preparation — dependency remediation and staging evidence
 
 Review delivery: implementation **bf409a1** pushed to

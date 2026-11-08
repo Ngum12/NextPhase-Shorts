@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {recoveryCapabilities,requiresEmailVerification} from '../src/emailActions';
-import * as DocumentPicker from 'expo-document-picker';
+import type { DocumentPickerAsset } from 'expo-document-picker';
+import { pickVideo } from '../src/videoPicker';
 import { Alert, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { api } from '../src/api';
@@ -20,7 +21,7 @@ export default function Create() {
   const [ownerId,setOwnerId]=useState('');
   const [verificationNeeded,setVerificationNeeded]=useState(false);
   const [recovery,setRecovery]=useState(0);
-  const [asset,setAsset]=useState<DocumentPicker.DocumentPickerAsset|null>(null);
+  const [asset,setAsset]=useState<DocumentPickerAsset|null>(null);
   const [style,setStyle]=useState('vlog');
   const [seconds,setSeconds]=useState(30);
   const [title,setTitle]=useState('My First Short');
@@ -49,8 +50,8 @@ export default function Create() {
   },[token,recovery]);
   const pick=async()=>{
     try {
-      const result=await DocumentPicker.getDocumentAsync({type:'video/*',copyToCacheDirectory:true,multiple:false});
-      if(!result.canceled&&result.assets.length){setAsset(result.assets[0]);setRights(false);}
+      const selected=await pickVideo();
+      if(selected){setAsset(selected);setRights(false);setMessage('');}
     }catch(error:any){Alert.alert('Could not select video',error.message||'Try again');}
   };
   const submit=async()=>{

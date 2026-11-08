@@ -1,5 +1,13 @@
 # Changelog
 
+## SDK 58 Android picker/private-copy fix
+
+- Copy Android user-selected provider URIs directly into private upload storage with awaited modern File.copy; preserve iOS cache behavior, failed-copy cleanup and resumable journals. Includes the Windows tooling-path test correction.
+
+## Windows SDK 58 tooling assertion fix
+
+- Expect native path separators in async/sync glob tests and add focused Windows CI coverage. Application behavior and dependencies are unchanged.
+
 ## Phase 2 package 6 preparation — mobile security and staging evidence
 
 - Upgrade to SDK-matched Expo 58 / RN 0.88 / React 19.3, adapt asynchronous file

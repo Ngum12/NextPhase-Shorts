@@ -72,7 +72,11 @@ async function prepareUploadImpl(ownerId:string, selected:{uri:string;name:strin
   const localName=Crypto.randomUUID()+extension;
   const localUri=root()+localName;
   try {
-    await FileSystem.copyAsync({from:selected.uri,to:localUri});
+    try {
+      await new File(selected.uri).copy(new File(localUri));
+    } catch {
+      throw new Error('Could not save the selected video. Choose it again and keep the app open while preparing the upload.');
+    }
     const totalBytes=new File(localUri).size;
     if(!Number.isSafeInteger(totalBytes)||totalBytes<=0||totalBytes>MAX_BYTES)
       throw new Error('Video must be nonempty and no larger than 300 MiB');
