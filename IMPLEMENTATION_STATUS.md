@@ -7,6 +7,10 @@ the reported Android baseline flow, not production readiness or AI functionality
 
 ## Windows SDK 58 tooling assertion correction
 
+Implementation **ce97d3d** pushed. PR creation returned GitHub API **Forbidden**;
+[create review from the branch](https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/windows-toolchain-paths).
+No remote Windows CI result is claimed.
+
 Owner upgraded merged main **145044a**: Docker API/database/queue healthy, worker
 started, clean Windows npm ci reports **zero vulnerabilities**, TypeScript passed,
 and **65 of 66** mobile/tooling tests passed. The sole failure compared native
