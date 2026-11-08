@@ -3,6 +3,11 @@
 The master contract in `prompt.md` owns phase order. Do not enable later paid
 features or present planned styles as implemented.
 
+**Current remaining Phase 2 scope:** [fixed six-package checklist](PHASE_2_CHECKLIST.md).
+It consolidates the historical notes below. Finish packages in order without
+dropping acceptance gates. Package 1 is implemented for review; see
+[session refresh](SESSION_REFRESH.md).
+
 | Priority | Work | Acceptance / dependency |
 |---|---|---|
 | P0, Phase 0/1 | Resolve mobile peers, lock dependencies, validate baseline, document audit | Automated checks and live smoke; tracked evidence in IMPLEMENTATION_STATUS.md |

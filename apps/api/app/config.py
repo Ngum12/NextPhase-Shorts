@@ -69,6 +69,14 @@ class Settings:
         if not 65536 <= self.upload_chunk_bytes <= 8388608 or not 1 <= self.upload_session_hours <= 168:
             raise RuntimeError("Upload chunks must be 64 KiB–8 MiB and session lifetime 1–168 hours")
         self.auth_session_hours = int(os.getenv("AUTH_SESSION_HOURS", "24"))
+        self.auth_access_minutes = int(os.getenv('AUTH_ACCESS_MINUTES', '15'))
+        self.auth_refresh_days = int(os.getenv('AUTH_REFRESH_DAYS', '30'))
+        self.auth_refresh_idle_days = int(os.getenv('AUTH_REFRESH_IDLE_DAYS', '7'))
+        self.auth_refresh_retry_seconds = int(os.getenv('AUTH_REFRESH_RETRY_SECONDS', '120'))
+        self.auth_refresh_ip_limit = int(os.getenv('AUTH_REFRESH_IP_LIMIT', '120'))
+        if not (1 <= self.auth_access_minutes <= 60 and 1 <= self.auth_refresh_idle_days <= self.auth_refresh_days <= 30
+                and 30 <= self.auth_refresh_retry_seconds <= 300 and self.auth_refresh_ip_limit > 0):
+            raise RuntimeError('Invalid access or refresh session limits')
         self.auth_window_seconds = int(os.getenv("AUTH_WINDOW_SECONDS", "900"))
         self.auth_login_account_limit = int(os.getenv("AUTH_LOGIN_ACCOUNT_LIMIT", "5"))
         self.auth_login_ip_limit = int(os.getenv("AUTH_LOGIN_IP_LIMIT", "30"))

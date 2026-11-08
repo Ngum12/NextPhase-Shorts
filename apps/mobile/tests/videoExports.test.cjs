@@ -11,7 +11,7 @@ function fixture(){
   'expo-media-library':{requestPermissionsAsync:async(writeOnly,types)=>{calls.push(['permission',writeOnly,...types]);return {granted:state.granted};},
    saveToLibraryAsync:async uri=>{calls.push(['save',uri]);if(state.saveError)throw Error('storage full');}},
   'expo-sharing':{isAvailableAsync:async()=>state.shareAvailable,shareAsync:async uri=>{calls.push(['share',uri]);}},
-  './api':{downloadUrl:id=>'http://localhost/'+id},'./authEvents':{unauthorized:token=>calls.push(['expired',token])},
+  './api':{downloadUrl:id=>'http://localhost/'+id},'./authEvents':{prepareToken:async token=>token,recoverToken:async token=>{calls.push(['expired',token]);return null;}},
  };
  const exports={};vm.runInNewContext(code,{exports,require:name=>adapters[name]});return {exports,calls,state};
 }

@@ -128,6 +128,26 @@ class AuthSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    family_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+
+
+class RefreshFamily(Base):
+    __tablename__ = 'refresh_families'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class RefreshGrant(Base):
+    __tablename__ = 'refresh_grants'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    family_id: Mapped[str] = mapped_column(ForeignKey('refresh_families.id'), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rotation_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    successor_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    access_session_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class AuthRateBucket(Base):

@@ -284,3 +284,22 @@ def test_auth_actions_migration_preserves_unverified_legacy_account(migration_en
         row=connection.execute(sa.text("SELECT email,password_hash,email_verified_at,email_verification_method FROM users WHERE id='recovery-owner'")).one()
         assert tuple(row)==('keep-recovery@example.com','keep-password-hash',None,None)
         assert connection.scalar(sa.text('SELECT count(*) FROM auth_actions'))==0
+
+
+def test_refresh_migration_preserves_existing_session_and_password(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    from app.models import utcnow
+    from datetime import timedelta
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0014_auth_actions')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at) VALUES ('refresh-owner','refresh-legacy@example.com','keep-hash',CURRENT_TIMESTAMP)"))
+        connection.execute(sa.text('INSERT INTO auth_sessions (id,user_id,created_at,expires_at) VALUES (:id,:uid,:now,:expiry)')
+            .bindparams(sa.bindparam('now',type_=sa.DateTime(timezone=True)),sa.bindparam('expiry',type_=sa.DateTime(timezone=True))),
+            {'id':'a'*64,'uid':'refresh-owner','now':utcnow(),'expiry':utcnow()+timedelta(hours=1)})
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        assert connection.scalar(sa.text("SELECT password_hash FROM users WHERE id='refresh-owner'"))=='keep-hash'
+        row=connection.execute(sa.text('SELECT id,family_id,revoked_at FROM auth_sessions')).one()
+        assert tuple(row)==('a'*64,None,None)
+        assert connection.scalar(sa.text('SELECT count(*) FROM refresh_families'))==0

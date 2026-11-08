@@ -134,3 +134,10 @@ remain applicable. SQLite/PostgreSQL and original synthetic fixtures are used fo
 No dependency, reference-kit source/asset or email provider added. Proofs use the
 existing Python cryptographic/password/database stack and native UI components.
 Existing 843-record inventory and unresolved legal/security/advisory gates remain.
+
+## Phase 2 package 1 — session refresh
+
+No dependency, native module, reference-kit source/asset or paid service added.
+Uses existing Python HMAC/JWT/DB stack and Expo SecureStore/Crypto. Existing
+843-record inventory, notices and unresolved licensing/advisory gates remain;
+no new commercial legal clearance is claimed.

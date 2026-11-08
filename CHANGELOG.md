@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 2 package 1 — rotating refresh sessions
+
+- Migration 0015 preserves access-only sessions; new logins get short access
+  tokens and opaque refresh families with idle/absolute expiry.
+- Owner-locked rotation, bounded same-key recovery, committed family reuse
+  revocation and logout/password/reset/account-deletion integration.
+- SecureStore journal, single-flight refresh, generation guards, stable upload
+  context and safe GET/native-download retry; writes require explicit retry.
+- Fixed six-package checklist, HTTP restart proof and mobile refresh CI tests.
+  No new dependency, paid service, email delivery or billing.
+
 ## Bounded retention maintenance and offline orphan preview
 
 - Owner-locked, bounded upload expiration; existing terminal cleanup/budget rules retained.

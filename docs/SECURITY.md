@@ -75,3 +75,10 @@ revocation, secret-free validation and private inbox permissions are tested. Loc
 message files contain codes/recipients and are outside media erasure; protect/remove
 disposable test messages. Real delivery/enforcement/outbox/privacy gates remain open.
 See AUTH_RECOVERY.md; no SMTP/provider or unauthenticated recovery bypass enabled.
+
+Package 1 adds opaque refresh rotation, short access tokens, owner-locked family
+reuse detection and committed revocation across logout/reset/deletion. A bounded
+same-key recovery window handles lost replies; consumed hashes remain to absolute
+expiry. Mobile uses SecureStore, durable intent and generation guards. See
+SESSION_REFRESH.md for retry/theft/cleanup boundaries. HTTPS, real email, MFA and
+production security gates remain open.

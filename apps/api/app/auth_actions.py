@@ -15,6 +15,7 @@ from .config import get_settings
 from .db import SessionLocal,session_dep
 from .models import AuthAction,AuthSession,User,utcnow
 from .queue import lock_owner
+from .refresh import revoke_families
 
 router=APIRouter(prefix='/api/v1/auth',tags=['local email actions'])
 logger=logging.getLogger('nextphase.auth-actions')
@@ -128,6 +129,7 @@ def confirm_reset(payload:ResetRequest,request:Request,db:Session=Depends(sessio
     new_hash=make_password_hash(payload.new_password)
     _,user=action_owner(db,payload.code,'reset')
     user.password_hash=new_hash;invalidate_actions(db,user.id)
+    revoke_families(db,user.id)
     db.execute(update(AuthSession).where(AuthSession.user_id==user.id,AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))
     db.commit()
     return Response(status_code=204,headers={'Cache-Control':'no-store'})
