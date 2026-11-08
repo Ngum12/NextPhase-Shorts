@@ -202,3 +202,30 @@ for this installer update. This is not a full OS/vendored/FFmpeg GPL/patent or
 commercial legal clearance. See SECURITY_REVIEW_2026-11-08.md for explicit blockers;
 no public release/risk waiver is inferred from this review. Synthetic load/restore
 media is independently generated; no customer footage or backup enters Git.
+
+## Phase 2 package 6 preparation — SDK 58 mobile graph
+
+Expo 58.0.23 / Router 58.0.30 / SDK-matched modules, React 19.3.0, React Native
+0.88.1 and declared native peers replace SDK 54. Direct/framework declarations
+are primarily MIT; scoped patched glob 14.0.4 and minimatch 11.0.5 declare
+BlueOak-1.0.0 (read their full packaged notices/source terms). Packaged notices
+for 29 direct/framework/tool/asset records are indexed at `docs/licenses/sdk58-index.json`
+and retained under `docs/licenses/sdk58/`. Official Expo SDK 58 MIT root notice
+was retrieved from https://raw.githubusercontent.com/expo/expo/sdk-58/LICENSE and
+preserved at `docs/licenses/expo-sdk58-MIT.txt` for @expo/ui/Router archives that
+omit standalone root notices. Preserve the applicable notices in distributions.
+
+Metadata inventory now has **615** locked/installed records. No reference-kit
+source/assets, paid provider, billing or AI integration added. This is metadata/
+notice review, not independent legal approval or complete transitive/OS/native
+redistribution/source/codec/patent clearance. The read-only image inventory helper
+reports installed versions/copyright hashes, not a vulnerability or legal signoff.
+
+Android export also bundles Material Symbols 400 Regular through Expo Router:
+`@expo-google-fonts/material-symbols` **0.4.53**, declared **MIT AND Apache-2.0**.
+Its packaged wrapper LICENSE and complete LICENSE_FONT are preserved under
+`docs/licenses/sdk58/`; the asset path/SHA-256/source are recorded in the index.
+Apache-2.0 permits commercial font use subject to its notice/license conditions;
+this unmodified navigation font is not copied from a reference kit or used by the
+server video renderer. React Navigation Elements' MIT notice is also retained for
+bundled navigation assets. No proprietary stock video/music/font was introduced.

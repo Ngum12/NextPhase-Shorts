@@ -1,3 +1,14 @@
+# Current resolution — Expo SDK 58, 2026-11-08
+
+The reviewed branch upgrades the SDK-matched mobile graph to Expo 58.0.23,
+Router 58.0.30, RN 0.88.1 and React 19.3.0. Narrow consumer-scoped glob 14.0.4 /
+minimatch 11.0.5 overrides and the existing PostCSS patch remove the remaining
+upstream tool chains. **Clean npm ci + current npm audit: zero findings.**
+Actual Expo config/fingerprint/Android export and dedicated consumer/API regressions
+pass; SDK 58 Pixel acceptance and complete image/legal/security review remain open.
+This supersedes the historical unresolved counts below, not the legal/privacy gates.
+See [exact override scope, tests and upgrade](STAGING_BLOCKERS.md).
+
 # Mobile dependency security follow-up — 2026-11-06
 
 ## Measured change

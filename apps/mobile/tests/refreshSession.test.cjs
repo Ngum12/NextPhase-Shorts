@@ -125,7 +125,7 @@ test('native Save retries a safe download with fresh access before saving',async
  const exports=load('videoExports',{'react-native':{Platform:{OS:'android',Version:33}},
   'expo-file-system/legacy':{cacheDirectory:'file:///cache/',downloadAsync:async(url,dest,init)=>{
    calls.push(init.headers.Authorization);return {status:++downloads===1?401:200,uri:dest};},getInfoAsync:async()=>({exists:true,size:1})},
-  'expo-media-library':{saveToLibraryAsync:async()=>calls.push('saved')},'expo-sharing':{},
+  'expo-media-library/legacy':{saveToLibraryAsync:async()=>calls.push('saved')},'expo-sharing':{},
   './api':{downloadUrl:()=> 'http://localhost/download'},'./authEvents':{prepareToken:async()=> 'first',recoverToken:async()=> 'second'}});
  await exports.exportVideo('save','job','old');assert.deepEqual(calls,['Bearer first','Bearer second','saved']);
 });

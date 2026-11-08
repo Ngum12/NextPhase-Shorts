@@ -88,7 +88,7 @@ npm ci  # installs the committed Expo-compatible dependency graph
 npm start
 ```
 
-For Android emulator use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. For iOS simulator use `http://localhost:8000`. For a **physical phone** use your computer's LAN IP and allow the firewall, e.g. `http://192.168.x.x:8000`. **Only for development on a trusted network.** Real production must use HTTPS + domain and reverse proxy. Verify Expo Go/SDK compatibility or build an Expo development client when needed.
+For Android emulator use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000`. For iOS simulator use `http://localhost:8000`. For a **physical Pixel**, prefer USB `adb reverse tcp:8000 tcp:8000` plus the Metro port and use `http://127.0.0.1:8000`. Docker binds the API to loopback by default. LAN access requires an explicit trusted development binding and firewall review. Real production must use HTTPS + domain and reverse proxy. Verify Expo Go/SDK compatibility or build an Expo development client when needed.
 
 1. Create account / sign in.
 2. Create Short -> choose your own short sample video -> acknowledge upload rights/server processing -> choose a style (future marker) -> 15, 30, 45 or 60 s maximum -> upload.
@@ -264,3 +264,8 @@ Package 5 adds shared capacity/intake limits, pre-parser upload caps, bounded
 operational cleanup and a disposable load/backup-restore drill. See
 [capacity/security runbook](docs/CAPACITY_SECURITY.md) and the
 [explicit security/privacy launch blockers](docs/SECURITY_REVIEW_2026-11-08.md).
+
+Package 6 preparation resolves the mobile advisory graph with Expo SDK 58 and
+reviewed tool patches. Use an SDK 58-compatible Expo Go client. See
+[upgrade and remaining staging gates](docs/STAGING_BLOCKERS.md). Zero npm findings
+is not production/security/legal signoff.

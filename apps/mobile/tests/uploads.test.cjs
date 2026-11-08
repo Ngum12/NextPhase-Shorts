@@ -35,7 +35,7 @@ function fixture(options={}) {
     open(){
       openHandles++;
       const bytes=storage.get(this.uri);
-      return {offset:0,readBytes(length){const part=new Uint8Array(bytes.buffer,bytes.byteOffset+this.offset,Math.min(length,bytes.length-this.offset));this.offset+=part.length;return part;},
+      return {offset:0,async readBytes(length){const part=new Uint8Array(bytes.buffer,bytes.byteOffset+this.offset,Math.min(length,bytes.length-this.offset));this.offset+=part.length;await Promise.resolve();options.afterRead?.();return part;},
         close(){openHandles--;}};
     }
   }
@@ -300,5 +300,14 @@ test('direct client refuses insecure storage addresses and preserves the private
   world.signedOrigin='http://storage.example';
   await assert.rejects(app.resumeUpload(record,'private-token',()=>{}),/not secure/);
   assert.deepEqual(world.signedTransfers,[]);assert.equal(world.openHandles,0);
+  assert(world.storage.has(world.root+record.localName));assert(await app.loadPending('owner-a'));
+});
+
+
+test('SDK 58 asynchronous chunk read respects pause before sending and closes its handle',async()=>{
+  const controller=new AbortController();
+  const world=fixture({afterRead:()=>controller.abort()});const app=world.restart();const record=await prepared(app);
+  await assert.rejects(app.resumeUpload(record,'token',()=>{},controller.signal),/paused/);
+  assert.deepEqual(world.offsets,[]);assert.equal(world.openHandles,0);
   assert(world.storage.has(world.root+record.localName));assert(await app.loadPending('owner-a'));
 });

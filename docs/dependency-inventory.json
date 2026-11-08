@@ -4,115 +4,19 @@
   "dependencies": [
     {
       "ecosystem": "npm",
-      "name": "@0no-co/graphql.web",
-      "version": "1.3.4",
+      "name": "2g",
+      "version": "1.0.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@0no-co/graphql.web/v/1.3.4",
-      "license_location": "apps/mobile/node_modules/@0no-co/graphql.web/LICENSE*"
+      "source": "https://www.npmjs.com/package/2g/v/1.0.1",
+      "license_location": "apps/mobile/node_modules/2g/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@babel/code-frame",
-      "version": "7.10.4",
+      "version": "7.29.7",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.10.4",
+      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
       "license_location": "apps/mobile/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.10.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.10.4",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/json-file/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/core/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/template/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/traverse--for-generate-function-map/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/traverse/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@expo/json-file/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@expo/require-utils/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/@babel/code-frame/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/code-frame",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/code-frame/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/@babel/code-frame/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -292,14 +196,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/highlight",
-      "version": "7.25.9",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/highlight/v/7.25.9",
-      "license_location": "apps/mobile/node_modules/@babel/highlight/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@babel/parser",
       "version": "7.29.13",
       "license": "MIT",
@@ -321,38 +217,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@babel/plugin-proposal-export-default-from/v/7.29.7",
       "license_location": "apps/mobile/node_modules/@babel/plugin-proposal-export-default-from/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-async-generators",
-      "version": "7.8.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-async-generators/v/7.8.4",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-async-generators/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-bigint",
-      "version": "7.8.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-bigint/v/7.8.3",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-bigint/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-class-properties",
-      "version": "7.12.13",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-class-properties/v/7.12.13",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-class-properties/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-class-static-block",
-      "version": "7.14.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-class-static-block/v/7.14.5",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-class-static-block/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -388,43 +252,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-import-attributes",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-import-attributes/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-import-attributes/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-import-meta",
-      "version": "7.10.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-import-meta/v/7.10.4",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-import-meta/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-json-strings",
-      "version": "7.8.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-json-strings/v/7.8.3",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-json-strings/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@babel/plugin-syntax-jsx",
       "version": "7.29.7",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@babel/plugin-syntax-jsx/v/7.29.7",
       "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-jsx/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-logical-assignment-operators",
-      "version": "7.10.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-logical-assignment-operators/v/7.10.4",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-logical-assignment-operators/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -436,51 +268,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-numeric-separator",
-      "version": "7.10.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-numeric-separator/v/7.10.4",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-numeric-separator/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-object-rest-spread",
-      "version": "7.8.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-object-rest-spread/v/7.8.3",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-object-rest-spread/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-optional-catch-binding",
-      "version": "7.8.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-optional-catch-binding/v/7.8.3",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-optional-catch-binding/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@babel/plugin-syntax-optional-chaining",
       "version": "7.8.3",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@babel/plugin-syntax-optional-chaining/v/7.8.3",
       "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-optional-chaining/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-private-property-in-object",
-      "version": "7.14.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-private-property-in-object/v/7.14.5",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-private-property-in-object/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-syntax-top-level-await",
-      "version": "7.14.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-syntax-top-level-await/v/7.14.5",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-syntax-top-level-await/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -548,14 +340,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/plugin-transform-computed-properties",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-transform-computed-properties/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-computed-properties/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@babel/plugin-transform-destructuring",
       "version": "7.29.13",
       "license": "MIT",
@@ -588,22 +372,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/plugin-transform-function-name",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-transform-function-name/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-function-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-transform-literals",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-transform-literals/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-literals/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@babel/plugin-transform-logical-assignment-operators",
       "version": "7.29.7",
       "license": "MIT",
@@ -633,14 +401,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@babel/plugin-transform-nullish-coalescing-operator/v/7.29.7",
       "license_location": "apps/mobile/node_modules/@babel/plugin-transform-nullish-coalescing-operator/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-transform-numeric-separator",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-transform-numeric-separator/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-numeric-separator/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -764,19 +524,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/plugin-transform-spread",
-      "version": "7.29.11",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-transform-spread/v/7.29.11",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-spread/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/plugin-transform-sticky-regex",
+      "name": "@babel/plugin-transform-template-literals",
       "version": "7.29.7",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/plugin-transform-sticky-regex/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-sticky-regex/LICENSE*"
+      "source": "https://www.npmjs.com/package/@babel/plugin-transform-template-literals/v/7.29.7",
+      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-template-literals/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -793,14 +545,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@babel/plugin-transform-unicode-regex/v/7.29.7",
       "license_location": "apps/mobile/node_modules/@babel/plugin-transform-unicode-regex/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@babel/preset-react",
-      "version": "7.29.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/preset-react/v/7.29.7",
-      "license_location": "apps/mobile/node_modules/@babel/preset-react/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -836,14 +580,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@babel/traverse",
-      "version": "7.29.13",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@babel/traverse/v/7.29.13",
-      "license_location": "apps/mobile/node_modules/@babel/traverse--for-generate-function-map/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@babel/types",
       "version": "7.29.11",
       "license": "MIT",
@@ -852,42 +588,50 @@
     },
     {
       "ecosystem": "npm",
+      "name": "@expo-google-fonts/material-symbols",
+      "version": "0.4.53",
+      "license": "MIT AND Apache-2.0",
+      "source": "https://www.npmjs.com/package/@expo-google-fonts/material-symbols/v/0.4.53",
+      "license_location": "apps/mobile/node_modules/@expo-google-fonts/material-symbols/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
       "name": "@expo/cli",
-      "version": "54.0.28",
+      "version": "58.1.19",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/cli/v/54.0.28",
+      "source": "https://www.npmjs.com/package/@expo/cli/v/58.1.19",
       "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/cli/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/code-signing-certificates",
-      "version": "0.0.6",
+      "version": "0.0.7",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/code-signing-certificates/v/0.0.6",
+      "source": "https://www.npmjs.com/package/@expo/code-signing-certificates/v/0.0.7",
       "license_location": "apps/mobile/node_modules/@expo/code-signing-certificates/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/config",
-      "version": "12.0.14",
+      "version": "58.0.11",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/config/v/12.0.14",
+      "source": "https://www.npmjs.com/package/@expo/config/v/58.0.11",
       "license_location": "apps/mobile/node_modules/@expo/config/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/config-plugins",
-      "version": "54.0.6",
+      "version": "58.0.12",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/config-plugins/v/54.0.6",
+      "source": "https://www.npmjs.com/package/@expo/config-plugins/v/58.0.12",
       "license_location": "apps/mobile/node_modules/@expo/config-plugins/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/config-types",
-      "version": "54.0.10",
+      "version": "58.0.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/config-types/v/54.0.10",
+      "source": "https://www.npmjs.com/package/@expo/config-types/v/58.0.3",
       "license_location": "apps/mobile/node_modules/@expo/config-types/LICENSE*"
     },
     {
@@ -901,58 +645,50 @@
     {
       "ecosystem": "npm",
       "name": "@expo/devtools",
-      "version": "0.1.8",
+      "version": "58.0.2",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/devtools/v/0.1.8",
+      "source": "https://www.npmjs.com/package/@expo/devtools/v/58.0.2",
       "license_location": "apps/mobile/node_modules/@expo/devtools/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "@expo/env",
-      "version": "2.0.12",
+      "name": "@expo/dom-webview",
+      "version": "58.0.2",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/env/v/2.0.12",
+      "source": "https://www.npmjs.com/package/@expo/dom-webview/v/58.0.2",
+      "license_location": "apps/mobile/node_modules/@expo/dom-webview/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/env",
+      "version": "2.5.4",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/env/v/2.5.4",
       "license_location": "apps/mobile/node_modules/@expo/env/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/fingerprint",
-      "version": "0.15.5",
+      "version": "0.21.9",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/fingerprint/v/0.15.5",
+      "source": "https://www.npmjs.com/package/@expo/fingerprint/v/0.21.9",
       "license_location": "apps/mobile/node_modules/@expo/fingerprint/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/image-utils",
-      "version": "0.8.17",
+      "version": "0.12.6",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/image-utils/v/0.8.17",
+      "source": "https://www.npmjs.com/package/@expo/image-utils/v/0.12.6",
       "license_location": "apps/mobile/node_modules/@expo/image-utils/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "@expo/json-file",
-      "version": "10.0.16",
+      "name": "@expo/inline-modules",
+      "version": "0.2.9",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/json-file/v/10.0.16",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/@expo/json-file/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@expo/json-file",
-      "version": "10.0.16",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/json-file/v/10.0.16",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/json-file/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@expo/json-file",
-      "version": "10.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/json-file/v/10.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/json-file/LICENSE*"
+      "source": "https://www.npmjs.com/package/@expo/inline-modules/v/0.2.9",
+      "license_location": "apps/mobile/node_modules/@expo/inline-modules/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -960,31 +696,95 @@
       "version": "11.2.1",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@expo/json-file/v/11.2.1",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/@expo/json-file/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@expo/json-file/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/local-build-cache-provider",
+      "version": "58.0.11",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/local-build-cache-provider/v/58.0.11",
+      "license_location": "apps/mobile/node_modules/@expo/local-build-cache-provider/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/log-box",
+      "version": "58.0.15",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/log-box/v/58.0.15",
+      "license_location": "apps/mobile/node_modules/@expo/log-box/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/log-box-utils",
+      "version": "58.0.2",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/log-box-utils/v/58.0.2",
+      "license_location": "apps/mobile/node_modules/@expo/log-box-utils/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/metro",
-      "version": "54.2.0",
+      "version": "58.0.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/metro/v/54.2.0",
+      "source": "https://www.npmjs.com/package/@expo/metro/v/58.0.0",
       "license_location": "apps/mobile/node_modules/@expo/metro/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/metro-config",
-      "version": "54.0.17",
+      "version": "58.0.21",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/metro-config/v/54.0.17",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/metro-config/LICENSE*"
+      "source": "https://www.npmjs.com/package/@expo/metro-config/v/58.0.21",
+      "license_location": "apps/mobile/node_modules/@expo/metro-config/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/metro-file-map",
+      "version": "58.0.5",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/metro-file-map/v/58.0.5",
+      "license_location": "apps/mobile/node_modules/@expo/metro-file-map/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/metro-runtime",
-      "version": "6.1.2",
+      "version": "58.0.17",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/metro-runtime/v/6.1.2",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@expo/metro-runtime/LICENSE*"
+      "source": "https://www.npmjs.com/package/@expo/metro-runtime/v/58.0.17",
+      "license_location": "apps/mobile/node_modules/@expo/metro-runtime/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/modules-macros-linux-arm64",
+      "version": "0.29.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/modules-macros-linux-arm64/v/0.29.0",
+      "license_location": "apps/mobile/node_modules/@expo/modules-macros-linux-arm64/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/modules-macros-linux-x64",
+      "version": "0.29.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/modules-macros-linux-x64/v/0.29.0",
+      "license_location": "apps/mobile/node_modules/@expo/modules-macros-linux-x64/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/modules-macros-win32-arm64",
+      "version": "0.29.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/modules-macros-win32-arm64/v/0.29.0",
+      "license_location": "apps/mobile/node_modules/@expo/modules-macros-win32-arm64/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/modules-macros-win32-x64",
+      "version": "0.29.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/modules-macros-win32-x64/v/0.29.0",
+      "license_location": "apps/mobile/node_modules/@expo/modules-macros-win32-x64/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1004,34 +804,50 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@expo/plist",
-      "version": "0.4.9",
+      "name": "@expo/platforms",
+      "version": "58.0.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/plist/v/0.4.9",
+      "source": "https://www.npmjs.com/package/@expo/platforms/v/58.0.1",
+      "license_location": "apps/mobile/node_modules/@expo/platforms/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/plist",
+      "version": "0.10.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/plist/v/0.10.1",
       "license_location": "apps/mobile/node_modules/@expo/plist/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/prebuild-config",
-      "version": "54.0.9",
+      "version": "58.0.19",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/prebuild-config/v/54.0.9",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/cli/node_modules/@expo/prebuild-config/LICENSE*"
+      "source": "https://www.npmjs.com/package/@expo/prebuild-config/v/58.0.19",
+      "license_location": "apps/mobile/node_modules/@expo/prebuild-config/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/require-utils",
-      "version": "55.0.8",
+      "version": "58.0.5",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/require-utils/v/55.0.8",
+      "source": "https://www.npmjs.com/package/@expo/require-utils/v/58.0.5",
       "license_location": "apps/mobile/node_modules/@expo/require-utils/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "@expo/schema-utils",
-      "version": "0.1.9",
+      "name": "@expo/router-server",
+      "version": "58.0.21",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/schema-utils/v/0.1.9",
+      "source": "https://www.npmjs.com/package/@expo/router-server/v/58.0.21",
+      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@expo/schema-utils",
+      "version": "58.0.3",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@expo/schema-utils/v/58.0.3",
       "license_location": "apps/mobile/node_modules/@expo/schema-utils/LICENSE*"
     },
     {
@@ -1060,19 +876,19 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@expo/vector-icons",
-      "version": "15.1.1",
+      "name": "@expo/ui",
+      "version": "58.0.27",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/vector-icons/v/15.1.1",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/vector-icons/LICENSE*"
+      "source": "https://www.npmjs.com/package/@expo/ui/v/58.0.27",
+      "license_location": "apps/mobile/node_modules/@expo/ui/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@expo/ws-tunnel",
-      "version": "1.0.6",
+      "version": "2.0.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@expo/ws-tunnel/v/1.0.6",
-      "license_location": "apps/mobile/node_modules/@expo/ws-tunnel/LICENSE*"
+      "source": "https://www.npmjs.com/package/@expo/ws-tunnel/v/2.0.1",
+      "license_location": "apps/mobile/node_modules/expo/node_modules/@expo/ws-tunnel/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1084,11 +900,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@isaacs/fs-minipass",
-      "version": "4.0.1",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/@isaacs/fs-minipass/v/4.0.1",
-      "license_location": "apps/mobile/node_modules/@isaacs/fs-minipass/LICENSE*"
+      "name": "@isaacs/nonrecursive-glob-match",
+      "version": "1.1.0",
+      "license": "BlueOak-1.0.0",
+      "source": "https://www.npmjs.com/package/@isaacs/nonrecursive-glob-match/v/1.1.0",
+      "license_location": "apps/mobile/node_modules/@isaacs/nonrecursive-glob-match/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1100,59 +916,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@istanbuljs/load-nyc-config",
-      "version": "1.1.0",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/@istanbuljs/load-nyc-config/v/1.1.0",
-      "license_location": "apps/mobile/node_modules/@istanbuljs/load-nyc-config/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@istanbuljs/schema",
-      "version": "0.1.6",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@istanbuljs/schema/v/0.1.6",
-      "license_location": "apps/mobile/node_modules/@istanbuljs/schema/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@jest/create-cache-key-function",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@jest/create-cache-key-function/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/@jest/create-cache-key-function/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@jest/environment",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@jest/environment/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/@jest/environment/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@jest/fake-timers",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@jest/fake-timers/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/@jest/fake-timers/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@jest/schemas",
       "version": "29.6.3",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@jest/schemas/v/29.6.3",
       "license_location": "apps/mobile/node_modules/@jest/schemas/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@jest/transform",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@jest/transform/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/@jest/transform/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1212,6 +980,78 @@
     },
     {
       "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-darwin-arm64",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-darwin-arm64/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-darwin-arm64/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-darwin-x64",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-darwin-x64/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-darwin-x64/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-linux-arm64-gnu",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-linux-arm64-gnu/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-linux-arm64-gnu/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-linux-arm64-musl",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-linux-arm64-musl/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-linux-arm64-musl/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-linux-x64-gnu",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-linux-x64-gnu/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-linux-x64-gnu/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-linux-x64-musl",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-linux-x64-musl/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-linux-x64-musl/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-win32-arm64-msvc",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-win32-arm64-msvc/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-win32-arm64-msvc/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@noxcturnal/noxcturnal-win32-x64-msvc",
+      "version": "0.1.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@noxcturnal/noxcturnal-win32-x64-msvc/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/@noxcturnal/noxcturnal-win32-x64-msvc/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@oxc-project/types",
+      "version": "0.154.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@oxc-project/types/v/0.154.0",
+      "license_location": "apps/mobile/node_modules/@oxc-project/types/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
       "name": "@radix-ui/primitive",
       "version": "1.2.0",
       "license": "MIT",
@@ -1224,31 +1064,15 @@
       "version": "1.2.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@radix-ui/react-collection/v/1.2.0",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-collection/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@radix-ui/react-collection/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@radix-ui/react-compose-refs",
-      "version": "1.1.2",
+      "version": "1.1.5",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-compose-refs/v/1.1.2",
+      "source": "https://www.npmjs.com/package/@radix-ui/react-compose-refs/v/1.1.5",
       "license_location": "apps/mobile/node_modules/@radix-ui/react-compose-refs/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-compose-refs",
-      "version": "1.1.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-compose-refs/v/1.1.5",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-compose-refs/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-compose-refs",
-      "version": "1.1.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-compose-refs/v/1.1.5",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-compose-refs/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1260,43 +1084,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@radix-ui/react-dialog",
-      "version": "1.3.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-dialog/v/1.3.1",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-dialog/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@radix-ui/react-direction",
       "version": "1.2.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@radix-ui/react-direction/v/1.2.0",
       "license_location": "apps/mobile/node_modules/@radix-ui/react-direction/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-dismissable-layer",
-      "version": "1.2.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-dismissable-layer/v/1.2.1",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-dismissable-layer/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-focus-guards",
-      "version": "1.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-focus-guards/v/1.2.0",
-      "license_location": "apps/mobile/node_modules/@radix-ui/react-focus-guards/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-focus-scope",
-      "version": "1.3.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-focus-scope/v/1.3.1",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-focus-scope/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1308,27 +1100,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@radix-ui/react-portal",
-      "version": "1.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-portal/v/1.2.0",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-portal/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@radix-ui/react-presence",
       "version": "1.1.11",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@radix-ui/react-presence/v/1.1.11",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-presence/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-presence",
-      "version": "1.1.11",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-presence/v/1.1.11",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-presence/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@radix-ui/react-presence/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1336,15 +1112,7 @@
       "version": "2.2.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@radix-ui/react-primitive/v/2.2.0",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-primitive/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-primitive",
-      "version": "2.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-primitive/v/2.2.0",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-primitive/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@radix-ui/react-primitive/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1352,39 +1120,15 @@
       "version": "1.2.1",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@radix-ui/react-roving-focus/v/1.2.1",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-roving-focus/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@radix-ui/react-roving-focus/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@radix-ui/react-slot",
-      "version": "1.2.0",
+      "version": "1.5.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-slot/v/1.2.0",
+      "source": "https://www.npmjs.com/package/@radix-ui/react-slot/v/1.5.0",
       "license_location": "apps/mobile/node_modules/@radix-ui/react-slot/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-slot",
-      "version": "1.5.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-slot/v/1.5.0",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-slot",
-      "version": "1.5.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-slot/v/1.5.0",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@radix-ui/react-slot",
-      "version": "1.5.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@radix-ui/react-slot/v/1.5.0",
-      "license_location": "apps/mobile/node_modules/vaul/node_modules/@radix-ui/react-slot/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1392,7 +1136,7 @@
       "version": "1.2.1",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@radix-ui/react-tabs/v/1.2.1",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/@radix-ui/react-tabs/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@radix-ui/react-tabs/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1436,139 +1180,123 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@react-native/assets-registry",
-      "version": "0.81.5",
+      "name": "@react-native-masked-view/masked-view",
+      "version": "0.3.2",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/assets-registry/v/0.81.5",
-      "license_location": "apps/mobile/node_modules/@react-native/assets-registry/LICENSE*"
+      "source": "https://www.npmjs.com/package/@react-native-masked-view/masked-view/v/0.3.2",
+      "license_location": "apps/mobile/node_modules/@react-native-masked-view/masked-view/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@react-native/asset-utils",
+      "version": "0.88.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@react-native/asset-utils/v/0.88.1",
+      "license_location": "apps/mobile/node_modules/@react-native/asset-utils/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/babel-plugin-codegen",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/babel-plugin-codegen/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/babel-plugin-codegen/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/babel-plugin-codegen/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/babel-preset",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/babel-preset/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/babel-preset/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/babel-preset/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/codegen",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/codegen/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/codegen/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/codegen/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/community-cli-plugin",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/community-cli-plugin/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/community-cli-plugin/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/community-cli-plugin/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/debugger-frontend",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/@react-native/debugger-frontend/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/debugger-frontend/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/debugger-frontend/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "@react-native/dev-middleware",
-      "version": "0.81.5",
+      "name": "@react-native/debugger-shell",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/dev-middleware/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/debugger-shell/v/0.88.1",
+      "license_location": "apps/mobile/node_modules/@react-native/debugger-shell/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@react-native/dev-middleware",
+      "version": "0.88.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@react-native/dev-middleware/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/dev-middleware/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/gradle-plugin",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/gradle-plugin/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/gradle-plugin/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/gradle-plugin/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/js-polyfills",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/js-polyfills/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/js-polyfills/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/js-polyfills/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "@react-native/normalize-colors",
-      "version": "0.81.5",
+      "name": "@react-native/metro-babel-transformer",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/normalize-colors/v/0.81.5",
+      "source": "https://www.npmjs.com/package/@react-native/metro-babel-transformer/v/0.88.1",
+      "license_location": "apps/mobile/node_modules/@react-native/metro-babel-transformer/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@react-native/metro-config",
+      "version": "0.88.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@react-native/metro-config/v/0.88.1",
+      "license_location": "apps/mobile/node_modules/@react-native/metro-config/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@react-native/normalize-colors",
+      "version": "0.88.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/@react-native/normalize-colors/v/0.88.1",
       "license_location": "apps/mobile/node_modules/@react-native/normalize-colors/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "@react-native/virtualized-lists",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-native/virtualized-lists/v/0.81.5",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/@react-native/virtualized-lists/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@react-navigation/bottom-tabs",
-      "version": "7.21.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-navigation/bottom-tabs/v/7.21.0",
-      "license_location": "apps/mobile/node_modules/@react-navigation/bottom-tabs/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@react-navigation/core",
-      "version": "7.24.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-navigation/core/v/7.24.0",
-      "license_location": "apps/mobile/node_modules/@react-navigation/core/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@react-navigation/elements",
-      "version": "2.9.45",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-navigation/elements/v/2.9.45",
-      "license_location": "apps/mobile/node_modules/@react-navigation/elements/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@react-navigation/native",
-      "version": "7.5.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-navigation/native/v/7.5.1",
-      "license_location": "apps/mobile/node_modules/@react-navigation/native/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@react-navigation/native-stack",
-      "version": "7.21.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-navigation/native-stack/v/7.21.0",
-      "license_location": "apps/mobile/node_modules/@react-navigation/native-stack/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@react-navigation/routers",
-      "version": "7.6.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@react-navigation/routers/v/7.6.5",
-      "license_location": "apps/mobile/node_modules/@react-navigation/routers/LICENSE*"
+      "source": "https://www.npmjs.com/package/@react-native/virtualized-lists/v/0.88.1",
+      "license_location": "apps/mobile/node_modules/@react-native/virtualized-lists/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1577,62 +1305,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/@sinclair/typebox/v/0.27.12",
       "license_location": "apps/mobile/node_modules/@sinclair/typebox/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@sinonjs/commons",
-      "version": "3.0.1",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/@sinonjs/commons/v/3.0.1",
-      "license_location": "apps/mobile/node_modules/@sinonjs/commons/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@sinonjs/fake-timers",
-      "version": "10.3.0",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/@sinonjs/fake-timers/v/10.3.0",
-      "license_location": "apps/mobile/node_modules/@sinonjs/fake-timers/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@types/babel__core",
-      "version": "7.20.5",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/babel__core/v/7.20.5",
-      "license_location": "apps/mobile/node_modules/@types/babel__core/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@types/babel__generator",
-      "version": "7.27.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/babel__generator/v/7.27.0",
-      "license_location": "apps/mobile/node_modules/@types/babel__generator/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@types/babel__template",
-      "version": "7.4.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/babel__template/v/7.4.4",
-      "license_location": "apps/mobile/node_modules/@types/babel__template/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@types/babel__traverse",
-      "version": "7.28.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/babel__traverse/v/7.28.0",
-      "license_location": "apps/mobile/node_modules/@types/babel__traverse/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@types/graceful-fs",
-      "version": "4.1.9",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/graceful-fs/v/4.1.9",
-      "license_location": "apps/mobile/node_modules/@types/graceful-fs/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1669,18 +1341,18 @@
     {
       "ecosystem": "npm",
       "name": "@types/react",
-      "version": "19.1.17",
+      "version": "19.3.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/react/v/19.1.17",
+      "source": "https://www.npmjs.com/package/@types/react/v/19.3.0",
       "license_location": "apps/mobile/node_modules/@types/react/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "@types/stack-utils",
-      "version": "2.0.3",
+      "name": "@types/react-test-renderer",
+      "version": "19.3.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/@types/stack-utils/v/2.0.3",
-      "license_location": "apps/mobile/node_modules/@types/stack-utils/LICENSE*"
+      "source": "https://www.npmjs.com/package/@types/react-test-renderer/v/19.3.1",
+      "license_location": "apps/mobile/node_modules/@types/react-test-renderer/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1708,22 +1380,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "@urql/core",
-      "version": "5.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@urql/core/v/5.2.0",
-      "license_location": "apps/mobile/node_modules/@urql/core/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "@urql/exchange-retry",
-      "version": "1.3.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/@urql/exchange-retry/v/1.3.2",
-      "license_location": "apps/mobile/node_modules/@urql/exchange-retry/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "@xmldom/xmldom",
       "version": "0.8.15",
       "license": "MIT",
@@ -1740,18 +1396,18 @@
     },
     {
       "ecosystem": "npm",
-      "name": "abort-controller",
-      "version": "3.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/abort-controller/v/3.0.0",
-      "license_location": "apps/mobile/node_modules/abort-controller/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "accepts",
       "version": "1.3.8",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/accepts/v/1.3.8",
+      "license_location": "apps/mobile/node_modules/expo/node_modules/accepts/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "accepts",
+      "version": "2.0.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/accepts/v/2.0.0",
       "license_location": "apps/mobile/node_modules/accepts/LICENSE*"
     },
     {
@@ -1816,143 +1472,23 @@
       "version": "3.2.1",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/ansi-styles/v/3.2.1",
+      "license_location": "apps/mobile/node_modules/log-symbols/node_modules/ansi-styles/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ansi-styles",
+      "version": "3.2.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/ansi-styles/v/3.2.1",
+      "license_location": "apps/mobile/node_modules/ora/node_modules/ansi-styles/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ansi-styles",
+      "version": "4.3.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
       "license_location": "apps/mobile/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/devtools/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/env/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@jest/transform/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/@jest/types/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/babel-jest/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/expo-modules-autolinking/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/jest-validate/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ansi-styles/v/4.3.0",
-      "license_location": "apps/mobile/node_modules/wrap-ansi/node_modules/ansi-styles/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1961,22 +1497,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/ansi-styles/v/5.2.0",
       "license_location": "apps/mobile/node_modules/pretty-format/node_modules/ansi-styles/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "any-promise",
-      "version": "1.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/any-promise/v/1.3.0",
-      "license_location": "apps/mobile/node_modules/any-promise/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "anymatch",
-      "version": "3.1.3",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/anymatch/v/3.1.3",
-      "license_location": "apps/mobile/node_modules/anymatch/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -1989,26 +1509,10 @@
     {
       "ecosystem": "npm",
       "name": "argparse",
-      "version": "1.0.10",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/argparse/v/1.0.10",
-      "license_location": "apps/mobile/node_modules/argparse/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "argparse",
       "version": "2.0.1",
       "license": "Python-2.0",
       "source": "https://www.npmjs.com/package/argparse/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/argparse/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "aria-hidden",
-      "version": "1.2.6",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/aria-hidden/v/1.2.6",
-      "license_location": "apps/mobile/node_modules/aria-hidden/LICENSE*"
+      "license_location": "apps/mobile/node_modules/argparse/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2017,38 +1521,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/asap/v/2.0.6",
       "license_location": "apps/mobile/node_modules/asap/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "async-limiter",
-      "version": "1.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/async-limiter/v/1.0.1",
-      "license_location": "apps/mobile/node_modules/async-limiter/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "babel-jest",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/babel-jest/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/babel-jest/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "babel-plugin-istanbul",
-      "version": "6.1.1",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/babel-plugin-istanbul/v/6.1.1",
-      "license_location": "apps/mobile/node_modules/babel-plugin-istanbul/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "babel-plugin-jest-hoist",
-      "version": "29.6.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/babel-plugin-jest-hoist/v/29.6.3",
-      "license_location": "apps/mobile/node_modules/babel-plugin-jest-hoist/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2093,9 +1565,9 @@
     {
       "ecosystem": "npm",
       "name": "babel-plugin-syntax-hermes-parser",
-      "version": "0.29.1",
+      "version": "0.36.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/babel-plugin-syntax-hermes-parser/v/0.29.1",
+      "source": "https://www.npmjs.com/package/babel-plugin-syntax-hermes-parser/v/0.36.1",
       "license_location": "apps/mobile/node_modules/babel-plugin-syntax-hermes-parser/LICENSE*"
     },
     {
@@ -2108,67 +1580,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "babel-preset-current-node-syntax",
-      "version": "1.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/babel-preset-current-node-syntax/v/1.2.0",
-      "license_location": "apps/mobile/node_modules/babel-preset-current-node-syntax/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "babel-preset-expo",
-      "version": "54.0.12",
+      "version": "58.0.24",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/babel-preset-expo/v/54.0.12",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/babel-preset-expo/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "babel-preset-jest",
-      "version": "29.6.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/babel-preset-jest/v/29.6.3",
-      "license_location": "apps/mobile/node_modules/babel-preset-jest/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "balanced-match",
-      "version": "1.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/balanced-match/v/1.0.2",
-      "license_location": "apps/mobile/node_modules/@react-native/codegen/node_modules/balanced-match/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "balanced-match",
-      "version": "1.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/balanced-match/v/1.0.2",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/balanced-match/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "balanced-match",
-      "version": "1.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/balanced-match/v/1.0.2",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/balanced-match/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "balanced-match",
-      "version": "1.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/balanced-match/v/1.0.2",
-      "license_location": "apps/mobile/node_modules/rimraf/node_modules/balanced-match/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "balanced-match",
-      "version": "1.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/balanced-match/v/1.0.2",
-      "license_location": "apps/mobile/node_modules/test-exclude/node_modules/balanced-match/LICENSE*"
+      "source": "https://www.npmjs.com/package/babel-preset-expo/v/58.0.24",
+      "license_location": "apps/mobile/node_modules/babel-preset-expo/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2196,14 +1612,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "better-opn",
-      "version": "3.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/better-opn/v/3.0.2",
-      "license_location": "apps/mobile/node_modules/better-opn/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "big-integer",
       "version": "1.6.52",
       "license": "Unlicense",
@@ -2225,46 +1633,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/bplist-parser/v/0.3.1",
       "license_location": "apps/mobile/node_modules/bplist-parser/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "brace-expansion",
-      "version": "1.1.21",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/brace-expansion/v/1.1.21",
-      "license_location": "apps/mobile/node_modules/@react-native/codegen/node_modules/brace-expansion/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "brace-expansion",
-      "version": "1.1.21",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/brace-expansion/v/1.1.21",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/brace-expansion/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "brace-expansion",
-      "version": "1.1.21",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/brace-expansion/v/1.1.21",
-      "license_location": "apps/mobile/node_modules/rimraf/node_modules/brace-expansion/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "brace-expansion",
-      "version": "1.1.21",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/brace-expansion/v/1.1.21",
-      "license_location": "apps/mobile/node_modules/test-exclude/node_modules/brace-expansion/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "brace-expansion",
-      "version": "2.1.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/brace-expansion/v/2.1.7",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/brace-expansion/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2300,14 +1668,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "buffer",
-      "version": "5.7.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/buffer/v/5.7.1",
-      "license_location": "apps/mobile/node_modules/buffer/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "buffer-from",
       "version": "1.1.2",
       "license": "MIT",
@@ -2321,14 +1681,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/bytes/v/3.1.2",
       "license_location": "apps/mobile/node_modules/bytes/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "camelcase",
-      "version": "5.3.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/camelcase/v/5.3.1",
-      "license_location": "apps/mobile/node_modules/@istanbuljs/load-nyc-config/node_modules/camelcase/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2352,183 +1704,31 @@
       "version": "2.4.2",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/chalk/v/2.4.2",
+      "license_location": "apps/mobile/node_modules/log-symbols/node_modules/chalk/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "chalk",
+      "version": "2.4.2",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/chalk/v/2.4.2",
+      "license_location": "apps/mobile/node_modules/ora/node_modules/chalk/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "chalk",
+      "version": "4.1.2",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
       "license_location": "apps/mobile/node_modules/chalk/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/devtools/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/env/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@jest/transform/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/@jest/types/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/babel-jest/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/expo-modules-autolinking/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/jest-validate/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chalk",
-      "version": "4.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/chalk/v/4.1.2",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/chalk/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chownr",
-      "version": "3.0.0",
-      "license": "BlueOak-1.0.0",
-      "source": "https://www.npmjs.com/package/chownr/v/3.0.0",
-      "license_location": "apps/mobile/node_modules/chownr/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chrome-launcher",
-      "version": "0.15.2",
-      "license": "Apache-2.0",
-      "source": "https://www.npmjs.com/package/chrome-launcher/v/0.15.2",
-      "license_location": "apps/mobile/node_modules/chrome-launcher/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "chromium-edge-launcher",
-      "version": "0.2.0",
-      "license": "Apache-2.0",
-      "source": "https://www.npmjs.com/package/chromium-edge-launcher/v/0.2.0",
-      "license_location": "apps/mobile/node_modules/chromium-edge-launcher/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "ci-info",
-      "version": "2.0.0",
+      "version": "3.9.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/ci-info/v/2.0.0",
+      "source": "https://www.npmjs.com/package/ci-info/v/3.9.0",
       "license_location": "apps/mobile/node_modules/ci-info/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ci-info",
-      "version": "3.9.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ci-info/v/3.9.0",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/ci-info/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ci-info",
-      "version": "3.9.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ci-info/v/3.9.0",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/ci-info/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2584,151 +1784,23 @@
       "version": "1.9.3",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/color-convert/v/1.9.3",
+      "license_location": "apps/mobile/node_modules/log-symbols/node_modules/color-convert/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "color-convert",
+      "version": "1.9.3",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/color-convert/v/1.9.3",
+      "license_location": "apps/mobile/node_modules/ora/node_modules/color-convert/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "color-convert",
+      "version": "2.0.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
       "license_location": "apps/mobile/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/devtools/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/env/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@jest/transform/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/@jest/types/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/babel-jest/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/color/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/expo-modules-autolinking/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/jest-validate/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/color-convert/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-convert/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/wrap-ansi/node_modules/color-convert/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2736,151 +1808,23 @@
       "version": "1.1.3",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/color-name/v/1.1.3",
+      "license_location": "apps/mobile/node_modules/log-symbols/node_modules/color-name/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "color-name",
+      "version": "1.1.3",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/color-name/v/1.1.3",
+      "license_location": "apps/mobile/node_modules/ora/node_modules/color-name/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "color-name",
+      "version": "1.1.4",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
       "license_location": "apps/mobile/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/devtools/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/env/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@jest/transform/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/@jest/types/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/babel-jest/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/color/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/expo-modules-autolinking/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/jest-validate/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/color-name/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/color-name/v/1.1.4",
-      "license_location": "apps/mobile/node_modules/wrap-ansi/node_modules/color-name/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2896,7 +1840,7 @@
       "version": "12.1.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/commander/v/12.1.0",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/commander/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@react-native/community-cli-plugin/node_modules/commander/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2905,14 +1849,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/commander/v/2.20.3",
       "license_location": "apps/mobile/node_modules/terser/node_modules/commander/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "commander",
-      "version": "4.1.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/commander/v/4.1.1",
-      "license_location": "apps/mobile/node_modules/sucrase/node_modules/commander/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -2940,19 +1876,19 @@
     },
     {
       "ecosystem": "npm",
-      "name": "concat-map",
-      "version": "0.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/concat-map/v/0.0.1",
-      "license_location": "apps/mobile/node_modules/concat-map/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "connect",
       "version": "3.7.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/connect/v/3.7.0",
       "license_location": "apps/mobile/node_modules/connect/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "content-type",
+      "version": "2.1.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/content-type/v/2.1.0",
+      "license_location": "apps/mobile/node_modules/content-type/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3016,14 +1952,6 @@
       "version": "2.6.9",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/debug/v/2.6.9",
-      "license_location": "apps/mobile/node_modules/lighthouse-logger/node_modules/debug/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "debug",
-      "version": "2.6.9",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/debug/v/2.6.9",
       "license_location": "apps/mobile/node_modules/send/node_modules/debug/LICENSE*"
     },
     {
@@ -3041,30 +1969,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/debug/v/4.4.3",
       "license_location": "apps/mobile/node_modules/debug/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "decode-uri-component",
-      "version": "0.2.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/decode-uri-component/v/0.2.2",
-      "license_location": "apps/mobile/node_modules/decode-uri-component/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "deep-extend",
-      "version": "0.6.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/deep-extend/v/0.6.0",
-      "license_location": "apps/mobile/node_modules/deep-extend/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "deepmerge",
-      "version": "4.3.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/deepmerge/v/4.3.1",
-      "license_location": "apps/mobile/node_modules/deepmerge/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3108,27 +2012,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "detect-node-es",
-      "version": "1.1.0",
+      "name": "dnssd-advertise",
+      "version": "1.1.6",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/detect-node-es/v/1.1.0",
-      "license_location": "apps/mobile/node_modules/detect-node-es/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "dotenv",
-      "version": "16.4.7",
-      "license": "BSD-2-Clause",
-      "source": "https://www.npmjs.com/package/dotenv/v/16.4.7",
-      "license_location": "apps/mobile/node_modules/dotenv/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "dotenv-expand",
-      "version": "11.0.7",
-      "license": "BSD-2-Clause",
-      "source": "https://www.npmjs.com/package/dotenv-expand/v/11.0.7",
-      "license_location": "apps/mobile/node_modules/dotenv-expand/LICENSE*"
+      "source": "https://www.npmjs.com/package/dnssd-advertise/v/1.1.6",
+      "license_location": "apps/mobile/node_modules/dnssd-advertise/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3180,14 +2068,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "env-editor",
-      "version": "0.4.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/env-editor/v/0.4.2",
-      "license_location": "apps/mobile/node_modules/env-editor/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "error-stack-parser",
       "version": "2.1.4",
       "license": "MIT",
@@ -3228,62 +2108,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "escape-string-regexp",
-      "version": "2.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/escape-string-regexp/v/2.0.0",
-      "license_location": "apps/mobile/node_modules/stack-utils/node_modules/escape-string-regexp/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "escape-string-regexp",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/escape-string-regexp/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@react-navigation/core/node_modules/escape-string-regexp/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "escape-string-regexp",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/escape-string-regexp/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@react-navigation/native/node_modules/escape-string-regexp/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "escape-string-regexp",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/escape-string-regexp/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/chrome-launcher/node_modules/escape-string-regexp/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "escape-string-regexp",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/escape-string-regexp/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/chromium-edge-launcher/node_modules/escape-string-regexp/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "escape-string-regexp",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/escape-string-regexp/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/escape-string-regexp/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "esprima",
-      "version": "4.0.1",
-      "license": "BSD-2-Clause",
-      "source": "https://www.npmjs.com/package/esprima/v/4.0.1",
-      "license_location": "apps/mobile/node_modules/esprima/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "etag",
       "version": "1.8.1",
       "license": "MIT",
@@ -3292,147 +2116,179 @@
     },
     {
       "ecosystem": "npm",
-      "name": "event-target-shim",
-      "version": "5.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/event-target-shim/v/5.0.1",
-      "license_location": "apps/mobile/node_modules/event-target-shim/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "expo",
-      "version": "54.0.38",
+      "version": "58.0.23",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo/v/54.0.38",
+      "source": "https://www.npmjs.com/package/expo/v/58.0.23",
       "license_location": "apps/mobile/node_modules/expo/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-asset",
-      "version": "12.0.14",
+      "version": "58.0.20",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-asset/v/12.0.14",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/expo-asset/LICENSE*"
+      "source": "https://www.npmjs.com/package/expo-asset/v/58.0.20",
+      "license_location": "apps/mobile/node_modules/expo-asset/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-constants",
-      "version": "18.0.14",
+      "version": "58.0.15",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-constants/v/18.0.14",
+      "source": "https://www.npmjs.com/package/expo-constants/v/58.0.15",
       "license_location": "apps/mobile/node_modules/expo-constants/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-crypto",
-      "version": "15.0.9",
+      "version": "58.0.7",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-crypto/v/15.0.9",
+      "source": "https://www.npmjs.com/package/expo-crypto/v/58.0.7",
       "license_location": "apps/mobile/node_modules/expo-crypto/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-document-picker",
-      "version": "14.0.8",
+      "version": "58.0.4",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-document-picker/v/14.0.8",
+      "source": "https://www.npmjs.com/package/expo-document-picker/v/58.0.4",
       "license_location": "apps/mobile/node_modules/expo-document-picker/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-file-system",
-      "version": "19.0.24",
+      "version": "58.0.13",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-file-system/v/19.0.24",
+      "source": "https://www.npmjs.com/package/expo-file-system/v/58.0.13",
       "license_location": "apps/mobile/node_modules/expo-file-system/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-font",
-      "version": "14.0.12",
+      "version": "58.0.11",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-font/v/14.0.12",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/expo-font/LICENSE*"
+      "source": "https://www.npmjs.com/package/expo-font/v/58.0.11",
+      "license_location": "apps/mobile/node_modules/expo-font/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "expo-glass-effect",
+      "version": "58.0.5",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-glass-effect/v/58.0.5",
+      "license_location": "apps/mobile/node_modules/expo-glass-effect/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-keep-awake",
-      "version": "15.0.8",
+      "version": "58.0.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-keep-awake/v/15.0.8",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/expo-keep-awake/LICENSE*"
+      "source": "https://www.npmjs.com/package/expo-keep-awake/v/58.0.3",
+      "license_location": "apps/mobile/node_modules/expo-keep-awake/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-linking",
-      "version": "8.0.12",
+      "version": "58.0.16",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-linking/v/8.0.12",
+      "source": "https://www.npmjs.com/package/expo-linking/v/58.0.16",
       "license_location": "apps/mobile/node_modules/expo-linking/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-media-library",
-      "version": "18.2.1",
+      "version": "58.0.13",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-media-library/v/18.2.1",
+      "source": "https://www.npmjs.com/package/expo-media-library/v/58.0.13",
       "license_location": "docs/licenses/expo-sdk54-MIT.txt (upstream SDK 54)"
     },
     {
       "ecosystem": "npm",
       "name": "expo-modules-autolinking",
-      "version": "3.0.28",
+      "version": "58.0.17",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-modules-autolinking/v/3.0.28",
+      "source": "https://www.npmjs.com/package/expo-modules-autolinking/v/58.0.17",
       "license_location": "apps/mobile/node_modules/expo-modules-autolinking/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "expo-modules-core",
-      "version": "3.0.30",
+      "name": "expo-modules-cli",
+      "version": "0.4.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-modules-core/v/3.0.30",
+      "source": "https://www.npmjs.com/package/expo-modules-cli/v/0.4.0",
+      "license_location": "apps/mobile/node_modules/expo-modules-cli/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "expo-modules-core",
+      "version": "58.0.30",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-modules-core/v/58.0.30",
       "license_location": "apps/mobile/node_modules/expo-modules-core/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "expo-router",
-      "version": "6.0.24",
+      "name": "expo-modules-jsi",
+      "version": "58.0.22",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-router/v/6.0.24",
+      "source": "https://www.npmjs.com/package/expo-modules-jsi/v/58.0.22",
+      "license_location": "apps/mobile/node_modules/expo-modules-jsi/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "expo-modules-macros",
+      "version": "0.29.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-modules-macros/v/0.29.0",
+      "license_location": "apps/mobile/node_modules/expo-modules-macros/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "expo-router",
+      "version": "58.0.30",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-router/v/58.0.30",
       "license_location": "apps/mobile/node_modules/expo-router/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-secure-store",
-      "version": "15.0.8",
+      "version": "58.0.2",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-secure-store/v/15.0.8",
+      "source": "https://www.npmjs.com/package/expo-secure-store/v/58.0.2",
       "license_location": "apps/mobile/node_modules/expo-secure-store/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-server",
-      "version": "1.0.7",
+      "version": "58.0.6",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-server/v/1.0.7",
+      "source": "https://www.npmjs.com/package/expo-server/v/58.0.6",
       "license_location": "apps/mobile/node_modules/expo-server/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-sharing",
-      "version": "14.0.8",
+      "version": "58.0.22",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-sharing/v/14.0.8",
+      "source": "https://www.npmjs.com/package/expo-sharing/v/58.0.22",
       "license_location": "apps/mobile/node_modules/expo-sharing/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "expo-status-bar",
-      "version": "3.0.9",
+      "version": "58.0.4",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/expo-status-bar/v/3.0.9",
+      "source": "https://www.npmjs.com/package/expo-status-bar/v/58.0.4",
       "license_location": "apps/mobile/node_modules/expo-status-bar/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "expo-symbols",
+      "version": "58.0.4",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-symbols/v/58.0.4",
+      "license_location": "apps/mobile/node_modules/expo-symbols/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3444,19 +2300,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "fast-deep-equal",
-      "version": "3.1.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/fast-deep-equal/v/3.1.3",
-      "license_location": "apps/mobile/node_modules/fast-deep-equal/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "fast-json-stable-stringify",
-      "version": "2.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/fast-json-stable-stringify/v/2.1.0",
-      "license_location": "apps/mobile/node_modules/fast-json-stable-stringify/LICENSE*"
+      "name": "fb-dotslash",
+      "version": "0.5.8",
+      "license": "(MIT OR Apache-2.0)",
+      "source": "https://www.npmjs.com/package/fb-dotslash/v/0.5.8",
+      "license_location": "apps/mobile/node_modules/fb-dotslash/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3472,7 +2320,15 @@
       "version": "6.5.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/fdir/v/6.5.0",
-      "license_location": "apps/mobile/node_modules/tinyglobby/node_modules/fdir/LICENSE*"
+      "license_location": "apps/mobile/node_modules/fdir/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "fetch-nodeshim",
+      "version": "0.4.10",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/fetch-nodeshim/v/0.4.10",
+      "license_location": "apps/mobile/node_modules/fetch-nodeshim/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3484,27 +2340,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "filter-obj",
-      "version": "1.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/filter-obj/v/1.1.0",
-      "license_location": "apps/mobile/node_modules/filter-obj/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "finalhandler",
       "version": "1.1.2",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/finalhandler/v/1.1.2",
       "license_location": "apps/mobile/node_modules/finalhandler/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "find-up",
-      "version": "4.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/find-up/v/4.1.0",
-      "license_location": "apps/mobile/node_modules/find-up/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3516,19 +2356,67 @@
     },
     {
       "ecosystem": "npm",
-      "name": "fontfaceobserver",
-      "version": "2.3.0",
-      "license": "BSD-2-Clause",
-      "source": "https://www.npmjs.com/package/fontfaceobserver/v/2.3.0",
-      "license_location": "apps/mobile/node_modules/fontfaceobserver/LICENSE*"
+      "name": "flow-estree",
+      "version": "0.327.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-estree/v/0.327.0",
+      "license_location": "apps/mobile/node_modules/flow-estree/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "freeport-async",
-      "version": "2.0.0",
+      "name": "flow-estree",
+      "version": "0.331.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/freeport-async/v/2.0.0",
-      "license_location": "apps/mobile/node_modules/freeport-async/LICENSE*"
+      "source": "https://www.npmjs.com/package/flow-estree/v/0.331.0",
+      "license_location": "apps/mobile/node_modules/metro-babel-transformer/node_modules/flow-estree/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "flow-estree",
+      "version": "0.331.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-estree/v/0.331.0",
+      "license_location": "apps/mobile/node_modules/metro/node_modules/flow-estree/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "flow-estree",
+      "version": "0.336.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-estree/v/0.336.0",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/flow-estree/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "flow-parser",
+      "version": "0.327.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-parser/v/0.327.0",
+      "license_location": "apps/mobile/node_modules/flow-parser/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "flow-parser",
+      "version": "0.331.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-parser/v/0.331.0",
+      "license_location": "apps/mobile/node_modules/metro-babel-transformer/node_modules/flow-parser/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "flow-parser",
+      "version": "0.331.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-parser/v/0.331.0",
+      "license_location": "apps/mobile/node_modules/metro/node_modules/flow-parser/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "flow-parser",
+      "version": "0.336.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/flow-parser/v/0.336.0",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/flow-parser/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3537,22 +2425,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/fresh/v/0.5.2",
       "license_location": "apps/mobile/node_modules/fresh/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "fs.realpath",
-      "version": "1.0.0",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/fs.realpath/v/1.0.0",
-      "license_location": "apps/mobile/node_modules/fs.realpath/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "fsevents",
-      "version": "2.3.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/fsevents/v/2.3.3",
-      "license_location": "apps/mobile/node_modules/fsevents/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3580,22 +2452,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "get-nonce",
-      "version": "1.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/get-nonce/v/1.0.1",
-      "license_location": "apps/mobile/node_modules/get-nonce/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "get-package-type",
-      "version": "0.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/get-package-type/v/0.1.0",
-      "license_location": "apps/mobile/node_modules/get-package-type/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "getenv",
       "version": "2.0.0",
       "license": "MIT",
@@ -3605,42 +2461,10 @@
     {
       "ecosystem": "npm",
       "name": "glob",
-      "version": "13.0.7",
+      "version": "14.0.4",
       "license": "BlueOak-1.0.0",
-      "source": "https://www.npmjs.com/package/glob/v/13.0.7",
+      "source": "https://www.npmjs.com/package/glob/v/14.0.4",
       "license_location": "apps/mobile/node_modules/glob/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "glob",
-      "version": "7.2.3",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/glob/v/7.2.3",
-      "license_location": "apps/mobile/node_modules/@react-native/codegen/node_modules/glob/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "glob",
-      "version": "7.2.3",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/glob/v/7.2.3",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/glob/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "glob",
-      "version": "7.2.3",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/glob/v/7.2.3",
-      "license_location": "apps/mobile/node_modules/rimraf/node_modules/glob/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "glob",
-      "version": "7.2.3",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/glob/v/7.2.3",
-      "license_location": "apps/mobile/node_modules/test-exclude/node_modules/glob/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3656,151 +2480,23 @@
       "version": "3.0.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/has-flag/v/3.0.0",
+      "license_location": "apps/mobile/node_modules/log-symbols/node_modules/has-flag/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "has-flag",
+      "version": "3.0.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/has-flag/v/3.0.0",
+      "license_location": "apps/mobile/node_modules/ora/node_modules/has-flag/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "has-flag",
+      "version": "4.0.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
       "license_location": "apps/mobile/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/devtools/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/env/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@jest/transform/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/@jest/types/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/babel-jest/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/expo-modules-autolinking/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/jest-validate/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/jest-worker/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/has-flag/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "has-flag",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/has-flag/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/supports-hyperlinks/node_modules/has-flag/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -3812,66 +2508,26 @@
     },
     {
       "ecosystem": "npm",
-      "name": "hermes-estree",
-      "version": "0.29.1",
+      "name": "hermes-compiler",
+      "version": "260318099.0.5",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-estree/v/0.29.1",
-      "license_location": "apps/mobile/node_modules/@react-native/codegen/node_modules/hermes-estree/LICENSE*"
+      "source": "https://www.npmjs.com/package/hermes-compiler/v/260318099.0.5",
+      "license_location": "apps/mobile/node_modules/hermes-compiler/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "hermes-estree",
-      "version": "0.29.1",
+      "version": "0.36.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-estree/v/0.29.1",
-      "license_location": "apps/mobile/node_modules/babel-plugin-syntax-hermes-parser/node_modules/hermes-estree/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "hermes-estree",
-      "version": "0.29.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-estree/v/0.29.1",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/hermes-estree/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "hermes-estree",
-      "version": "0.32.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-estree/v/0.32.0",
+      "source": "https://www.npmjs.com/package/hermes-estree/v/0.36.1",
       "license_location": "apps/mobile/node_modules/hermes-estree/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "hermes-parser",
-      "version": "0.29.1",
+      "version": "0.36.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-parser/v/0.29.1",
-      "license_location": "apps/mobile/node_modules/@react-native/codegen/node_modules/hermes-parser/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "hermes-parser",
-      "version": "0.29.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-parser/v/0.29.1",
-      "license_location": "apps/mobile/node_modules/babel-plugin-syntax-hermes-parser/node_modules/hermes-parser/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "hermes-parser",
-      "version": "0.29.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-parser/v/0.29.1",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/hermes-parser/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "hermes-parser",
-      "version": "0.32.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/hermes-parser/v/0.32.0",
+      "source": "https://www.npmjs.com/package/hermes-parser/v/0.36.1",
       "license_location": "apps/mobile/node_modules/hermes-parser/LICENSE*"
     },
     {
@@ -3900,14 +2556,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "ieee754",
-      "version": "1.2.1",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/ieee754/v/1.2.1",
-      "license_location": "apps/mobile/node_modules/ieee754/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "ignore",
       "version": "5.3.2",
       "license": "MIT",
@@ -3916,43 +2564,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "image-size",
-      "version": "1.2.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/image-size/v/1.2.1",
-      "license_location": "apps/mobile/node_modules/image-size/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "imurmurhash",
-      "version": "0.1.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/imurmurhash/v/0.1.4",
-      "license_location": "apps/mobile/node_modules/imurmurhash/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "inflight",
-      "version": "1.0.6",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/inflight/v/1.0.6",
-      "license_location": "apps/mobile/node_modules/inflight/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "inherits",
       "version": "2.0.4",
       "license": "ISC",
       "source": "https://www.npmjs.com/package/inherits/v/2.0.4",
       "license_location": "apps/mobile/node_modules/inherits/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ini",
-      "version": "1.3.8",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/ini/v/1.3.8",
-      "license_location": "apps/mobile/node_modules/ini/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4020,67 +2636,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "istanbul-lib-coverage",
-      "version": "3.2.2",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/istanbul-lib-coverage/v/3.2.2",
-      "license_location": "apps/mobile/node_modules/istanbul-lib-coverage/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "istanbul-lib-instrument",
-      "version": "5.2.1",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/istanbul-lib-instrument/v/5.2.1",
-      "license_location": "apps/mobile/node_modules/istanbul-lib-instrument/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "jest-environment-node",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/jest-environment-node/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/jest-environment-node/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "jest-get-type",
       "version": "29.6.3",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/jest-get-type/v/29.6.3",
       "license_location": "apps/mobile/node_modules/jest-get-type/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "jest-haste-map",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/jest-haste-map/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/jest-haste-map/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "jest-message-util",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/jest-message-util/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/jest-message-util/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "jest-mock",
-      "version": "29.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/jest-mock/v/29.7.0",
-      "license_location": "apps/mobile/node_modules/jest-mock/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "jest-regex-util",
-      "version": "29.6.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/jest-regex-util/v/29.6.3",
-      "license_location": "apps/mobile/node_modules/jest-regex-util/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4125,18 +2685,10 @@
     {
       "ecosystem": "npm",
       "name": "js-yaml",
-      "version": "3.15.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/js-yaml/v/3.15.2",
-      "license_location": "apps/mobile/node_modules/js-yaml/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "js-yaml",
       "version": "4.3.2",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/js-yaml/v/4.3.2",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/js-yaml/LICENSE*"
+      "license_location": "apps/mobile/node_modules/js-yaml/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4185,14 +2737,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/leven/v/3.1.0",
       "license_location": "apps/mobile/node_modules/leven/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "lighthouse-logger",
-      "version": "1.4.2",
-      "license": "Apache-2.0",
-      "source": "https://www.npmjs.com/package/lighthouse-logger/v/1.4.2",
-      "license_location": "apps/mobile/node_modules/lighthouse-logger/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4292,22 +2836,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "lines-and-columns",
-      "version": "1.2.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/lines-and-columns/v/1.2.4",
-      "license_location": "apps/mobile/node_modules/lines-and-columns/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "locate-path",
-      "version": "5.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/locate-path/v/5.0.0",
-      "license_location": "apps/mobile/node_modules/locate-path/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "lodash.debounce",
       "version": "4.0.8",
       "license": "MIT",
@@ -4372,14 +2900,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "marky",
-      "version": "1.3.0",
-      "license": "Apache-2.0",
-      "source": "https://www.npmjs.com/package/marky/v/1.3.0",
-      "license_location": "apps/mobile/node_modules/marky/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "memoize-one",
       "version": "5.2.1",
       "license": "MIT",
@@ -4397,114 +2917,242 @@
     {
       "ecosystem": "npm",
       "name": "metro",
-      "version": "0.83.3",
+      "version": "0.87.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-babel-transformer",
-      "version": "0.83.3",
+      "name": "metro",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-babel-transformer/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-babel-transformer",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-babel-transformer/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-babel-transformer/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-cache",
-      "version": "0.83.3",
+      "name": "metro-babel-transformer",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-cache/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-babel-transformer/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-babel-transformer/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-cache",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-cache/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-cache/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-cache-key",
-      "version": "0.83.3",
+      "name": "metro-cache",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-cache-key/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-cache/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-cache/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-cache-key",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-cache-key/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-cache-key/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-config",
-      "version": "0.83.3",
+      "name": "metro-cache-key",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-config/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-cache-key/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-cache-key/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-config",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-config/v/0.87.1",
+      "license_location": "apps/mobile/node_modules/@expo/metro/node_modules/metro-config/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-config",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-config/v/0.87.1",
+      "license_location": "apps/mobile/node_modules/metro/node_modules/metro-config/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-config",
+      "version": "0.87.3",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-config/v/0.87.3",
       "license_location": "apps/mobile/node_modules/metro-config/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "metro-core",
-      "version": "0.83.3",
+      "version": "0.87.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-core/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-core/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-core/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-file-map",
-      "version": "0.83.3",
+      "name": "metro-core",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-file-map/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-core/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-core/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-file-map",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-file-map/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-file-map/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-minify-terser",
-      "version": "0.83.3",
+      "name": "metro-file-map",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-minify-terser/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-file-map/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-file-map/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-minify-terser",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-minify-terser/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-minify-terser/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-resolver",
-      "version": "0.83.3",
+      "name": "metro-minify-terser",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-resolver/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-minify-terser/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-minify-terser/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-resolver",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-resolver/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-resolver/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-runtime",
-      "version": "0.83.3",
+      "name": "metro-resolver",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-runtime/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-resolver/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-resolver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-runtime",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-runtime/v/0.87.1",
+      "license_location": "apps/mobile/node_modules/@expo/metro/node_modules/metro-runtime/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-runtime",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-runtime/v/0.87.1",
+      "license_location": "apps/mobile/node_modules/metro/node_modules/metro-runtime/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-runtime",
+      "version": "0.87.3",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-runtime/v/0.87.3",
       "license_location": "apps/mobile/node_modules/metro-runtime/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "metro-source-map",
-      "version": "0.83.3",
+      "version": "0.87.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-source-map/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-source-map/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-source-map/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-symbolicate",
-      "version": "0.83.3",
+      "name": "metro-source-map",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-symbolicate/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-source-map/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-source-map/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-symbolicate",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-symbolicate/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-symbolicate/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-transform-plugins",
-      "version": "0.83.3",
+      "name": "metro-symbolicate",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-transform-plugins/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-symbolicate/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-symbolicate/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-transform-plugins",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-transform-plugins/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-transform-plugins/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "metro-transform-worker",
-      "version": "0.83.3",
+      "name": "metro-transform-plugins",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/metro-transform-worker/v/0.83.3",
+      "source": "https://www.npmjs.com/package/metro-transform-plugins/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-transform-plugins/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-transform-worker",
+      "version": "0.87.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-transform-worker/v/0.87.1",
       "license_location": "apps/mobile/node_modules/metro-transform-worker/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "metro-transform-worker",
+      "version": "0.87.3",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/metro-transform-worker/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/metro-transform-worker/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4528,6 +3176,14 @@
       "version": "1.52.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/mime-db/v/1.52.0",
+      "license_location": "apps/mobile/node_modules/expo/node_modules/mime-db/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "mime-db",
+      "version": "1.54.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/mime-db/v/1.54.0",
       "license_location": "apps/mobile/node_modules/mime-db/LICENSE*"
     },
     {
@@ -4536,6 +3192,14 @@
       "version": "2.1.35",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/mime-types/v/2.1.35",
+      "license_location": "apps/mobile/node_modules/expo/node_modules/mime-types/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "mime-types",
+      "version": "3.0.2",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/mime-types/v/3.0.2",
       "license_location": "apps/mobile/node_modules/mime-types/LICENSE*"
     },
     {
@@ -4549,58 +3213,10 @@
     {
       "ecosystem": "npm",
       "name": "minimatch",
-      "version": "10.2.6",
+      "version": "11.0.5",
       "license": "BlueOak-1.0.0",
-      "source": "https://www.npmjs.com/package/minimatch/v/10.2.6",
+      "source": "https://www.npmjs.com/package/minimatch/v/11.0.5",
       "license_location": "apps/mobile/node_modules/minimatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minimatch",
-      "version": "3.1.5",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/minimatch/v/3.1.5",
-      "license_location": "apps/mobile/node_modules/@react-native/codegen/node_modules/minimatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minimatch",
-      "version": "3.1.5",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/minimatch/v/3.1.5",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/minimatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minimatch",
-      "version": "3.1.5",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/minimatch/v/3.1.5",
-      "license_location": "apps/mobile/node_modules/rimraf/node_modules/minimatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minimatch",
-      "version": "3.1.5",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/minimatch/v/3.1.5",
-      "license_location": "apps/mobile/node_modules/test-exclude/node_modules/minimatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minimatch",
-      "version": "9.0.9",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/minimatch/v/9.0.9",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/minimatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minimist",
-      "version": "1.2.8",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/minimist/v/1.2.8",
-      "license_location": "apps/mobile/node_modules/minimist/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4609,22 +3225,6 @@
       "license": "BlueOak-1.0.0",
       "source": "https://www.npmjs.com/package/minipass/v/7.1.3",
       "license_location": "apps/mobile/node_modules/minipass/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "minizlib",
-      "version": "3.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/minizlib/v/3.1.0",
-      "license_location": "apps/mobile/node_modules/minizlib/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "mkdirp",
-      "version": "1.0.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/mkdirp/v/1.0.4",
-      "license_location": "apps/mobile/node_modules/mkdirp/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4656,14 +3256,6 @@
       "version": "2.0.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/ms/v/2.0.0",
-      "license_location": "apps/mobile/node_modules/lighthouse-logger/node_modules/ms/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ms",
-      "version": "2.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ms/v/2.0.0",
       "license_location": "apps/mobile/node_modules/send/node_modules/debug/node_modules/ms/LICENSE*"
     },
     {
@@ -4676,11 +3268,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "mz",
-      "version": "2.7.0",
+      "name": "multitars",
+      "version": "1.0.2",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/mz/v/2.7.0",
-      "license_location": "apps/mobile/node_modules/mz/LICENSE*"
+      "source": "https://www.npmjs.com/package/multitars/v/1.0.2",
+      "license_location": "apps/mobile/node_modules/multitars/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4696,7 +3288,7 @@
       "version": "0.6.3",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/negotiator/v/0.6.3",
-      "license_location": "apps/mobile/node_modules/negotiator/LICENSE*"
+      "license_location": "apps/mobile/node_modules/expo/node_modules/negotiator/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4708,11 +3300,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "nested-error-stacks",
-      "version": "2.0.1",
+      "name": "negotiator",
+      "version": "1.1.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/nested-error-stacks/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/nested-error-stacks/LICENSE*"
+      "source": "https://www.npmjs.com/package/negotiator/v/1.1.0",
+      "license_location": "apps/mobile/node_modules/negotiator/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4740,11 +3332,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "normalize-path",
-      "version": "3.0.0",
+      "name": "noxcturnal",
+      "version": "0.1.12",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/normalize-path/v/3.0.0",
-      "license_location": "apps/mobile/node_modules/normalize-path/LICENSE*"
+      "source": "https://www.npmjs.com/package/noxcturnal/v/0.1.12",
+      "license_location": "apps/mobile/node_modules/noxcturnal/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4765,18 +3357,18 @@
     {
       "ecosystem": "npm",
       "name": "ob1",
-      "version": "0.83.3",
+      "version": "0.87.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/ob1/v/0.83.3",
+      "source": "https://www.npmjs.com/package/ob1/v/0.87.1",
       "license_location": "apps/mobile/node_modules/ob1/LICENSE*"
     },
     {
       "ecosystem": "npm",
-      "name": "object-assign",
-      "version": "4.1.1",
+      "name": "ob1",
+      "version": "0.87.3",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/object-assign/v/4.1.1",
-      "license_location": "apps/mobile/node_modules/object-assign/LICENSE*"
+      "source": "https://www.npmjs.com/package/ob1/v/0.87.3",
+      "license_location": "apps/mobile/node_modules/metro-config/node_modules/ob1/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4804,14 +3396,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "once",
-      "version": "1.4.0",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/once/v/1.4.0",
-      "license_location": "apps/mobile/node_modules/once/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "onetime",
       "version": "2.0.1",
       "license": "MIT",
@@ -4821,18 +3405,10 @@
     {
       "ecosystem": "npm",
       "name": "open",
-      "version": "7.4.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/open/v/7.4.2",
-      "license_location": "apps/mobile/node_modules/open/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "open",
       "version": "8.4.2",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/open/v/8.4.2",
-      "license_location": "apps/mobile/node_modules/better-opn/node_modules/open/LICENSE*"
+      "license_location": "apps/mobile/node_modules/open/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4841,38 +3417,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/ora/v/3.4.0",
       "license_location": "apps/mobile/node_modules/ora/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "p-limit",
-      "version": "2.3.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/p-limit/v/2.3.0",
-      "license_location": "apps/mobile/node_modules/p-locate/node_modules/p-limit/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "p-limit",
-      "version": "3.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/p-limit/v/3.1.0",
-      "license_location": "apps/mobile/node_modules/p-limit/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "p-locate",
-      "version": "4.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/p-locate/v/4.1.0",
-      "license_location": "apps/mobile/node_modules/p-locate/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "p-try",
-      "version": "2.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/p-try/v/2.2.0",
-      "license_location": "apps/mobile/node_modules/p-try/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4889,22 +3433,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/parseurl/v/1.3.3",
       "license_location": "apps/mobile/node_modules/parseurl/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "path-exists",
-      "version": "4.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/path-exists/v/4.0.0",
-      "license_location": "apps/mobile/node_modules/path-exists/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "path-is-absolute",
-      "version": "1.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/path-is-absolute/v/1.0.1",
-      "license_location": "apps/mobile/node_modules/path-is-absolute/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4925,9 +3453,9 @@
     {
       "ecosystem": "npm",
       "name": "path-scurry",
-      "version": "2.0.2",
+      "version": "3.0.0",
       "license": "BlueOak-1.0.0",
-      "source": "https://www.npmjs.com/package/path-scurry/v/2.0.2",
+      "source": "https://www.npmjs.com/package/path-scurry/v/3.0.0",
       "license_location": "apps/mobile/node_modules/path-scurry/LICENSE*"
     },
     {
@@ -4944,31 +3472,23 @@
       "version": "2.3.2",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/picomatch/v/2.3.2",
+      "license_location": "apps/mobile/node_modules/jest-util/node_modules/picomatch/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "picomatch",
+      "version": "2.3.2",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/picomatch/v/2.3.2",
+      "license_location": "apps/mobile/node_modules/micromatch/node_modules/picomatch/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "picomatch",
+      "version": "4.0.7",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/picomatch/v/4.0.7",
       "license_location": "apps/mobile/node_modules/picomatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "picomatch",
-      "version": "4.0.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/picomatch/v/4.0.7",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/picomatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "picomatch",
-      "version": "4.0.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/picomatch/v/4.0.7",
-      "license_location": "apps/mobile/node_modules/tinyglobby/node_modules/picomatch/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "pirates",
-      "version": "4.0.7",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/pirates/v/4.0.7",
-      "license_location": "apps/mobile/node_modules/pirates/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -4993,14 +3513,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/postcss/v/8.5.32",
       "license_location": "apps/mobile/node_modules/postcss/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "pretty-bytes",
-      "version": "5.6.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/pretty-bytes/v/5.6.0",
-      "license_location": "apps/mobile/node_modules/pretty-bytes/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5044,38 +3556,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "punycode",
-      "version": "2.3.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/punycode/v/2.3.1",
-      "license_location": "apps/mobile/node_modules/punycode/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "qrcode-terminal",
-      "version": "0.11.0",
-      "license": "REVIEW_REQUIRED",
-      "source": "https://www.npmjs.com/package/qrcode-terminal/v/0.11.0",
-      "license_location": "apps/mobile/node_modules/qrcode-terminal/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "query-string",
-      "version": "7.1.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/query-string/v/7.1.3",
-      "license_location": "apps/mobile/node_modules/query-string/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "queue",
-      "version": "6.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/queue/v/6.0.2",
-      "license_location": "apps/mobile/node_modules/queue/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "range-parser",
       "version": "1.2.1",
       "license": "MIT",
@@ -5084,18 +3564,10 @@
     },
     {
       "ecosystem": "npm",
-      "name": "rc",
-      "version": "1.2.8",
-      "license": "(BSD-2-Clause OR MIT OR Apache-2.0)",
-      "source": "https://www.npmjs.com/package/rc/v/1.2.8",
-      "license_location": "apps/mobile/node_modules/rc/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "react",
-      "version": "19.1.0",
+      "version": "19.3.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/react/v/19.1.0",
+      "source": "https://www.npmjs.com/package/react/v/19.3.0",
       "license_location": "apps/mobile/node_modules/react/LICENSE*"
     },
     {
@@ -5109,9 +3581,9 @@
     {
       "ecosystem": "npm",
       "name": "react-dom",
-      "version": "19.1.0",
+      "version": "19.3.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-dom/v/19.1.0",
+      "source": "https://www.npmjs.com/package/react-dom/v/19.3.0",
       "license_location": "apps/mobile/node_modules/react-dom/LICENSE*"
     },
     {
@@ -5149,10 +3621,26 @@
     {
       "ecosystem": "npm",
       "name": "react-native",
-      "version": "0.81.5",
+      "version": "0.88.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-native/v/0.81.5",
+      "source": "https://www.npmjs.com/package/react-native/v/0.88.1",
       "license_location": "apps/mobile/node_modules/react-native/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-native-drawer-layout",
+      "version": "4.2.12",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-drawer-layout/v/4.2.12",
+      "license_location": "apps/mobile/node_modules/react-native-drawer-layout/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-native-gesture-handler",
+      "version": "3.3.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-gesture-handler/v/3.3.0",
+      "license_location": "apps/mobile/node_modules/react-native-gesture-handler/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5164,19 +3652,35 @@
     },
     {
       "ecosystem": "npm",
-      "name": "react-native-safe-area-context",
-      "version": "5.6.2",
+      "name": "react-native-reanimated",
+      "version": "4.7.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-native-safe-area-context/v/5.6.2",
+      "source": "https://www.npmjs.com/package/react-native-reanimated/v/4.7.1",
+      "license_location": "apps/mobile/node_modules/react-native-reanimated/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-native-safe-area-context",
+      "version": "5.11.1",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-safe-area-context/v/5.11.1",
       "license_location": "apps/mobile/node_modules/react-native-safe-area-context/LICENSE*"
     },
     {
       "ecosystem": "npm",
       "name": "react-native-screens",
-      "version": "4.16.0",
+      "version": "4.30.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-native-screens/v/4.16.0",
+      "source": "https://www.npmjs.com/package/react-native-screens/v/4.30.1",
       "license_location": "apps/mobile/node_modules/react-native-screens/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-native-worklets",
+      "version": "0.13.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/react-native-worklets/v/0.13.0",
+      "license_location": "apps/mobile/node_modules/react-native-worklets/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5185,30 +3689,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/react-refresh/v/0.14.2",
       "license_location": "apps/mobile/node_modules/react-refresh/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "react-remove-scroll",
-      "version": "2.7.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-remove-scroll/v/2.7.2",
-      "license_location": "apps/mobile/node_modules/react-remove-scroll/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "react-remove-scroll-bar",
-      "version": "2.3.8",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-remove-scroll-bar/v/2.3.8",
-      "license_location": "apps/mobile/node_modules/react-remove-scroll-bar/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "react-style-singleton",
-      "version": "2.2.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/react-style-singleton/v/2.2.3",
-      "license_location": "apps/mobile/node_modules/react-style-singleton/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5268,35 +3748,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "require-from-string",
-      "version": "2.0.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/require-from-string/v/2.0.2",
-      "license_location": "apps/mobile/node_modules/require-from-string/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "requireg",
-      "version": "0.2.2",
-      "license": "REVIEW_REQUIRED",
-      "source": "https://www.npmjs.com/package/requireg/v/0.2.2",
-      "license_location": "apps/mobile/node_modules/requireg/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "resolve",
       "version": "1.22.14",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/resolve/v/1.22.14",
       "license_location": "apps/mobile/node_modules/resolve/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "resolve",
-      "version": "1.7.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/resolve/v/1.7.1",
-      "license_location": "apps/mobile/node_modules/requireg/node_modules/resolve/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5316,14 +3772,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "resolve.exports",
-      "version": "2.0.4",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/resolve.exports/v/2.0.4",
-      "license_location": "apps/mobile/node_modules/resolve.exports/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "restore-cursor",
       "version": "2.0.0",
       "license": "MIT",
@@ -5332,19 +3780,19 @@
     },
     {
       "ecosystem": "npm",
-      "name": "rimraf",
-      "version": "3.0.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/rimraf/v/3.0.2",
-      "license_location": "apps/mobile/node_modules/rimraf/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "safe-buffer",
       "version": "5.2.1",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/safe-buffer/v/5.2.1",
       "license_location": "apps/mobile/node_modules/safe-buffer/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "sandbox-cli-detector",
+      "version": "0.2.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/sandbox-cli-detector/v/0.2.0",
+      "license_location": "apps/mobile/node_modules/sandbox-cli-detector/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5357,9 +3805,9 @@
     {
       "ecosystem": "npm",
       "name": "scheduler",
-      "version": "0.26.0",
+      "version": "0.28.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/scheduler/v/0.26.0",
+      "source": "https://www.npmjs.com/package/scheduler/v/0.28.0",
       "license_location": "apps/mobile/node_modules/scheduler/LICENSE*"
     },
     {
@@ -5368,63 +3816,7 @@
       "version": "6.3.2",
       "license": "ISC",
       "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/@babel/core/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "6.3.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/@babel/helper-compilation-targets/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "6.3.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/@babel/helper-create-class-features-plugin/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "6.3.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/@babel/helper-create-regexp-features-plugin/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "6.3.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/@babel/plugin-transform-runtime/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "6.3.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/babel-plugin-polyfill-corejs2/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "6.3.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/6.3.2",
-      "license_location": "apps/mobile/node_modules/istanbul-lib-instrument/node_modules/semver/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "semver",
-      "version": "7.6.3",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/semver/v/7.6.3",
-      "license_location": "apps/mobile/node_modules/expo-router/node_modules/semver/LICENSE*"
+      "license_location": "apps/mobile/node_modules/semver/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5432,7 +3824,87 @@
       "version": "7.8.6",
       "license": "ISC",
       "source": "https://www.npmjs.com/package/semver/v/7.8.6",
-      "license_location": "apps/mobile/node_modules/semver/LICENSE*"
+      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/@expo/config/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/@expo/prebuild-config/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/@react-native/community-cli-plugin/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/expo/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/npm-package-arg/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/react-native-reanimated/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/react-native-worklets/node_modules/semver/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "semver",
+      "version": "7.8.6",
+      "license": "ISC",
+      "source": "https://www.npmjs.com/package/semver/v/7.8.6",
+      "license_location": "apps/mobile/node_modules/react-native/node_modules/semver/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5481,14 +3953,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/sf-symbols-typescript/v/2.2.0",
       "license_location": "apps/mobile/node_modules/sf-symbols-typescript/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "shallowequal",
-      "version": "1.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/shallowequal/v/1.1.0",
-      "license_location": "apps/mobile/node_modules/shallowequal/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5548,14 +4012,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "slash",
-      "version": "3.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/slash/v/3.0.0",
-      "license_location": "apps/mobile/node_modules/slash/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "slugify",
       "version": "1.6.9",
       "license": "MIT",
@@ -5596,30 +4052,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "split-on-first",
-      "version": "1.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/split-on-first/v/1.1.0",
-      "license_location": "apps/mobile/node_modules/split-on-first/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "sprintf-js",
-      "version": "1.0.3",
-      "license": "BSD-3-Clause",
-      "source": "https://www.npmjs.com/package/sprintf-js/v/1.0.3",
-      "license_location": "apps/mobile/node_modules/sprintf-js/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "stack-utils",
-      "version": "2.0.6",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/stack-utils/v/2.0.6",
-      "license_location": "apps/mobile/node_modules/stack-utils/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "stackframe",
       "version": "1.3.4",
       "license": "MIT",
@@ -5637,9 +4069,9 @@
     {
       "ecosystem": "npm",
       "name": "standard-navigation",
-      "version": "0.0.8",
+      "version": "0.0.5",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/standard-navigation/v/0.0.8",
+      "source": "https://www.npmjs.com/package/standard-navigation/v/0.0.5",
       "license_location": "apps/mobile/node_modules/standard-navigation/LICENSE*"
     },
     {
@@ -5676,14 +4108,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "strict-uri-encode",
-      "version": "2.0.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/strict-uri-encode/v/2.0.0",
-      "license_location": "apps/mobile/node_modules/strict-uri-encode/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "string-width",
       "version": "4.2.3",
       "license": "MIT",
@@ -5708,14 +4132,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "strip-json-comments",
-      "version": "2.0.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/strip-json-comments/v/2.0.1",
-      "license_location": "apps/mobile/node_modules/strip-json-comments/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "structured-headers",
       "version": "0.4.1",
       "license": "MIT",
@@ -5724,11 +4140,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "sucrase",
-      "version": "3.35.1",
+      "name": "supports-color",
+      "version": "5.5.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/sucrase/v/3.35.1",
-      "license_location": "apps/mobile/node_modules/sucrase/LICENSE*"
+      "source": "https://www.npmjs.com/package/supports-color/v/5.5.0",
+      "license_location": "apps/mobile/node_modules/log-symbols/node_modules/supports-color/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5736,143 +4152,15 @@
       "version": "5.5.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/supports-color/v/5.5.0",
+      "license_location": "apps/mobile/node_modules/ora/node_modules/supports-color/LICENSE*"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "supports-color",
+      "version": "7.2.0",
+      "license": "MIT",
+      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
       "license_location": "apps/mobile/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/config-plugins/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/devtools/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/env/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/fingerprint/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/image-utils/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/package-manager/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@expo/xcpretty/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@jest/transform/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/@jest/types/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/babel-jest/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/expo-modules-autolinking/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/expo/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/jest-message-util/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/jest-util/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/jest-validate/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/metro/node_modules/supports-color/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "supports-color",
-      "version": "7.2.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/supports-color/v/7.2.0",
-      "license_location": "apps/mobile/node_modules/supports-hyperlinks/node_modules/supports-color/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5900,14 +4188,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "tar",
-      "version": "7.5.22",
-      "license": "BlueOak-1.0.0",
-      "source": "https://www.npmjs.com/package/tar/v/7.5.22",
-      "license_location": "apps/mobile/node_modules/tar/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "terminal-link",
       "version": "2.1.1",
       "license": "MIT",
@@ -5921,30 +4201,6 @@
       "license": "BSD-2-Clause",
       "source": "https://www.npmjs.com/package/terser/v/5.51.2",
       "license_location": "apps/mobile/node_modules/terser/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "test-exclude",
-      "version": "6.0.0",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/test-exclude/v/6.0.0",
-      "license_location": "apps/mobile/node_modules/test-exclude/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "thenify",
-      "version": "3.3.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/thenify/v/3.3.1",
-      "license_location": "apps/mobile/node_modules/thenify/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "thenify-all",
-      "version": "1.6.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/thenify-all/v/1.6.0",
-      "license_location": "apps/mobile/node_modules/thenify-all/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -5988,27 +4244,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "ts-interface-checker",
-      "version": "0.1.13",
-      "license": "Apache-2.0",
-      "source": "https://www.npmjs.com/package/ts-interface-checker/v/0.1.13",
-      "license_location": "apps/mobile/node_modules/ts-interface-checker/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "tslib",
-      "version": "2.9.1",
-      "license": "0BSD",
-      "source": "https://www.npmjs.com/package/tslib/v/2.9.1",
-      "license_location": "apps/mobile/node_modules/tslib/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "type-detect",
-      "version": "4.0.8",
+      "name": "toqr",
+      "version": "0.1.1",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/type-detect/v/4.0.8",
-      "license_location": "apps/mobile/node_modules/type-detect/LICENSE*"
+      "source": "https://www.npmjs.com/package/toqr/v/0.1.1",
+      "license_location": "apps/mobile/node_modules/toqr/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -6033,14 +4273,6 @@
       "license": "Apache-2.0",
       "source": "https://www.npmjs.com/package/typescript/v/5.9.3",
       "license_location": "apps/mobile/node_modules/typescript/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "undici",
-      "version": "6.29.1",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/undici/v/6.29.1",
-      "license_location": "apps/mobile/node_modules/undici/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -6100,35 +4332,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "use-callback-ref",
-      "version": "1.3.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/use-callback-ref/v/1.3.3",
-      "license_location": "apps/mobile/node_modules/use-callback-ref/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "use-latest-callback",
       "version": "0.2.6",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/use-latest-callback/v/0.2.6",
       "license_location": "apps/mobile/node_modules/use-latest-callback/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "use-sidecar",
-      "version": "1.1.3",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/use-sidecar/v/1.1.3",
-      "license_location": "apps/mobile/node_modules/use-sidecar/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "use-sync-external-store",
-      "version": "1.7.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/use-sync-external-store/v/1.7.0",
-      "license_location": "apps/mobile/node_modules/use-sync-external-store/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -6153,14 +4361,6 @@
       "license": "MIT",
       "source": "https://www.npmjs.com/package/vary/v/1.1.2",
       "license_location": "apps/mobile/node_modules/vary/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "vaul",
-      "version": "1.1.2",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/vaul/v/1.1.2",
-      "license_location": "apps/mobile/node_modules/vaul/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -6196,14 +4396,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "webidl-conversions",
-      "version": "5.0.0",
-      "license": "BSD-2-Clause",
-      "source": "https://www.npmjs.com/package/webidl-conversions/v/5.0.0",
-      "license_location": "apps/mobile/node_modules/webidl-conversions/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "whatwg-fetch",
       "version": "3.6.20",
       "license": "MIT",
@@ -6212,11 +4404,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "whatwg-url-without-unicode",
-      "version": "8.0.0-3",
+      "name": "whatwg-url-minimum",
+      "version": "0.2.0",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/whatwg-url-without-unicode/v/8.0.0-3",
-      "license_location": "apps/mobile/node_modules/whatwg-url-without-unicode/LICENSE*"
+      "source": "https://www.npmjs.com/package/whatwg-url-minimum/v/0.2.0",
+      "license_location": "apps/mobile/node_modules/whatwg-url-minimum/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -6228,51 +4420,11 @@
     },
     {
       "ecosystem": "npm",
-      "name": "wonka",
-      "version": "6.3.6",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/wonka/v/6.3.6",
-      "license_location": "apps/mobile/node_modules/wonka/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "wrap-ansi",
       "version": "7.0.0",
       "license": "MIT",
       "source": "https://www.npmjs.com/package/wrap-ansi/v/7.0.0",
       "license_location": "apps/mobile/node_modules/wrap-ansi/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "wrappy",
-      "version": "1.0.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/wrappy/v/1.0.2",
-      "license_location": "apps/mobile/node_modules/wrappy/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "write-file-atomic",
-      "version": "4.0.2",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/write-file-atomic/v/4.0.2",
-      "license_location": "apps/mobile/node_modules/write-file-atomic/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ws",
-      "version": "6.2.6",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ws/v/6.2.6",
-      "license_location": "apps/mobile/node_modules/@react-native/dev-middleware/node_modules/ws/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "ws",
-      "version": "6.2.6",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/ws/v/6.2.6",
-      "license_location": "apps/mobile/node_modules/react-native/node_modules/ws/LICENSE*"
     },
     {
       "ecosystem": "npm",
@@ -6285,9 +4437,9 @@
     {
       "ecosystem": "npm",
       "name": "ws",
-      "version": "8.22.1",
+      "version": "8.22.2",
       "license": "MIT",
-      "source": "https://www.npmjs.com/package/ws/v/8.22.1",
+      "source": "https://www.npmjs.com/package/ws/v/8.22.2",
       "license_location": "apps/mobile/node_modules/expo/node_modules/ws/LICENSE*"
     },
     {
@@ -6340,22 +4492,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "yallist",
-      "version": "5.0.0",
-      "license": "BlueOak-1.0.0",
-      "source": "https://www.npmjs.com/package/yallist/v/5.0.0",
-      "license_location": "apps/mobile/node_modules/tar/node_modules/yallist/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "yaml",
-      "version": "2.9.1",
-      "license": "ISC",
-      "source": "https://www.npmjs.com/package/yaml/v/2.9.1",
-      "license_location": "apps/mobile/node_modules/yaml/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
       "name": "yargs",
       "version": "17.7.3",
       "license": "MIT",
@@ -6369,14 +4505,6 @@
       "license": "ISC",
       "source": "https://www.npmjs.com/package/yargs-parser/v/21.1.1",
       "license_location": "apps/mobile/node_modules/yargs-parser/LICENSE*"
-    },
-    {
-      "ecosystem": "npm",
-      "name": "yocto-queue",
-      "version": "0.1.0",
-      "license": "MIT",
-      "source": "https://www.npmjs.com/package/yocto-queue/v/0.1.0",
-      "license_location": "apps/mobile/node_modules/yocto-queue/LICENSE*"
     },
     {
       "ecosystem": "pypi",

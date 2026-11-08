@@ -5,6 +5,115 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 package 6 preparation — dependency remediation and staging evidence
+
+Implementation on `dev/phase-2-staging-blockers`, based on confirmed main
+**82f1ab1 / PR #24**. Resolves the largest concrete software advisory gate and
+prepares remaining evidence; **package 6/Phase 2/public release are not complete**.
+No paid resource/API, real mail, AI, billing, public hosting, domain/DNS change or
+provider contract activation. Remaining engineering and owner/legal/provider gates
+are mapped in [STAGING_BLOCKERS.md](docs/STAGING_BLOCKERS.md), not marked skipped.
+
+- Coordinated official SDK map upgrade: **Expo 58.0.23, Router 58.0.30, React Native
+  0.88.1, React 19.3.0**, SDK-matched modules/native peers and React types. Node
+  engine matches Expo's supported range; owner's Node 24.15 is suitable.
+- SDK upgrade removes the old decode/query, deepmerge and image-size chains.
+  Upstream Expo CLI/fingerprint still declare glob 13/minimatch 10; **narrowly
+  scoped reviewed overrides** select glob **14.0.4** for those two consumers and
+  minimatch **11.0.5** for fingerprint. Existing PostCSS patch retained. These are
+  tested consumer compatibility overrides, not a claim upstream Expo changed its
+  declarations. No blanket override or `npm audit fix --force` was used.
+- **Clean npm ci followed by fresh npm audit: zero findings**, down from 17
+  (4 high/12 moderate/1 low). CI now checks the audit and real tool-consumer tests.
+  This is advisory status for the locked graph, not universal security clearance.
+- FileHandle chunk reads are awaited under SDK 58, with a Pause check before
+  sending. Save explicitly imports `expo-media-library/legacy`; SDK 58's root
+  deprecated function throws at runtime. Original/private-upload journal behavior,
+  one bounded chunk, credential/origin isolation and separate Save/Share retained.
+  No video rendering/inference moved to mobile.
+- Docker API binding changes to **127.0.0.1:8000** by default for the existing USB
+  workflow; LAN/public publishing now requires explicit review. No HTTPS/edge
+  deployment or production network acceptance is inferred from loopback binding.
+- Added create-only private `scripts/image_inventory.py`: selects an existing
+  immutable local image ID (no pull), inspects installed OS/source/Python/FFmpeg
+  metadata and copyright hashes without app env, secrets, mounts, network or DB.
+  The result explicitly says vulnerability/legal scan not complete. Actual owner
+  image still needs its own exact-artifact review; no false complete SBOM claim.
+- Prepared an **unpublished privacy/preview terms draft** from implemented behavior,
+  with exact missing operator/retention/provider decisions and honest deletion/
+  backup limits. Asked only for registered company name/business country, never
+  keys/account numbers. Missing owner/legal input is not assumed or waived.
+
+### Verification
+
+- Before upgrade: **63 app logic tests and TypeScript passed** on SDK 54.
+- Clean SDK 58 install passed (545 installed npm packages). **64 app logic tests +
+  2 real tooling-consumer regressions = 66 passed**, plus TypeScript. New test pauses
+  during asynchronous reading and confirms no chunk send, closed handle and intact
+  saved intent. Tool tests exercise CommonJS exports, async/sync traversal, ignore/
+  case/dot matching and pre-aborted cancellation with patched glob/minimatch.
+- Offline Expo compatibility check reports dependencies up to date, with its
+  explicit offline validation warning. Real config introspection passed: Android
+  broad read/location permissions remain removed, iOS has add-only photo text.
+- Actual Expo fingerprint generation twice yielded equal 40-character hashes from
+  **34 sources**. No customer media or secret content was printed/exported by this
+  check. This exercises the real overridden consumer rather than an empty audit.
+- Final clean-install Android Hermes export passed: **1,374 modules, 3.1MB**, 27
+  assets. This is a JavaScript/native-config bundle, not a new APK, native SDK 58
+  runtime/physical Pixel/iOS/performance acceptance.
+- Fresh merged backend baseline **350 passed on SQLite (81.49s)**, one existing
+  Starlette/httpx warning. Application backend/schema unchanged; PostgreSQL's prior
+  350-pass evidence remains, not rerun/claimed new for this mobile/tools change.
+- Complete HTTP upload/resume/auth/queue/server-render/download/cleanup/retention/
+  monitoring/crash regression passed: **1080×1920, 30fps, 4.9s**, baseline **2.73s**.
+  Evidence `.data/smoke-365a9c10909845c09700ea8a48f69b19/`. This confirms the service
+  contract, not a native SDK 58 phone transfer or new S3 performance proof.
+- Image inventory tested on the **existing earlier validation worker image**:
+  292 OS/41 Python packages, private output mode 0600 and overwrite refusal passed.
+  No app image was rebuilt or treated as the new production artifact. Compose
+  parse/read-back confirms loopback API port; no running service was changed.
+- Doctor, pip consistency and diff checks passed. No app/API migration. Mobile
+  metadata inventory regenerated to **615** records; 29 direct/framework/tool/
+  asset notice records preserved/indexed under `docs/licenses/sdk58*`.
+  Material Symbols 0.4.53 navigation font (MIT wrapper/Apache-2.0 font) full notices
+  and asset SHA/source retained; no restricted kit or stock media introduced.
+  React Navigation's upstream MIT notice retained; exact fork asset revision is
+  not independently established, remains in full transitive provenance review.
+
+### Remaining gates / focused review
+
+- **SDK 58 phone acceptance remains pending.** After review/merge, update Expo Go
+  to SDK 58 compatibility (custom clients need rebuilding), npm ci, keep Docker
+  running, restore USB forwards and do one navigation/login/reopen/pause/resume/
+  render/Save/play/Share check. Do not uninstall/clear app data to hide migration
+  problems; finish pending uploads and keep original footage. Native Expo Go
+  storage behavior across SDKs is not guaranteed by adapter tests.
+- Backend image/schema is unchanged: no repeated Docker image build/migration or
+  owner full backend suite is required. `docker compose up -d` applies private
+  port binding. Runbook: [STAGING_BLOCKERS.md](docs/STAGING_BLOCKERS.md).
+- Still open: exact image/OS/native/transitive licensing/security scan; independent
+  post-snapshot erasure/revocation journal and encrypted/offsite restore; approved
+  TLS/edge/private-storage/queue deployment and scoped secret runtime; collector/
+  alert delivery and real provider-cost ceiling/reconciliation; representative
+  staging acceptance and privacy/terms/provider approval. These are concrete work
+  and external decisions, not completed capabilities or legal risk waivers.
+- [Unpublished draft](docs/PRIVACY_TERMS_DRAFT.md) needs registered operator/country,
+  contacts/jurisdiction/providers and approved retention/rights decisions. No legal
+  policy was published/accepted on the owner's behalf. Remote CI remains unobserved.
+  Funding/credentials/public-domain exposure will require the existing approvals.
+
+### Owner-reported package 5 acceptance — 2026-11-08
+
+Confirmed merge **82f1ab1 / PR #24**. Owner backed up PostgreSQL, built the worker
+and supplied updated strict host report: all three protections enforced, ready
+true. Supplied monitoring status ok/no issues: three succeeded jobs/attempts, one
+fresh idle worker/two stopped, no stuck/expired/missing claims, zero unknown or
+inflight/stale intake records, local disk ok and 430,490,753 reserved bytes. Owner
+explicitly confirmed latest Pixel save and playback. Existing one old measurement
+gap and null rates remain expected. This is owner-supported host/device evidence,
+not the unsupported managed cloud host or production/privacy/security signoff;
+supersedes historical package 5 native acceptance pending notes below.
+
 ## Phase 2 package 5 — capacity, cleanup, restore and security disposition
 
 Implementation on `dev/phase-2-capacity-security`, based on confirmed merge
