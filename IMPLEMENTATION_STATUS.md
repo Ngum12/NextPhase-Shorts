@@ -7,6 +7,11 @@ the reported Android baseline flow, not production readiness or AI functionality
 
 ## SDK 58 Android picker/private-copy correction
 
+Implementation **a1feb3e** pushed; this branch includes the Windows test fix.
+GitHub PR creation returned **Forbidden**;
+[open the combined fix for review](https://github.com/Ngum12/NextPhase-Shorts/pull/new/fix/sdk58-picker-copy).
+Remote CI/native device results remain unobserved.
+
 The owner supplied a Pixel screenshot showing `ExponentFileSystem.copyAsync`
 rejecting the selected `cache/DocumentPicker` file as unreadable before upload.
 Inspected installed SDK sources: Android DocumentPicker writes its cached copy
