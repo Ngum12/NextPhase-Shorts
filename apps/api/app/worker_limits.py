@@ -1,6 +1,12 @@
 """Fail closed if the Compose worker's required cgroup v2 limits are absent."""
 from pathlib import Path
+import os
 import sys
+
+
+def require_unprivileged():
+    if not sys.platform.startswith('linux') or not hasattr(os,'geteuid') or os.geteuid()==0:
+        raise RuntimeError('Strict processing requires an unprivileged Linux process')
 
 
 def require_worker_limits(root=Path('/sys/fs/cgroup')):

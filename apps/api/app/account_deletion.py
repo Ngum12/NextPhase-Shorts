@@ -59,9 +59,12 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
         raise HTTPException(409,'Deletion confirmation key is unavailable. Start a new request.')
     after=now+timedelta(seconds=settings.upload_part_timeout_seconds+90)
     lease=db.scalar(select(func.max(RenderJob.lease_expires_at)).where(RenderJob.user_id==uid))
+    hard=db.scalar(select(func.max(RenderJob.claim_deadline_at)).where(RenderJob.user_id==uid))
+    attempts=db.scalar(select(func.max(RenderAttempt.deadline_at)).join(RenderJob,RenderAttempt.job_id==RenderJob.id)
+        .where(RenderJob.user_id==uid,RenderAttempt.status.in_(('running','lease_lost','cancelled'))))
     grants=db.scalar(select(func.max(DirectUploadGrant.expires_at)).join(UploadSession,
         UploadSession.id==DirectUploadGrant.session_id).where(UploadSession.user_id==uid))
-    for deadline in (lease,grants):
+    for deadline in (lease,hard,attempts,grants):
         if deadline:after=max(after,aware(deadline)+timedelta(seconds=30))
     namespaces=set(db.scalars(select(RenderJob.object_store_id).where(RenderJob.user_id==uid,RenderJob.media_backend=='s3')))
     namespaces.update(db.scalars(select(UploadSession.object_store_id).where(UploadSession.user_id==uid,UploadSession.transfer_backend=='direct-s3')))

@@ -85,6 +85,27 @@ class Settings:
             raise RuntimeError('Worker heartbeat must be 1–60 seconds')
         self.worker_poll_seconds = float(os.getenv("WORKER_POLL_SECONDS", "2"))
         self.worker_require_limits = os.getenv('WORKER_REQUIRE_LIMITS','false').lower()=='true'
+        self.worker_require_sandbox=os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true'
+        self.queue_backend=os.getenv('QUEUE_BACKEND','database')
+        self.queue_host=os.getenv('QUEUE_HOST','127.0.0.1')
+        self.queue_port=int(os.getenv('QUEUE_PORT','6379'))
+        self.queue_password=os.getenv('QUEUE_PASSWORD','')
+        self.queue_tls=os.getenv('QUEUE_TLS','false').lower()=='true'
+        self.worker_lease_seconds=int(os.getenv('WORKER_LEASE_SECONDS','45'))
+        self.worker_renew_seconds=int(os.getenv('WORKER_RENEW_SECONDS','10'))
+        self.retry_backoff_seconds=int(os.getenv('RETRY_BACKOFF_SECONDS','5'))
+        if self.queue_backend not in ('database','valkey') or not 1<=self.queue_port<=65535:
+            raise RuntimeError('Invalid queue configuration')
+        if not 15<=self.worker_lease_seconds<=120 or not 1<=self.worker_renew_seconds<=self.worker_lease_seconds//3:
+            raise RuntimeError('Worker lease must be 15–120 seconds with renewal <= one third')
+        if not 1<=self.retry_backoff_seconds<=300:
+            raise RuntimeError('Retry backoff must be 1–300 seconds')
+        if self.queue_backend=='valkey':
+            import re
+            if not re.fullmatch(r'[A-Za-z0-9.-]{1,253}',self.queue_host) or len(self.queue_password)<32:
+                raise RuntimeError('Valkey requires an explicit host and strong server-only password')
+            if self.env in ('staging','production') and not self.queue_tls:
+                raise RuntimeError('Staging/production queue requires verified TLS')
         import math
         if not 1<=self.render_timeout_seconds<=7200 or not math.isfinite(self.worker_poll_seconds) or not .05<=self.worker_poll_seconds<=60:
             raise RuntimeError('Render timeout must be 1–7200 seconds; worker poll must be 0.05–60 seconds')

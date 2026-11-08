@@ -1,7 +1,7 @@
 """Short owner-row transactions serialize admission and worker capacity checks."""
 from fastapi import HTTPException
 from sqlalchemy import func, select, update
-from .models import RenderJob, UploadSession, User, utcnow
+from .models import RenderJob, UploadSession, User, QueueSignal, DeadLetter, utcnow
 from .config import get_settings
 from .storage import require_capacity
 
@@ -62,4 +62,17 @@ def admit_job(db, job, *, upload_session_id=None):
         require_capacity(db,job.user_id,job.storage_reserved_bytes)
     db.add(job)
     db.flush()
+    if get_settings().queue_backend=='valkey':
+        import uuid
+        now=utcnow()
+        db.add(QueueSignal(job_id=job.id,generation=str(uuid.uuid4()),created_at=now,next_publish_at=now))
     return job, False
+
+
+def dead_letter(db,job_id,reason,attempts):
+    from .db import engine
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+    insert=pg_insert if engine.dialect.name=='postgresql' else sqlite_insert
+    db.execute(insert(DeadLetter).values(job_id=job_id,reason=reason,attempts=attempts,created_at=utcnow())
+        .on_conflict_do_nothing(index_elements=['job_id']))

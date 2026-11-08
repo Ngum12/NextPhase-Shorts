@@ -23,7 +23,7 @@ def main():
         private=Path(temporary)/'sink';email=uuid.uuid4().hex+'@example.com'
         password=secrets.token_urlsafe(24);new_password=secrets.token_urlsafe(24)
         env=os.environ.copy()
-        env.update(APP_ENV='test',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
+        env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
             STORAGE_DIR=temporary+'/media',JWT_SECRET=secrets.token_urlsafe(48),MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false',
             AUTH_MAIL_BACKEND='resend',AUTH_MAIL_SEND_ENABLED='true',AUTH_MAIL_DIR=temporary+'/mail',
             AUTH_MAIL_FROM='noreply@auth.example.com',RESEND_API_KEY='re_'+secrets.token_urlsafe(24),

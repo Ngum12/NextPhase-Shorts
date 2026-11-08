@@ -5,6 +5,71 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 package 3 — durable queue and worker supervision
+
+Implementation branch: `dev/phase-2-queue-reliability`, based on merged main
+`06e5c86` (email delivery PR #21). **Implemented and locally verified; strict host
+acceptance, review, remote CI and the focused owner device check remain open.**
+No package 4 work, paid infrastructure/API, billing or AI was activated.
+
+- Chosen stack: pinned Valkey 8.1.11 and Arq 0.28.0; PostgreSQL remains the
+  authority for fair scheduling, attempts and publication. Migration 0017 adds
+  transactional dispatch signals, reconciliation, hard deadlines and dead letters;
+  preserves existing media/accounts/uploads and the two-attempt reservation budget.
+- Authenticated durable AOF broker uses strict bounded JSON, fixed functions and
+  canonical generation IDs, with no pickle, customer payload or secret in messages.
+  Lost replies, broker restart and duplicate delivery reconcile against SQL state.
+- Claims renew every 10 seconds within a 45-second lease and fixed hard deadline.
+  Expired/superseded claims cannot revive or publish. Transient failures use bounded
+  retry/backoff; exhausted/permanent failures receive explicit dead-letter records.
+  Deletion respects older attempt hard deadlines before releasing media/storage.
+- Decoder controls include process-tree teardown for both FFmpeg and FFprobe,
+  stripped credentials, unprivileged execution and required Linux filesystem/network
+  isolation plus cgroup checks. Unsupported required protections fail closed.
+- Compose includes private broker configuration and a separate supervisor. The
+  helper preserves credentials without printing them. The isolated broker service
+  was verified healthy, unprivileged, read-only and capability-dropped, then removed.
+
+### Automated evidence
+
+- Final backend suite: **317 passed on SQLite (74.01s)** and **317 passed on
+  PostgreSQL (88.54s)**; one existing Starlette/httpx deprecation warning each.
+- Mobile: **63 logic tests passed** and TypeScript passed; no mobile code changed.
+  No new Hermes export or physical-device acceptance is claimed for this package.
+- Full HTTP upload/queue/render/download: database adapter, real Valkey/Arq adapter,
+  and Valkey plus private S3 all passed. Output verified **1080×1920, 30 fps, 4.9s**;
+  observed render waits 2.05s, 3.52s and 9.79s respectively, not a load benchmark.
+  Broker smoke also verified AOF restart persistence and duplicate/lost-reply recovery.
+- Evidence (ignored local artifacts): `.data/smoke-64b6ddaa9d254d408753d2e1753a7bc1/`,
+  `.data/nextphase-queue-smoke-be933caa2219/workflow/`,
+  `.data/nextphase-queue-smoke-84c3c8ae6bc4/` and
+  `.data/nextphase-s3-smoke-59d99fc9bedd/workflow/`.
+- Actual seccomp network-denial test passed. Landlock tests verify refusal on this
+  unsupported kernel; their passing result is **not** successful filesystem isolation.
+- Dependency inventory now has 849 records; Arq/redis/hiredis MIT notices and Valkey
+  BSD-3-Clause notice retained. Full container OS/legal review remains open.
+
+### Blockers and next steps
+
+- **Strict Linux host acceptance is OPEN:** this managed host returns ENOSYS for
+  Landlock and Docker reports cgroup driver `none`. The focused host report returns
+  `ready: false`. No production guard was bypassed to claim acceptance.
+- After review/merge, follow [QUEUE_RELIABILITY.md](docs/QUEUE_RELIABILITY.md): run
+  the single host check and share its coarse report. On a supported host it must
+  report `ready: true`; then perform one focused Pixel upload/render/save check.
+- This is shared-kernel isolation, not a VM/security certification or per-job disk
+  quota. Capacity/soak, broader security/cleanup, deployment, privacy/legal and
+  production acceptance remain in packages 4–6. Existing mobile audit findings
+  (last observed 17) are not declared resolved by this queue change.
+
+### Owner-reported package 2 acceptance update
+
+The owner reports real inbox verification, password reset, new-password sign-in
+and upload/render/save worked, then disabled mail sending again. This records
+owner acceptance, not an independent provider observation. Real sending stays
+opt-in; no recipient, key or mail content is recorded here. Earlier package 2
+notes below describe the state at its implementation and are retained as history.
+
 ## Phase 2 package 2 — optional Resend delivery and verified-email policy
 
 - Implementation on `dev/phase-2-email-delivery`, based on confirmed merge

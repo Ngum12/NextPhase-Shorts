@@ -1,7 +1,7 @@
 """Linux exec launcher: no server credentials, parent-death kill and OS limits.
 
-Only the server's fixed FFmpeg/FFprobe invocations use this internal module. This is
-defense in depth, not a security sandbox against a compromised decoder.
+Only fixed server FFmpeg/FFprobe invocations use this internal module. Required
+mode also adds Landlock/seccomp restrictions; it still shares the host kernel.
 """
 import ctypes
 import os
@@ -12,6 +12,10 @@ import sys
 def main():
     import resource
     expected_parent=int(sys.argv[1]);cpu_seconds=int(sys.argv[2]);command=sys.argv[3:]
+    sandbox=None
+    if command and command[0]=='--sandbox':
+        import json
+        sandbox=json.loads(command[1]);command=command[2:]
     if not sys.platform.startswith('linux') or not command or command[0] not in ('ffmpeg','ffprobe') or not 1<=cpu_seconds<=14430:
         raise RuntimeError('Invalid internal render invocation')
     libc=ctypes.CDLL(None,use_errno=True)
@@ -22,6 +26,12 @@ def main():
     resource.setrlimit(resource.RLIMIT_CORE,(0,0))
     resource.setrlimit(resource.RLIMIT_NOFILE,(128,128))
     resource.setrlimit(resource.RLIMIT_CPU,(cpu_seconds,cpu_seconds))
+    if sandbox is not None:
+        import importlib.util
+        from pathlib import Path
+        spec=importlib.util.spec_from_file_location('render_sandbox',Path(__file__).with_name('render_sandbox.py'))
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        module.apply(sandbox['source'],sandbox['output'])
     os.execvp(command[0],command)
 
 

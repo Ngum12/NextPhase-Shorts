@@ -159,3 +159,25 @@ were added. Provider terms, privacy/DPA/subprocessors, current plan/Forge behavi
 and sender-owner approval remain real-channel acceptance gates; local transport
 fixtures do not establish these. No provider request, outgoing real email, paid
 resource/API or billing activation was performed during automated validation.
+
+## Phase 2 package 3 — durable dispatch and decoder containment
+
+Added Arq **0.28.0**, redis-py **5.3.1** and hiredis **3.5.0**, all declaring MIT.
+Sources: https://pypi.org/project/arq/0.28.0/ ,
+https://pypi.org/project/redis/5.3.1/ , https://pypi.org/project/hiredis/3.5.0/ .
+Exact packaged notices are preserved under `docs/licenses/queue/`; retain copyright
+and permission notices in distributions. Inventory now has **849** metadata records.
+redis-py is a client library; no Redis server distribution/license was introduced.
+
+The local broker is Valkey **8.1.11**, BSD-3-Clause, pinned image
+`valkey/valkey:8.1-alpine@sha256:2602ace2be6569bc2bbb06f873776516ab9089821525be34f4305c67eb9db02a`.
+Source/notice: https://github.com/valkey-io/valkey/tree/8.1.11 and
+https://raw.githubusercontent.com/valkey-io/valkey/8.1.11/COPYING . Full upstream
+COPYING is preserved at `docs/licenses/queue/valkey-8.1.11-BSD-3-Clause.txt`.
+BSD permits commercial use subject to its copyright/notice/disclaimer and
+non-endorsement conditions. This is metadata/upstream notice review, not a full
+OS/image/transitive audit, security certification or production/legal signoff.
+
+Landlock/seccomp use standard Linux interfaces and Python ctypes; no external
+sandbox code, restricted reference-kit source/assets or paid provider added.
+Shared-kernel/kernel-version/host acceptance and existing legal/advisory gates remain.

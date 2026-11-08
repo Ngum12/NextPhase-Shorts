@@ -10,6 +10,9 @@ os.environ['AUTH_MAIL_SEND_ENABLED']='false'
 os.environ['AUTH_REQUIRE_VERIFIED_EMAIL']='false'
 os.environ['RESEND_API_KEY']=''
 os.environ['AUTH_MAIL_ENCRYPTION_KEYS']=''
+os.environ['QUEUE_BACKEND']='database'
+os.environ['WORKER_REQUIRE_SANDBOX']='false'
+os.environ['WORKER_REQUIRE_LIMITS']='false'
 os.environ["AUTH_MAIL_DIR"] = str(ROOT / "auth-mail")
 os.environ['MEDIA_BACKEND'] = 'local'
 os.environ['DIRECT_UPLOADS_ENABLED'] = 'false'
@@ -49,6 +52,21 @@ upgrade_schema(engine)
 def client():
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture(autouse=True)
+def finish_active_fixture_work():
+    # Every test owns its synthetic live work. Short real leases must not expire
+    # an unrelated earlier test's intentionally unfinished claims during a slow run.
+    yield
+    from sqlalchemy import update
+    from app.db import SessionLocal
+    from app.models import RenderJob,RenderAttempt,QueueSignal,utcnow
+    with SessionLocal.begin() as db:
+        db.execute(update(RenderJob).where(RenderJob.status.in_(('queued','processing')))
+            .values(status='cancelled',claim_token=None,lease_expires_at=None,claim_deadline_at=None,next_attempt_at=None))
+        db.execute(update(RenderAttempt).where(RenderAttempt.status=='running').values(status='cancelled',finished_at=utcnow()))
+        db.execute(update(QueueSignal).values(completed_at=utcnow(),lease_token=None,lease_until=None))
 
 
 def pytest_sessionfinish(session, exitstatus):

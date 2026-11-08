@@ -72,6 +72,28 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     cleanup_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     media_deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cleanup_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claim_deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True,index=True)
+
+
+class QueueSignal(Base):
+    __tablename__='queue_signals'
+    job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'),primary_key=True)
+    generation: Mapped[str] = mapped_column(String(36),unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    next_publish_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+    lease_token: Mapped[str | None] = mapped_column(String(36),nullable=True)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+
+
+class DeadLetter(Base):
+    __tablename__='render_dead_letters'
+    job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'),primary_key=True)
+    reason: Mapped[str] = mapped_column(String(80))
+    attempts: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
 
 
 class UploadSession(StorageBudget, RightsRecord, Base):
@@ -168,6 +190,7 @@ class RenderAttempt(Base):
     status: Mapped[str] = mapped_column(String(20), default='running')
     wall_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     output_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
 
 
 class WorkerPulse(Base):

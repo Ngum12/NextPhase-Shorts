@@ -6460,6 +6460,14 @@
     },
     {
       "ecosystem": "pypi",
+      "name": "arq",
+      "version": "0.28.0",
+      "license": "OSI Approved :: MIT License",
+      "source": "https://pypi.org/project/arq/0.28.0/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
       "name": "boto3",
       "version": "1.43.126",
       "license": "REVIEW_REQUIRED",
@@ -6536,6 +6544,14 @@
       "version": "0.16.0",
       "license": "OSI Approved :: MIT License",
       "source": "https://pypi.org/project/h11/0.16.0/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "hiredis",
+      "version": "3.5.0",
+      "license": "OSI Approved :: MIT License",
+      "source": "https://pypi.org/project/hiredis/3.5.0/",
       "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
     },
     {
@@ -6688,6 +6704,14 @@
       "version": "0.0.33",
       "license": "Apache-2.0",
       "source": "https://pypi.org/project/python-multipart/0.0.33/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "redis",
+      "version": "5.3.1",
+      "license": "OSI Approved :: MIT License",
+      "source": "https://pypi.org/project/redis/5.3.1/",
       "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
     },
     {

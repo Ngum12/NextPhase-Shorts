@@ -9,7 +9,7 @@ def main():
     evidence=ROOT/'.data'/('auth-recovery-smoke-'+uuid.uuid4().hex);evidence.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix='nextphase-auth-smoke-') as temporary:
         inbox=Path(temporary)/'private-mail';env=os.environ.copy()
-        env.update(APP_ENV='test',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
+        env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
             STORAGE_DIR=temporary+'/media',JWT_SECRET=secrets.token_urlsafe(48),MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false',
             AUTH_MAIL_BACKEND='file',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',AUTH_MAIL_DIR=str(inbox),AUTH_ACTION_EMAIL_LIMIT='3',AUTH_ACTION_MINUTES='15',
             AUTH_LOGIN_ACCOUNT_LIMIT='5',AUTH_LOGIN_IP_LIMIT='30',AUTH_REGISTER_IP_LIMIT='10',AUTH_PASSWORD_LIMIT='5',AUTH_WINDOW_SECONDS='900')

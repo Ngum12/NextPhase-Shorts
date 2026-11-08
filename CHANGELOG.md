@@ -1,5 +1,17 @@
 # Changelog
 
+## Phase 2 package 3 — durable queue and worker supervision
+
+- Add Valkey/Arq durable dispatch with transactional SQL signals, strict JSON,
+  bounded reconciliation and duplicate/lost-response recovery.
+- Migration 0017 adds renewable fenced leases, fixed hard deadlines and dead letters;
+  preserve two-attempt budgets and delayed deletion safety for older writers.
+- Add decoder filesystem/network guards, probe/render process-tree teardown, private
+  configuration helper, queue supervisor and focused fail-closed host check.
+- Verified 317 tests on each SQL backend, 63 mobile tests, TypeScript and real broker/
+  S3 workflows. Strict host acceptance remains blocked on this managed kernel/runtime.
+- Owner reports package 2 real email acceptance passed; sending remains opt-in.
+
 ## Phase 2 package 2 — optional Resend and verified email
 
 - Migration 0016 adds an encrypted durable outbox, shared attempt budgets and

@@ -3,8 +3,19 @@ services:
     build:
       context: ./apps/api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers
-    env_file: .env
+    env_file: [.env, .data/queue-private/client.env]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 128
+    tmpfs:
+      - /tmp:size=402653184,mode=1777
     environment:
+      QUEUE_HOST: queue
+      QUEUE_PORT: '6379'
+      WORKER_REQUIRE_SANDBOX: 'true'
       DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
       STORAGE_DIR: /var/nextphase/media
     ports:
@@ -48,9 +59,12 @@ services:
     tmpfs:
       - /tmp:size=67108864,mode=1777
     stop_grace_period: 15s
-    env_file: .env
+    env_file: [.env, .data/queue-private/client.env]
     environment:
       WORKER_REQUIRE_LIMITS: 'true'
+      WORKER_REQUIRE_SANDBOX: 'true'
+      QUEUE_HOST: queue
+      QUEUE_PORT: '6379'
       DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
       STORAGE_DIR: /var/nextphase/media
     volumes:
@@ -59,6 +73,53 @@ services:
       db:
         condition: service_healthy
       api:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+    restart: unless-stopped
+  queue:
+    image: valkey/valkey:8.1-alpine@sha256:2602ace2be6569bc2bbb06f873776516ab9089821525be34f4305c67eb9db02a
+    command: valkey-server /etc/valkey/valkey.conf
+    user: valkey
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 1.0
+    pids_limit: 64
+    ports:
+      - '127.0.0.1:6380:6379'
+    volumes:
+      - queue-data:/data
+      - ./.data/queue-private/valkey.conf:/etc/valkey/valkey.conf:ro
+    healthcheck:
+      test: [CMD-SHELL, 'valkey-cli --raw ping 2>&1 | grep -q NOAUTH']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  queue-supervisor:
+    build:
+      context: ./apps/api
+    command: python -m app.queue_supervisor
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:size=67108864,mode=1777
+    env_file: [.env, .data/queue-private/client.env]
+    environment:
+      QUEUE_HOST: queue
+      QUEUE_PORT: '6379'
+      DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase
+      STORAGE_DIR: /var/nextphase/media
+    volumes:
+      - media:/var/nextphase/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      queue:
         condition: service_healthy
     restart: unless-stopped
   mail-worker:
@@ -97,3 +158,4 @@ services:
 volumes:
   pgdata:
   media:
+  queue-data:

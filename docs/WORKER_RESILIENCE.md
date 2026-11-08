@@ -1,5 +1,10 @@
 # Worker resilience and containment in the developer preview
 
+Historical foundation notes follow. Package 3 now implements Valkey/Arq dispatch,
+bounded claim renewal, transient retry/dead letters and strict Landlock/seccomp
+guards. See [current protocol and supported-host gate](QUEUE_RELIABILITY.md).
+The earlier poller is retained as native development/test mode.
+
 The DB poller remains the current queue. This increment strengthens fair claims,
 recovery and process limits; it does not finish Phase 2 or introduce a broker,
 production deployment, paid service or AI editing.

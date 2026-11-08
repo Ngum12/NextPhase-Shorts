@@ -1,5 +1,11 @@
 # REST API — Stage 1 truth
 
+Package 3 preserves public request/status shapes. Transient storage/internal
+failures may return to queued with bounded backoff within the existing two
+attempts; permanent/exhausted failures stay failed. Queue signals/dead letters
+are private operator metadata. Claim renewal never extends the absolute attempt
+budget. See QUEUE_RELIABILITY.md.
+
 Base URL: `http://localhost:8000` in development only. Production must be HTTPS, authenticated and routed behind edge protections.
 
 | Method | Endpoint | Auth | Purpose |

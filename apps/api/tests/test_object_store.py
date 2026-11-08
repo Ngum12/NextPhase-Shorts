@@ -2,6 +2,7 @@
 import hashlib
 import io
 import uuid
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 import pytest
@@ -130,6 +131,11 @@ def test_remote_failure_never_publishes_success(client, monkeypatch, remote):
     owner = {'Authorization':'Bearer '+new_user(client)}
     jid = post(client, owner).json()['id']; job = claim_job(); assert job['id'] == jid
     remote.fail_put = True; process(job)
+    with SessionLocal.begin() as db:
+        row=db.get(RenderJob,jid)
+        assert row.status=='queued' and row.next_attempt_at is not None and row.output_path is None
+        row.next_attempt_at=utcnow()-timedelta(seconds=1)
+    retry=claim_job();assert retry and retry['id']==jid;process(retry)
     with SessionLocal() as db:
         row = db.get(RenderJob, jid)
         assert row.status == 'failed' and row.error_code == 'STORAGE_UNAVAILABLE' and row.output_path is None
@@ -185,6 +191,10 @@ def test_cancel_during_remote_publication_keeps_fence(client, monkeypatch, remot
     assert client.get(f'/api/v1/jobs/{jid}/download',headers=owner).status_code==409
     from app.deletion import cleanup_deleted
     client.delete(f'/api/v1/jobs/{jid}',headers=owner);cleanup_deleted()
+    assert remote.objects  # Short lease cancellation must retain the writer-lifetime guard.
+    # This mock publication/process has returned; advance only its disposal deadline.
+    with SessionLocal.begin() as db:db.get(RenderJob,jid).cleanup_after=utcnow()-timedelta(seconds=1)
+    cleanup_deleted()
     assert not remote.objects
 
 
