@@ -63,6 +63,8 @@ def claim_job():
             .order_by(RenderJob.created_at, RenderJob.id).limit(1))
         if job_id is None:
             return None
+        from .capacity import worker_available
+        if not worker_available(db):return None
         now = utcnow()
         token = str(uuid.uuid4())
         budget=settings.render_timeout_seconds+(300 if db.get(RenderJob,job_id).media_backend=='s3' else 90)
@@ -289,6 +291,8 @@ def main():
                     cleanup_deleted()
                     from .account_deletion import cleanup_accounts
                     cleanup_accounts()
+                    from .metadata_cleanup import cleanup
+                    cleanup()
                     last_upload_cleanup = time.monotonic()
                 requeued,failed=recover_stale_jobs()
                 if requeued or failed:emit('lease_recovery',worker_id=heartbeat.id,requeued=requeued,failed=failed)

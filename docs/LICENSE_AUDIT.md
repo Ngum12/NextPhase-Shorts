@@ -190,3 +190,15 @@ text mappings are independently authored from their public protocol conventions;
 no SDK/collector image was incorporated. Existing 849-record dependency inventory,
 notices and unresolved OS/transitive/security/legal gates remain. Protocol-shaped
 export is not an external collector, commercial-policy or privacy signoff.
+
+## Phase 2 package 5 — capacity/security review
+
+No application dependency or restricted reference-kit code/assets added. Build/CI
+installer pip is now pinned to **26.3** (MIT), source
+https://pypi.org/project/pip/26.3/ . Its packaged MIT notice is preserved at
+`docs/licenses/pip-26.3/LICENSE.txt`; wheel/image installations retain upstream
+vendored notices as supplied. Existing 849-record metadata inventory regenerated
+for this installer update. This is not a full OS/vendored/FFmpeg GPL/patent or
+commercial legal clearance. See SECURITY_REVIEW_2026-11-08.md for explicit blockers;
+no public release/risk waiver is inferred from this review. Synthetic load/restore
+media is independently generated; no customer footage or backup enters Git.

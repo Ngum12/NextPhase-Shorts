@@ -31,7 +31,7 @@ def teardown_decoder(process):
     process.wait(timeout=5)
 
 
-def decoder_invocation(cmd,timeout):
+def decoder_invocation(cmd,timeout,max_file_bytes=None):
     # Read only the explicit guard flag here; decoder-launch tests and tools do
     # not need to initialize server credentials just to construct a subprocess.
     sandbox_required=os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true'
@@ -46,22 +46,24 @@ def decoder_invocation(cmd,timeout):
         sandbox=[]
         if sandbox_required:
             source=cmd[cmd.index('-i')+1] if cmd[0]=='ffmpeg' else cmd[-1]
-            output=str(Path(cmd[-1]).resolve().parent) if cmd[0]=='ffmpeg' else None
+            output=str(Path(cmd[-1]).resolve()) if cmd[0]=='ffmpeg' else None
+            if cmd[0]=='ffmpeg' and max_file_bytes is None:raise MediaError('Strict renderer needs a fixed output file bound')
             sandbox=['--sandbox',json.dumps({'source':str(Path(source).resolve()),'output':output},separators=(',',':'))]
         child_cmd=[sys.executable,'-I',str(Path(__file__).with_name('render_child.py')),
-                   str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),*sandbox,*cmd]
+                   str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),
+                   *(['--file-limit',str(max_file_bytes if cmd[0]=='ffmpeg' else 0)] if sandbox_required else []),*sandbox,*cmd]
     elif sandbox_required:
         raise MediaError('Required decoder isolation needs supported Linux')
     kwargs={'start_new_session':True} if os.name=='posix' else {}
     return child_cmd,child_env,kwargs
 
 
-def run_render(cmd, timeout, should_cancel):
+def run_render(cmd, timeout, should_cancel, max_file_bytes=None):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
     samples=DecoderSamples()
-    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout)
+    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes)
     # Diagnostics are deliberately discarded: malformed media cannot grow a
     # PIPE buffer without bound or put private source paths into general logs.
     with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:
@@ -118,6 +120,10 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes:
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_name(dest.stem + ".partial.mp4")
     tmp.unlink(missing_ok=True)
+    # Strict Landlock permits writing only this existing file, never creating
+    # arbitrary scratch files. RLIMIT_FSIZE supplies the kernel file-size bound.
+    if os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true':
+        descriptor=os.open(tmp,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600);os.close(descriptor)
     vf = (
         "scale=1080:1920:force_original_aspect_ratio=decrease:flags=lanczos,"
         "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,"
@@ -139,7 +145,7 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes:
             return should_cancel() if should_cancel is not None else False
         # Abort oversize output, never silently truncate it into a shorter export.
         with stage('encode') as observed:
-            measurements=run_render(cmd, get_settings().render_timeout_seconds, stop_requested)
+            measurements=run_render(cmd, get_settings().render_timeout_seconds, stop_requested,max_file_bytes=max_output_bytes)
             observed.update(measurements or {})
         if tmp.stat().st_size >= max_output_bytes:
             raise OutputLimitExceeded('Rendered file exceeded its reserved output limit')

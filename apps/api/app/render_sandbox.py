@@ -77,7 +77,10 @@ def apply(source,output=None):
         for name in ('/dev/null','/dev/urandom','/dev/random'):
             path=Path(name)
             if path.exists():rules[path]=6 if name=='/dev/null' else 4
-        if output is not None:rules[Path(output).resolve(strict=True)]=WRITE
+        if output is not None:
+            target=Path(output).resolve(strict=True)
+            if not target.is_file():raise RuntimeError('Decoder output must be one existing private file')
+            rules[target]=2|4|16384  # write/read/truncate that file, no directory creation/removal
         for path,access in rules.items():
             fd=os.open(path,os.O_PATH|os.O_CLOEXEC)
             try:
@@ -95,6 +98,7 @@ def require_support():
     with tempfile.TemporaryDirectory(prefix='nextphase-sandbox-probe-') as temporary:
         root=Path(temporary);allowed=root/'allowed';denied=root/'denied'
         allowed.write_text('allowed');denied.write_text('private')
+        (root/'output').write_text('')
         try:
             result=subprocess.run([sys.executable,'-I',str(Path(__file__).resolve()),'--probe',str(allowed),str(denied)],
                 stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)
@@ -105,7 +109,13 @@ def require_support():
 if __name__=='__main__':
     if len(sys.argv)!=4 or sys.argv[1]!='--probe':raise SystemExit(2)
     allowed,denied=Path(sys.argv[2]),Path(sys.argv[3])
-    apply(allowed)
+    output=allowed.parent/'output'
+    apply(allowed,output)
+    output.write_text('permitted',encoding='utf-8')
+    assert output.read_text(encoding='utf-8')=='permitted'
+    try:(allowed.parent/'extra').write_text('denied',encoding='utf-8')
+    except PermissionError:pass
+    else:raise SystemExit(1)
     assert allowed.read_text(encoding='utf-8')=='allowed'
     try:denied.read_text(encoding='utf-8')
     except PermissionError:pass

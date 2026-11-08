@@ -265,3 +265,16 @@ class ArtifactMeasure(Base):
     kind: Mapped[str] = mapped_column(String(16))
     bytes: Mapped[int] = mapped_column(BigInteger)
     stored_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CapacityGate(Base):
+    __tablename__='capacity_gate'
+    id: Mapped[int] = mapped_column(Integer,primary_key=True)
+
+
+class IngressLease(Base):
+    __tablename__='ingress_leases'
+    id: Mapped[str] = mapped_column(String(36),primary_key=True)
+    reserved_bytes: Mapped[int] = mapped_column(BigInteger)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)

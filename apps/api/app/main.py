@@ -52,6 +52,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="NextPhase Shorts API", version="0.1.0", lifespan=lifespan)
 from .observability import TraceMiddleware,bind_job
+from .ingress import IngressGuard
+app.add_middleware(IngressGuard)
 app.add_middleware(TraceMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                    allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"],

@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 2 package 5 — capacity, cleanup and security review
+
+- Migration 0019 adds shared slot/storage/processing and in-flight intake budgets;
+  bound API execution/body parsing, preserve replay/reservations and guard disk space.
+- Narrow strict decoder writes to one file with kernel size cap; bound operational
+  observation/stopped-worker retention and expose stale intake reservations.
+- Prove 100 simultaneous admissions, ten-minute/98-cycle real soak and new-DB/media
+  restore; add short CI drill. Pin reviewed pip installer 26.3 and retain notice.
+- Record package 4 owner acceptance and explicit unresolved dependency/privacy/
+  image/staging launch blockers; no paid service, billing, AI or public deployment.
+
 ## Phase 2 package 4 — monitoring, secrets and measured costs
 
 - Migration 0018 preserves media/auth state and adds private observations, known

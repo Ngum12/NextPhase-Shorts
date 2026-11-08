@@ -5,6 +5,122 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 package 5 — capacity, cleanup, restore and security disposition
+
+Implementation on `dev/phase-2-capacity-security`, based on confirmed merge
+**4c565b0 / PR #23**. Engineering locally verified for review; updated strict-host/
+Pixel check and remote CI remain pending. **Public-launch security/privacy/license
+blockers remain open**, listed below, rather than being waived or called complete.
+Package 6 and Phase 3 have not been started. No paid infrastructure/API, real email
+sending, billing, subscription collection or AI was activated.
+
+- Migration **0019_global_capacity** adds a shared SQL admission mutex and bounded
+  intake reservation records; preserves accounts/auth/media/jobs/trace/rights/
+  upload offsets. Owner-then-global locking serializes collective slot/storage
+  admission; processing claims have a global cap. Defaults 100 active, two
+  processing, 50GiB logical retained budget. Existing accepted session conversion
+  and same-key valid replay retain their prior semantics at capacity.
+- Per-process request gate (default eight) avoids DB connection/thread starvation;
+  waits asynchronously then returns retryable 503 after 30s. Shared intake limits
+  cover count/bytes before multipart parsing; actual body/declared length/deadlines
+  and local free-space guards apply. Unexpected API death leaves intake charged;
+  stale recovery requires explicit stopped-writer assertion, not automatic reuse.
+- Known failed/deleted media retains reservation until verified cleanup. Trace
+  observations and stopped-worker pulses receive bounded seven-day maintenance;
+  no automatic age deletion of valid saved projects, rights/cleanup tombstones or
+  unverified orphans. Policy and full erasure limits are written explicitly.
+- Strict Linux decoder write permission narrows from a directory to one precreated
+  output file, with hard RLIMIT_FSIZE; probe has zero file-write size budget.
+  Host canary checks allowed-file write and sibling creation denial. Real Linux
+  file-size enforcement passed here; Landlock/cgroups remain unsupported on this
+  managed host, so actual new strict render needs supported-owner-host acceptance.
+- Added a disposable PostgreSQL HTTP load/soak/backup-restore exercise and CI's
+  short version. It never accepts an existing API/database/media target. All its
+  service processes/container/anonymous volume are cleaned; private synthetic
+  backup/report artifacts remain ignored for review. No real owner's DB restored.
+
+### Verification and evidence
+
+- Unchanged isolated baseline: **339 tests passed (73.67s)**.
+- Final complete backend suites: **350 passed on SQLite (88.81s)** and **350 passed
+  on PostgreSQL (113.22s)**; no Linux skips, one existing Starlette/httpx warning
+  each. Includes global owner/processing/storage/unknown inventory boundaries,
+  crash reservations/free-space/body caps, bounded retention, kernel file limit
+  and all prior migrations/auth/media/privacy/queue/storage regressions.
+- **63 mobile logic tests and TypeScript passed**; no mobile source/native module
+  changed and no new Android/Hermes build is claimed. Doctor, pip consistency,
+  dependency inventory and diff checks passed. No repeated owner regression suite.
+- **100 simultaneous real HTTP submissions** to disposable PostgreSQL: exactly
+  **64 unique admissions, 36 intended retryable queue refusals**, same-key replay
+  and cross-owner denial passed; recorded burst/check/abort interval **4.044s**.
+  Eight active API executions bound DB use; this is not 100 renderers/transactions.
+  Early preflights exposed pool starvation; request gating corrected it before
+  final proof. Failed preflights are not reported as successful acceptance.
+- **600.0-second real steady soak: 98 render/download cycles**, three rotating
+  owners, two worker processes, synthetic two-second landscape/audio input;
+  ownership/deletion checks passed. Not a production or mixed-codec/long-duration
+  load benchmark, 24-hour soak or availability/security certification.
+- Stopped all disposable writers, dumped PostgreSQL/custom format plus media,
+  checked SHA-256 manifest, restored into a **fresh PostgreSQL database**, removed/
+  replaced only original disposable media from backup; prior auth/output hash,
+  deleted-project denial and **new render after restoration passed**. Evidence:
+  `.data/capacity-exercise-3780e3279970/`. Short preflight also passed; CI uses 30s.
+- Complete native HTTP restart/resume/auth/render/download/cleanup/retention/
+  monitoring/crash regression passed: **1080×1920, 30fps, 4.9s**, baseline **2.59s**;
+  evidence `.data/smoke-4787f8a97c784e8d97b86a8c0c7aee07/`.
+- Complete **real Valkey/Arq plus private S3** regression passed under the new
+  capacity/intake guards; signed direct transfer/expiry/sealing, AOF restart,
+  render/download/decode, physical cleanup, account/auth/worker recovery and
+  monitoring proofs passed. Same valid output; baseline **10.04s** includes signed
+  expiry wait. Evidence `.data/nextphase-s3-smoke-180501389c97/workflow/` and
+  `.data/nextphase-queue-smoke-58dfa85adf69/`. Standalone development guards are
+  explicitly distinct from unsupported managed-host strict acceptance.
+
+### Dependency/license/privacy review and remaining gates
+
+- Fresh npm audit: **17 findings (4 high, 12 moderate, 1 low)**, unchanged. Router
+  query decoding is potentially reachable; no blanket development-only dismissal
+  or breaking SDK override. These are unresolved public-launch blockers.
+- Official PyPI exact-version advisory JSON checked for **52 distributions**.
+  Initial installer pip 25.0.1 had known advisories; updated isolated installer to
+  **26.3**, pinned Docker/CI installer, verified zero published advisories for it.
+  Final 52 checked versions have no listed advisories in that feed, not proof of
+  absence of all vulnerabilities or a complete OS/wheel/static security scan.
+- Metadata inventory remains **849**; pip version updated and packaged MIT notice
+  retained. No new application dependency or restricted reference ZIP code/assets.
+  Immutable image/OS/FFmpeg GPL/source-notice/patent/transitive review and legal/
+  privacy signoff remain open. This managed environment did not rebuild a full
+  application image or claim updated production-image scanning.
+- [Security risk disposition](docs/SECURITY_REVIEW_2026-11-08.md) explicitly blocks
+  public launch pending supported dependency remediation/approved mitigation,
+  production containment check, image/legal review, real global/provider quotas/
+  cost reconciliation, encrypted offsite backup and post-snapshot deletion/
+  revocation journal. Local restore proves pre-snapshot tombstones only; missing
+  later erasure requests cannot be reconstructed from that backup alone.
+- Trace/stopped-worker aging is not full personal metadata erasure; crash records,
+  accounting/rights/grant/tombstones/backups/provider/device copies remain scoped.
+  Logical budgets/free-space checks are not an S3 quota, entire disk inventory or
+  provider billing stop. Longer representative staging load/soak and edge/TLS/
+  connection controls remain package 6 gates. No owner risk waiver was requested
+  or inferred from permission to implement this package.
+- After review/merge: active PostgreSQL/media backup, rebuild, updated hostcheck
+  ready true, migration 0019, one Pixel render/save/playback and aggregate monitoring
+  check. See [capacity/security runbook](docs/CAPACITY_SECURITY.md). Native Windows
+  adapters do not establish the changed strict Linux output-file policy.
+
+### Owner-reported package 4 acceptance — 2026-11-08
+
+Owner merged PR **#23**, backed up PostgreSQL and rebuilt the Docker stack. Supplied
+monitoring report: status ok/no issues, two successful jobs/attempts, one fresh idle
+worker/one stopped, zero expired/missing claims, no truncation. One new render had
+8.059s attempt wall, 7.686s encode, 14.83 lower-bound decoder CPU seconds and
+330,002,432 maximum sampled RSS bytes; download/ingress measurements present.
+Prices were unset/null; one older job lacked new spans/artifact measures, expected
+historical unknown coverage. Owner explicitly confirmed Pixel save and playback.
+These are supplied host/device results, not independent cloud-agent device tests;
+remote CI and external collector/vault/provider reconciliation remain unobserved.
+This supersedes package 4's historical owner-check pending notes below.
+
 ## Phase 2 package 4 — monitoring, secrets and measured-cost coverage
 
 Implementation branch `dev/phase-2-monitoring-secrets-costs`, based on confirmed

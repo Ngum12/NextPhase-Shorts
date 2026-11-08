@@ -5,6 +5,12 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+# Legacy regressions exercise owner limits; dedicated capacity tests set small global limits.
+os.environ['GLOBAL_ACTIVE_LIMIT']='10000'
+os.environ['GLOBAL_PROCESSING_LIMIT']='100'
+os.environ['GLOBAL_STORAGE_BYTES']='1099511627776'
+os.environ['INGRESS_LIMIT']='100'
+os.environ['MIN_FREE_DISK_BYTES']='0'
 # Isolated tests never read operator-mounted credentials or dotenv file bindings.
 for key in ['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE']:os.environ[key]=''
 os.environ["AUTH_MAIL_BACKEND"] = "disabled"
@@ -63,12 +69,18 @@ def finish_active_fixture_work():
     yield
     from sqlalchemy import update
     from app.db import SessionLocal
-    from app.models import RenderJob,RenderAttempt,QueueSignal,utcnow
+    from app.models import RenderJob,RenderAttempt,QueueSignal,UploadSession,utcnow
     with SessionLocal.begin() as db:
         db.execute(update(RenderJob).where(RenderJob.status.in_(('queued','processing')))
             .values(status='cancelled',claim_token=None,lease_expires_at=None,claim_deadline_at=None,next_attempt_at=None))
         db.execute(update(RenderAttempt).where(RenderAttempt.status=='running').values(status='cancelled',finished_at=utcnow()))
         db.execute(update(QueueSignal).values(completed_at=utcnow(),lease_token=None,lease_until=None))
+        # Old legacy-inventory fixtures are no longer live after their test; avoid
+        # contaminating the next test's shared global inventory gate.
+        from sqlalchemy import or_
+        for model in (RenderJob,UploadSession):
+            db.execute(update(model).where(or_(model.storage_reserved_bytes.is_(None),model.max_render_bytes.is_(None)))
+                .values(storage_reserved_bytes=0,max_render_bytes=67108864))
 
 
 def pytest_sessionfinish(session, exitstatus):

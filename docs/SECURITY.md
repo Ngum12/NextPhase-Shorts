@@ -117,3 +117,13 @@ consumers on rotation; JWT rotation deliberately requires re-login. External vau
 collector/alert routing, edge logs, provider billing reconciliation, metadata
 retention and privacy/security signoff remain deployment/capacity gates. See
 MONITORING_SECRETS_COSTS.md; no public metrics endpoint or telemetry network sender.
+
+Package 5 adds owner-then-global admission locking, shared retained/scratch budgets,
+worker concurrency/free-space checks, pre-parser body caps and bounded API execution.
+Intake reservations remain charged after crashes until explicit stopped-writer
+recovery. Strict decoder writes are narrowed to one precreated file with hard
+RLIMIT_FSIZE. Trace/stopped-worker retention is bounded, not full metadata erasure.
+A disposable PostgreSQL/media restore and 100-request/steady-soak exercise are
+implemented. See CAPACITY_SECURITY.md and SECURITY_REVIEW_2026-11-08.md: unresolved
+17 npm findings, image/legal/privacy/backup-journal and real staging quotas remain
+public-launch blockers, not accepted production risks.

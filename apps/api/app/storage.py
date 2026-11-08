@@ -40,6 +40,8 @@ def require_capacity(db,owner_id,amount):
     current=usage(db,owner_id)
     if current['uninventoried_count']:
         raise HTTPException(409,'Storage usage is being verified. New uploads are temporarily unavailable.')
+    from .capacity import admit
+    admit(db,amount)
     if amount>current['available_bytes']:
         raise HTTPException(409,'Your server storage budget is full. Delete projects or discard pending uploads, then wait for server cleanup.')
 
