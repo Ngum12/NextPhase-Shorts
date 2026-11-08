@@ -1,5 +1,10 @@
 # Changelog
 
+## Independent restore journal and replay gate
+
+- Record encrypted independent write-ahead security intentions; reapply post-snapshot deletions, invalidate restored credentials/passwords, and require explicit offline release after a capability-retirement interval.
+- Add create-only local Docker setup, SQLite/PostgreSQL HTTP restore drills and fail-closed regressions. Offsite backups, immutable key/checkpoint custody and production fencing remain open.
+
 ## SDK 58 Android picker/private-copy fix
 
 - Copy Android user-selected provider URIs directly into private upload storage with awaited modern File.copy; preserve iOS cache behavior, failed-copy cleanup and resumable journals. Includes the Windows tooling-path test correction.

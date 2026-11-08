@@ -136,3 +136,14 @@ a completed vulnerability/legal scan. The owner's package 5 updated strict-host/
 render/Save/playback checks passed. Remaining engineering/owner/provider gates and
 unpublished policy draft are in STAGING_BLOCKERS.md / PRIVACY_TERMS_DRAFT.md; no
 public staging, paid resource, real mail, billing, AI or legal signoff was enabled.
+
+
+Independent local restore protection records encrypted write-ahead deletion/
+revocation intentions outside DB/media snapshots. Offline replay verifies the
+full chain against a separately retained current checkpoint, revokes all restored
+credentials/passwords, reapplies tombstones and leaves an explicit access hold.
+A 120-second minimum retirement interval precedes release. API staging/production
+requires a configured ready journal; local development is opt-in. This cannot
+automatically detect arbitrary manual DB rollback or replace old-host fencing,
+immutable/offsite journal/key custody, encrypted backups or complete remote erasure.
+See RESTORE_JOURNAL.md for failure, privacy and recovery boundaries.

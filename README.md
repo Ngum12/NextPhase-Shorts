@@ -269,3 +269,12 @@ Package 6 preparation resolves the mobile advisory graph with Expo SDK 58 and
 reviewed tool patches. Use an SDK 58-compatible Expo Go client. See
 [upgrade and remaining staging gates](docs/STAGING_BLOCKERS.md). Zero npm findings
 is not production/security/legal signoff.
+
+
+Package 6 backup safety adds an opt-in independent encrypted local journal and
+explicit offline restore/release gate. Protected restores require fresh password
+recovery and reapply post-snapshot deletions; back up and migrate **0020** first,
+then explicitly bind the current stopped source before protected snapshots.
+API staging/production now requires the journal. Local Docker activation uses the
+reviewed `compose.restore-journal.yaml` overlay; preserve its independent volume
+when restoring DB/media. See [setup, automated proof and remaining offsite gates](docs/RESTORE_JOURNAL.md).

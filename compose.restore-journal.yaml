@@ -1,0 +1,30 @@
+# Optional local Docker protection, layered over compose.yaml after review.
+# A separate volume avoids DB/media rollback; it is NOT offsite/immutable storage.
+services:
+  api:
+    environment:
+      RESTORE_JOURNAL_DIR: /var/nextphase/restore/events
+      RESTORE_JOURNAL_KEY: ''
+      RESTORE_JOURNAL_KEY_FILE: /var/nextphase/restore/journal.key
+    volumes:
+      - restore-journal-data:/var/nextphase/restore
+  journal-init:
+    profiles: [maintenance]
+    build:
+      context: ./apps/api
+    entrypoint: python
+    command: -m app.restore_setup
+    user: '0:0'
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 1.0
+    pids_limit: 32
+    volumes:
+      - restore-journal-data:/var/nextphase/restore
+    restart: 'no'
+volumes:
+  restore-journal-data:

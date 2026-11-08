@@ -104,6 +104,9 @@ def logout(auth: AuthContext = Depends(current_auth), db: Session = Depends(sess
     lock_owner(db, auth.user.id)
     if auth.session.family_id:
         revoke_families(db, auth.user.id, auth.session.family_id)
+    else:
+        from .restore_journal import record
+        record('revoke',auth.user.id)
     db.execute(update(AuthSession).where(AuthSession.id == auth.session.id,
         AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))
     db.commit()
@@ -140,6 +143,8 @@ def change_password(data: PasswordChange, request: Request, auth: AuthContext = 
     if not verify_password(data.current_password, auth.user.password_hash):
         db.rollback()
         raise HTTPException(400, 'Current password is incorrect')
+    from .restore_journal import record
+    record('password',auth.user.id)
     auth.user.password_hash = make_password_hash(data.new_password)
     invalidate_actions(db,auth.user.id)
     revoke_families(db,auth.user.id)

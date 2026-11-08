@@ -142,6 +142,8 @@ def confirm_reset(payload:ResetRequest,request:Request,db:Session=Depends(sessio
     require_enabled();limit_confirmation(request,payload.code,'reset')
     new_hash=make_password_hash(payload.new_password)
     _,user=action_owner(db,payload.code,'reset')
+    from .restore_journal import record
+    record('password',user.id)
     user.password_hash=new_hash;invalidate_actions(db,user.id)
     revoke_families(db,user.id)
     db.execute(update(AuthSession).where(AuthSession.user_id==user.id,AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))

@@ -107,3 +107,11 @@ reviewed and implemented.
 
 No policy/terms were published, no recipient was contacted, no provider contract
 accepted and no legal approval inferred from preparing this draft.
+
+
+Engineering draft update: independent encrypted **local** deletion/revocation
+journaling, DB stream binding and explicit offline restore/release are implemented.
+Protected restores invalidate all old credentials/passwords and require fresh
+recovery; unbound/pre-activation snapshots are refused. This does not complete
+immutable/offsite custody, encrypted snapshot retention, actual production fencing
+or remote/versioned erasure. This draft remains unpublished and unapproved.

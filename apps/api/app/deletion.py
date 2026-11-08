@@ -22,6 +22,8 @@ def delete_project(job_id:str,user:User=Depends(current_user),db:Session=Depends
     job=db.scalar(select(RenderJob).where(RenderJob.id==job_id,RenderJob.user_id==user.id).with_for_update())
     if job is None:raise HTTPException(404,'Project not found')
     if job.status!='deleted':
+        from .restore_journal import record
+        record('project_delete',user.id,project=job.id,backend=job.media_backend,namespace=job.object_store_id)
         now=utcnow()
         # Short renewable leases are not writer-lifetime bounds. Preserve the
         # hard deadlines of cancelled/lost attempts before revoking their tokens.

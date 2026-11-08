@@ -22,7 +22,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='nextphase-email-proof-') as temporary:
         private=Path(temporary)/'sink';email=uuid.uuid4().hex+'@example.com'
         password=secrets.token_urlsafe(24);new_password=secrets.token_urlsafe(24)
-        env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE'], '')}
+        env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR'], '')}
         env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
             STORAGE_DIR=temporary+'/media',JWT_SECRET=secrets.token_urlsafe(48),MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false',
             AUTH_MAIL_BACKEND='resend',AUTH_MAIL_SEND_ENABLED='true',AUTH_MAIL_DIR=temporary+'/mail',

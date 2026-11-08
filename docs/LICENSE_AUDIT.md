@@ -229,3 +229,11 @@ Apache-2.0 permits commercial font use subject to its notice/license conditions;
 this unmodified navigation font is not copied from a reference kit or used by the
 server video renderer. React Navigation Elements' MIT notice is also retained for
 bundled navigation assets. No proprietary stock video/music/font was introduced.
+
+
+## Independent restore journal increment
+
+No dependency, reference-kit code/media/font, paid provider or license change.
+Journal encryption uses the already inventoried cryptography 50.0.2 Fernet API;
+HMAC/fsync/flock and snapshot fixtures use standard Python/Linux/PostgreSQL tools.
+Existing notices and unresolved full OS/transitive/codec/legal gates remain.

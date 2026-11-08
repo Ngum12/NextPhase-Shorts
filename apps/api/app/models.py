@@ -278,3 +278,10 @@ class IngressLease(Base):
     reserved_bytes: Mapped[int] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+
+
+class RestoreJournalBinding(Base):
+    __tablename__='restore_journal_binding'
+    id: Mapped[int] = mapped_column(Integer,primary_key=True)
+    journal_id: Mapped[str] = mapped_column(String(36))
+    bound_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
