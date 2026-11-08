@@ -67,3 +67,11 @@ public metrics/admin route is added. Minimal `/ready` exposes no dependency deta
 Validated structured worker events omit arbitrary messages, exception text and
 credentials; correlation UUIDs and all operational logs remain private. This is not
 a global logging/retention certification. See OPERATIONS.md for heartbeat boundaries.
+
+Local email-action proof handling is implemented with delivery off by default and
+a file-only development/test adapter. It is forbidden in staging/production and
+not proof of actual email ownership. One-use credential-bound hashes, owner locks,
+revocation, secret-free validation and private inbox permissions are tested. Local
+message files contain codes/recipients and are outside media erasure; protect/remove
+disposable test messages. Real delivery/enforcement/outbox/privacy gates remain open.
+See AUTH_RECOVERY.md; no SMTP/provider or unauthenticated recovery bypass enabled.

@@ -29,6 +29,18 @@ class Settings:
             raise RuntimeError('Invalid media backend or signed download lifetime (5–60 seconds)')
         if self.media_backend == 's3':
             self.validate_s3()
+        self.auth_mail_backend=os.getenv('AUTH_MAIL_BACKEND','disabled')
+        self.auth_mail_dir=Path(os.getenv('AUTH_MAIL_DIR',str(self.storage_dir.parent/'auth-mail'))).absolute()
+        self.auth_action_minutes=int(os.getenv('AUTH_ACTION_MINUTES','15'))
+        self.auth_action_email_limit=int(os.getenv('AUTH_ACTION_EMAIL_LIMIT','3'))
+        if self.auth_mail_backend not in ('disabled','file'):
+            raise RuntimeError('Only disabled or local file mail is implemented')
+        if self.auth_mail_backend=='file' and self.env not in ('development','test'):
+            raise RuntimeError('Local file mail is forbidden in staging/production')
+        if self.auth_mail_dir.resolve()==self.storage_dir or self.storage_dir in self.auth_mail_dir.resolve().parents:
+            raise RuntimeError('Authentication mail must be outside media storage')
+        if not 5<=self.auth_action_minutes<=30 or not 1<=self.auth_action_email_limit<=20:
+            raise RuntimeError('Auth actions require 5–30 minute expiry and 1–20 requests per email window')
         self.jwt_secret = os.getenv("JWT_SECRET", "")
         self.max_upload_bytes = int(os.getenv("MAX_UPLOAD_BYTES", "314572800"))
         self.account_storage_bytes = int(os.getenv('ACCOUNT_STORAGE_BYTES','5368709120'))

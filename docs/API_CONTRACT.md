@@ -87,3 +87,14 @@ GET `/health` remains process liveness. GET `/ready` returns 200 or 503 with onl
 `ok` and `service`, no-store, based on DB/current-schema availability. It does not
 guarantee workers or object-provider readiness. Detailed snapshots are operator-only
 CLI commands, with no public metrics endpoint. See OPERATIONS.md.
+
+## Local email action preview
+
+Migration 0014 adds optional `email_verified_at` / `email_verification_method` to /me.
+Only local_file proof is implemented, with no enforced verification gate. Read-only
+GET `/api/v1/auth/recovery-capabilities` reports disabled/local_file availability.
+POST password-reset/request takes email; email-verification/request requires bearer.
+Both use generic 202 acceptance, never codes. POST password-reset/confirm takes
+code/new_password; email-verification/confirm takes code. Confirmations require an
+expiring one-use proof and return 204, never a session. Default disabled mode rejects
+confirmation with 503. Auth input errors are sanitized 422/no-store. See AUTH_RECOVERY.md.

@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from starlette.background import BackgroundTask
 from sqlalchemy import select, update
@@ -14,6 +16,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from .auth import current_user
 from .auth_routes import router as auth_router
+from .auth_actions import router as auth_actions_router
 from .deletion import router as deletion_router
 from .config import get_settings
 from .db import engine, session_dep
@@ -49,7 +52,14 @@ app.include_router(uploads_router)
 app.include_router(direct_uploads_router)
 app.include_router(account_deletion_router)
 app.include_router(auth_router)
+app.include_router(auth_actions_router)
 app.include_router(deletion_router)
+
+@app.exception_handler(RequestValidationError)
+async def safe_auth_validation(request,error):
+    if request.url.path.startswith('/api/v1/auth/'):
+        return JSONResponse({'detail':'Invalid authentication request'},status_code=422,headers={'Cache-Control':'no-store'})
+    return await request_validation_exception_handler(request,error)
 
 @app.get("/health")
 def health():

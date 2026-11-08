@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .auth import AuthContext, DUMMY_HASH, current_auth, unauthorized, make_password_hash, make_token, verify_password
 from .auth_limits import consume_limits
+from .auth_action_tokens import invalidate_actions
 from .config import get_settings
 from .db import session_dep
 from .models import AuthSession, User, utcnow
@@ -104,6 +105,7 @@ def change_password(data: PasswordChange, request: Request, auth: AuthContext = 
         db.rollback()
         raise HTTPException(400, 'Current password is incorrect')
     auth.user.password_hash = make_password_hash(data.new_password)
+    invalidate_actions(db,auth.user.id)
     db.execute(update(AuthSession).where(AuthSession.user_id == auth.user.id,
         AuthSession.revoked_at.is_(None)).values(revoked_at=utcnow()))
     db.commit()

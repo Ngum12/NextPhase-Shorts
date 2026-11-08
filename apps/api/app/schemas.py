@@ -14,6 +14,8 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
     email: str
+    email_verified_at: datetime | None
+    email_verification_method: str | None
 
 class JobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

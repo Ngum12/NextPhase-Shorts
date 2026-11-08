@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     with tempfile.TemporaryDirectory(prefix='nextphase-account-smoke-') as temporary:
         directory=Path(temporary);env=os.environ.copy()
-        env.update(APP_ENV='test',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
+        env.update(APP_ENV='test',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_DIR=temporary+'/auth-mail',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
             STORAGE_DIR=temporary+'/media',JWT_SECRET=secrets.token_urlsafe(48))
         subprocess.run([sys.executable,'-m','app.migrate'],cwd=ROOT,env=env,check=True,timeout=30)
         source=directory/'source.mp4'
