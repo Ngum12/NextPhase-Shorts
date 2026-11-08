@@ -114,8 +114,8 @@ def test_lost_part_commit_ack_can_resume_without_advancing_twice(client, context
         raise RuntimeError('lost part acknowledgement')
     with monkeypatch.context() as patch:
         patch.setattr(Session, 'commit', lose_ack)
-        with pytest.raises(RuntimeError, match='lost part'):
-            put(client, owner, session, 0, b'12345678')
+        failed=put(client, owner, session, 0, b'12345678')
+        assert failed.status_code==500 and 'lost part' not in failed.text
     assert client.get(f'/api/v1/upload-sessions/{session}', headers=owner).json()['received_bytes'] == 8
     assert put(client, owner, session, 0, b'12345678').json()['received_bytes'] == 8
 
@@ -233,8 +233,8 @@ def test_lost_completion_ack_keeps_source_and_returns_original_job(client, conte
         raise RuntimeError('lost completion acknowledgement')
     with monkeypatch.context() as patch:
         patch.setattr(Session, 'commit', lose_ack)
-        with pytest.raises(RuntimeError, match='lost completion'):
-            client.post(f'/api/v1/upload-sessions/{session}/complete', headers=owner)
+        failed=client.post(f'/api/v1/upload-sessions/{session}/complete', headers=owner)
+        assert failed.status_code==500 and 'lost completion' not in failed.text
     snapshot = client.get(f'/api/v1/upload-sessions/{session}', headers=owner).json()
     assert snapshot['status'] == 'completed'
     replay = client.post(f'/api/v1/upload-sessions/{session}/complete', headers=owner)

@@ -337,3 +337,21 @@ def test_queue_migration_preserves_deadline_media_and_scrubs_legacy_dead_letter_
         assert row.lease_expires_at==row.claim_deadline_at and row.next_attempt_at is None
         assert connection.scalar(sa.text("SELECT reason FROM render_dead_letters WHERE job_id='old-failed'"))=='LEGACY_FAILURE'
         assert connection.scalar(sa.text('SELECT count(*) FROM queue_signals'))==0
+
+
+def test_observation_upgrade_keeps_historical_costs_unknown_and_media_intact(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0017_queue_supervision')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at) VALUES ('u','u@example.com','hash',CURRENT_TIMESTAMP)"))
+        connection.execute(sa.text("""INSERT INTO render_jobs
+            (id,user_id,title,style,desired_seconds,source_duration_seconds,source_path,status,attempt_count,created_at)
+            VALUES ('j','u','keep','vlog',15,5,'keep/media.mp4','queued',0,CURRENT_TIMESTAMP)"""))
+    upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        job=connection.execute(sa.text('SELECT source_path,status,trace_id,parent_span_id FROM render_jobs')).one()
+        assert job.source_path=='keep/media.mp4' and job.status=='queued'
+        assert job.trace_id is None and job.parent_span_id is None
+        assert connection.scalar(sa.text('SELECT count(*) FROM observations'))==0
+        assert connection.scalar(sa.text('SELECT count(*) FROM artifact_measures'))==0

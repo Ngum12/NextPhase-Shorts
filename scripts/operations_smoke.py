@@ -36,6 +36,24 @@ def main():
             if row.get('component')=='worker':events.append(row['event'])
     assert events.count('render_completed')>=2 and 'worker_started' in events
     if os.name!='nt':assert 'worker_stopped' in events
+    from app.monitoring import snapshot as monitoring_snapshot,prometheus
+    from app.observability import export
+    from app.models import Observation
+    with SessionLocal() as db:
+        monitoring=monitoring_snapshot(db)
+        observations=list(db.scalars(select(Observation)))
+        assert observations and {'encode','output_probe','http_download'} <= {row.stage for row in observations}
+        assert monitoring['costs']['api_received_bytes']>0
+        assert monitoring['costs']['decoder_cpu_samples']>0 if os.name!='nt' else True
+        assert monitoring['costs']['estimated_observed_total'] is None
+        assert 'nextphase_monitor_attention' in prometheus(monitoring)
+        trace_payload=export(db)
+        assert trace_payload['resourceSpans'][0]['scopeSpans'][0]['spans']
+    target=output/'traces.otlp.json'
+    exported=subprocess.run([sys.executable,'-m','app.monitoring','--format','otlp','--output',str(target)],capture_output=True,text=True,timeout=30)
+    assert exported.returncode==0 and json.loads(exported.stdout)['export_written']
+    assert json.loads(target.read_text(encoding='utf-8'))['resourceSpans']
+    print('Monitoring: correlated OTLP export, stage/resource samples and transfer counters passed; prices unset, unknown coverage explicit')
     engine.dispose()
     print(json.dumps({'live_heartbeat_advanced':True,'shutdown_stopped_records':snapshot['workers']['stopped'],
         'expired_claim_cli_exit':checked.returncode,'structured_completed_events':events.count('render_completed'),

@@ -32,7 +32,7 @@ def reserved_upload_count(db, user_id, exclude=None):
     return db.scalar(query)
 
 
-def admit_job(db, job, *, upload_session_id=None):
+def admit_job(db, job, *, upload_session_id=None,source_bytes=None):
     """Returns (job, replayed); caller commits. Fingerprint includes source bytes."""
     lock_owner(db, job.user_id)
     if job.idempotency_key:
@@ -43,6 +43,8 @@ def admit_job(db, job, *, upload_session_id=None):
                 raise HTTPException(410, 'This project was deleted. Start a new upload with a new key.')
             if existing.request_hash != job.request_hash:
                 raise HTTPException(409, 'This upload key was already used for a different video or settings')
+            from .observability import bind_job
+            bind_job(existing)
             return existing, True
     reservation = None
     if upload_session_id:
@@ -60,8 +62,13 @@ def admit_job(db, job, *, upload_session_id=None):
         raise ValueError('Admission requires a server storage reservation')
     if reservation is None:
         require_capacity(db,job.user_id,job.storage_reserved_bytes)
+    from .observability import bind_job
+    bind_job(job)
     db.add(job)
     db.flush()
+    if source_bytes is not None:
+        from .costs import measure_artifact
+        measure_artifact(job.id,'original',source_bytes,db=db)
     if get_settings().queue_backend=='valkey':
         import uuid
         now=utcnow()

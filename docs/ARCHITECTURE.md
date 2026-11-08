@@ -36,3 +36,11 @@ See [storage boundaries](PRIVATE_OBJECT_STORAGE.md).
 4. Video access and outputs are owner-scoped; server rejects invalid media and never trusts user-supplied paths, URLs or AI-generated commands.
 5. No production subscriptions or quotas until webhooks, store policies, invoices, refunds and entitlements have been independently tested.
 6. Licenses for original uploaded skill packs are not automatically transferable for SaaS; don't bundle restricted code/assets.
+
+Package 4: admission persists server-generated trace/parent IDs; strict broker
+messages remain unchanged. Separate private observation transactions record
+fixed-schema stages and bytes; telemetry gaps never revoke durable job outcomes.
+Operator CLIs export OTLP JSON/Prometheus text and compute partial estimates from
+explicit rates. Mounted server secret files are read at startup without copying
+values into decoder environments. No public metrics route or automatic external
+exporter. See MONITORING_SECRETS_COSTS.md for coverage/rotation boundaries.

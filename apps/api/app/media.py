@@ -9,6 +9,8 @@ import time
 from typing import Callable
 from pathlib import Path
 from .config import get_settings
+from .observability import stage,active_attributes
+from .resource_measure import DecoderSamples
 from .media_policy import CODEC_THREADS, input_args, validate_metadata
 
 class MediaError(Exception):
@@ -58,12 +60,14 @@ def run_render(cmd, timeout, should_cancel):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
+    samples=DecoderSamples()
     child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout)
     # Diagnostics are deliberately discarded: malformed media cannot grow a
     # PIPE buffer without bound or put private source paths into general logs.
     with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:
         try:
             while True:
+                samples.sample(process.pid)
                 if should_cancel():
                     raise MediaCancelled('Render cancelled or lease lost')
                 remaining = timeout - (time.monotonic() - started)
@@ -73,12 +77,13 @@ def run_render(cmd, timeout, should_cancel):
                     process.wait(timeout=min(0.25, remaining))
                     if process.returncode:
                         raise subprocess.CalledProcessError(process.returncode, cmd)
-                    return
+                    return samples.attributes()
                 except subprocess.TimeoutExpired:
                     if time.monotonic() - started >= timeout:
                         raise
         finally:
             teardown_decoder(process)
+            if active_attributes.get() is not None:active_attributes.get().update(samples.attributes())
 
 
 def probe_video(path: Path) -> dict:
@@ -106,7 +111,8 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes:
         raise MediaError("Duration must be 1–60 seconds")
     max_output_bytes = max_output_bytes or get_settings().max_render_bytes
     if should_cancel is not None and should_cancel():raise MediaCancelled('Render cancelled')
-    source_info=probe_video(source)
+    with stage('source_probe'):
+        source_info=probe_video(source)
     if source_info['duration']>get_settings().max_source_seconds:
         raise MediaError('Source exceeds the configured duration limit')
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -132,10 +138,15 @@ def render_baseline(source: Path, dest: Path, seconds: int, *, max_output_bytes:
                 raise OutputLimitExceeded('Rendered file exceeded its reserved output limit')
             return should_cancel() if should_cancel is not None else False
         # Abort oversize output, never silently truncate it into a shorter export.
-        run_render(cmd, get_settings().render_timeout_seconds, stop_requested)
+        with stage('encode') as observed:
+            measurements=run_render(cmd, get_settings().render_timeout_seconds, stop_requested)
+            observed.update(measurements or {})
         if tmp.stat().st_size >= max_output_bytes:
             raise OutputLimitExceeded('Rendered file exceeded its reserved output limit')
-        info = probe_video(tmp)
+        with stage('output_probe') as qa:
+            info = probe_video(tmp)
+            qa['frames']=round(info['duration']*30)
+            if observed.get('wall_seconds',0)>0:qa['frames_per_second']=qa['frames']/observed['wall_seconds']
         if info["width"] != 1080 or info["height"] != 1920 or info["duration"] > float(seconds) or info["duration"] > 60.0:
             raise MediaError("Rendered video failed aspect ratio or duration check")
         if should_cancel is not None and should_cancel():

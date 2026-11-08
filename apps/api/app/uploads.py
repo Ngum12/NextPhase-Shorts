@@ -376,7 +376,7 @@ def complete_session(session_id: str, user: User = Depends(upload_user), db: Ses
                               source_path=source_reference, status='queued',
                               storage_reserved_bytes=row.storage_reserved_bytes or reservation(row.total_bytes,settings.max_render_bytes),
                               max_render_bytes=row.max_render_bytes or settings.max_render_bytes)
-        job, _ = admit_job(db, candidate, upload_session_id=session_id)
+        job, _ = admit_job(db, candidate, upload_session_id=session_id,source_bytes=row.total_bytes)
         row.status, row.job_id, row.source_sha256 = 'completed', job.id, full_hash.hexdigest()
         retain_source = True  # Preserve accepted input even if COMMIT acknowledgement is lost.
         db.commit()
