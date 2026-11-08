@@ -190,3 +190,30 @@ class AuthAction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    delivery_method: Mapped[str] = mapped_column(String(16),server_default='local_file')
+
+
+class MailOutbox(Base):
+    __tablename__ = 'mail_outbox'
+    id: Mapped[str] = mapped_column(String(36),primary_key=True,default=uuid_str)
+    user_id: Mapped[str] = mapped_column(ForeignKey('users.id'),index=True)
+    action_id: Mapped[str] = mapped_column(ForeignKey('auth_actions.id'),unique=True)
+    payload: Mapped[str | None] = mapped_column(Text,nullable=True)  # authenticated encryption; no plaintext secrets
+    state: Mapped[str] = mapped_column(String(16),default='pending',index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),index=True)
+    attempts: Mapped[int] = mapped_column(Integer,default=0)
+    lease_token: Mapped[str | None] = mapped_column(String(36),nullable=True)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
+    last_code: Mapped[str | None] = mapped_column(String(32),nullable=True)
+
+
+class MailBudget(Base):
+    __tablename__ = 'mail_budgets'
+    id: Mapped[str] = mapped_column(String(16),primary_key=True)
+    day: Mapped[str] = mapped_column(String(10))
+    month: Mapped[str] = mapped_column(String(7))
+    daily_attempts: Mapped[int] = mapped_column(Integer)
+    monthly_attempts: Mapped[int] = mapped_column(Integer)
+    next_send_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -6,6 +6,10 @@ from pathlib import Path
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
 os.environ["AUTH_MAIL_BACKEND"] = "disabled"
+os.environ['AUTH_MAIL_SEND_ENABLED']='false'
+os.environ['AUTH_REQUIRE_VERIFIED_EMAIL']='false'
+os.environ['RESEND_API_KEY']=''
+os.environ['AUTH_MAIL_ENCRYPTION_KEYS']=''
 os.environ["AUTH_MAIL_DIR"] = str(ROOT / "auth-mail")
 os.environ['MEDIA_BACKEND'] = 'local'
 os.environ['DIRECT_UPLOADS_ENABLED'] = 'false'

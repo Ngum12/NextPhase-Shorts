@@ -33,8 +33,37 @@ class Settings:
         self.auth_mail_dir=Path(os.getenv('AUTH_MAIL_DIR',str(self.storage_dir.parent/'auth-mail'))).absolute()
         self.auth_action_minutes=int(os.getenv('AUTH_ACTION_MINUTES','15'))
         self.auth_action_email_limit=int(os.getenv('AUTH_ACTION_EMAIL_LIMIT','3'))
-        if self.auth_mail_backend not in ('disabled','file'):
-            raise RuntimeError('Only disabled or local file mail is implemented')
+        self.auth_mail_send_enabled=os.getenv('AUTH_MAIL_SEND_ENABLED','false').lower()=='true'
+        self.resend_api_key=os.getenv('RESEND_API_KEY','')
+        self.auth_mail_from=os.getenv('AUTH_MAIL_FROM','')
+        self.auth_mail_keys=[part.strip() for part in os.getenv('AUTH_MAIL_ENCRYPTION_KEYS','').split(',') if part.strip()]
+        self.auth_mail_recipients=tuple(part.strip().lower() for part in os.getenv('AUTH_MAIL_RECIPIENTS','').split(',') if part.strip())
+        self.auth_mail_daily_limit=int(os.getenv('AUTH_MAIL_DAILY_LIMIT','20'))
+        self.auth_mail_monthly_limit=int(os.getenv('AUTH_MAIL_MONTHLY_LIMIT','500'))
+        self.auth_require_verified_email=os.getenv('AUTH_REQUIRE_VERIFIED_EMAIL','false').lower()=='true'
+        if self.auth_mail_backend not in ('disabled','file','resend'):
+            raise RuntimeError('Invalid authentication mail backend')
+        if not 1<=self.auth_mail_daily_limit<=100 or not self.auth_mail_daily_limit<=self.auth_mail_monthly_limit<=3000:
+            raise RuntimeError('Mail attempt caps require 1–100/day and daily–3000/month')
+        if self.auth_mail_send_enabled and self.auth_mail_backend!='resend':
+            raise RuntimeError('Real email sending requires the resend backend')
+        if self.auth_mail_keys:
+            from cryptography.fernet import Fernet
+            try:
+                for key in self.auth_mail_keys:Fernet(key.encode())
+            except (ValueError,TypeError):raise RuntimeError('Invalid mail encryption key configuration') from None
+        if self.auth_mail_send_enabled:
+            from email_validator import validate_email,EmailNotValidError
+            try:
+                validate_email(self.auth_mail_from,check_deliverability=False)
+                for address in self.auth_mail_recipients:validate_email(address,check_deliverability=False)
+            except EmailNotValidError:raise RuntimeError('Invalid mail sender or recipient configuration') from None
+            if not self.auth_mail_keys or not 16<=len(self.resend_api_key)<=512 or any(c.isspace() for c in self.resend_api_key):
+                raise RuntimeError('Real mail requires separate encryption keys and a server API key')
+            if self.env in ('development','test') and not 1<=len(self.auth_mail_recipients)<=5:
+                raise RuntimeError('Development email requires an explicit 1–5 recipient allowlist')
+        if self.auth_require_verified_email and not (self.auth_mail_backend=='resend' and self.auth_mail_send_enabled):
+            raise RuntimeError('Verified-upload policy requires enabled real email delivery')
         if self.auth_mail_backend=='file' and self.env not in ('development','test'):
             raise RuntimeError('Local file mail is forbidden in staging/production')
         if self.auth_mail_dir.resolve()==self.storage_dir or self.storage_dir in self.auth_mail_dir.resolve().parents:
@@ -42,6 +71,8 @@ class Settings:
         if not 5<=self.auth_action_minutes<=30 or not 1<=self.auth_action_email_limit<=20:
             raise RuntimeError('Auth actions require 5–30 minute expiry and 1–20 requests per email window')
         self.jwt_secret = os.getenv("JWT_SECRET", "")
+        if self.jwt_secret and self.jwt_secret in self.auth_mail_keys:
+            raise RuntimeError('Mail encryption keys must be separate from the session secret')
         self.max_upload_bytes = int(os.getenv("MAX_UPLOAD_BYTES", "314572800"))
         self.account_storage_bytes = int(os.getenv('ACCOUNT_STORAGE_BYTES','5368709120'))
         self.max_render_bytes = int(os.getenv('MAX_RENDER_BYTES','67108864'))

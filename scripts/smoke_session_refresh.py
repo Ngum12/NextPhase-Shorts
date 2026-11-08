@@ -22,7 +22,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='nextphase-refresh-') as temporary:
         env=os.environ.copy()
         env.update(APP_ENV='test',PYTHONPATH=str(ROOT/'apps/api'),DATABASE_URL='sqlite:///'+temporary+'/db.sqlite3',
-            STORAGE_DIR=temporary+'/media',JWT_SECRET=secrets.token_urlsafe(48),AUTH_MAIL_BACKEND='disabled',
+            STORAGE_DIR=temporary+'/media',JWT_SECRET=secrets.token_urlsafe(48),AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',
             AUTH_MAIL_DIR=temporary+'/mail',MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false',AUTH_ACCESS_MINUTES='1',
             AUTH_REFRESH_IP_LIMIT='120',AUTH_REGISTER_IP_LIMIT='10',AUTH_LOGIN_ACCOUNT_LIMIT='10',AUTH_LOGIN_IP_LIMIT='30')
         subprocess.run([sys.executable,'-m','app.migrate'],cwd=ROOT,env=env,check=True,timeout=30)

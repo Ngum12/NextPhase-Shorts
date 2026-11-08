@@ -6484,10 +6484,26 @@
     },
     {
       "ecosystem": "pypi",
+      "name": "cffi",
+      "version": "2.1.1",
+      "license": "MIT-0",
+      "source": "https://pypi.org/project/cffi/2.1.1/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
       "name": "click",
       "version": "8.5.0",
       "license": "BSD-3-Clause",
       "source": "https://pypi.org/project/click/8.5.0/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "cryptography",
+      "version": "50.0.2",
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "source": "https://pypi.org/project/cryptography/50.0.2/",
       "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
     },
     {
@@ -6616,6 +6632,14 @@
       "version": "3.3.8",
       "license": "LGPL-3.0-only",
       "source": "https://pypi.org/project/psycopg-binary/3.3.8/",
+      "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pycparser",
+      "version": "3.12",
+      "license": "BSD-3-Clause",
+      "source": "https://pypi.org/project/pycparser/3.12/",
       "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
     },
     {

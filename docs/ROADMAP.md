@@ -8,6 +8,10 @@ It consolidates the historical notes below. Finish packages in order without
 dropping acceptance gates. Package 1 is implemented for review; see
 [session refresh](SESSION_REFRESH.md).
 
+Package 2 Resend/outbox/policy implementation is locally verified for review;
+real provider/inbox/Pixel acceptance stays open. See [delivery runbook](EMAIL_DELIVERY.md).
+No later package is declared complete or skipped by this preparation.
+
 | Priority | Work | Acceptance / dependency |
 |---|---|---|
 | P0, Phase 0/1 | Resolve mobile peers, lock dependencies, validate baseline, document audit | Automated checks and live smoke; tracked evidence in IMPLEMENTATION_STATUS.md |

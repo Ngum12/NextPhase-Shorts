@@ -1,8 +1,11 @@
 import {BASE,extract,authenticatedFetch} from './api';
-export type RecoveryCapabilities={delivery:'disabled'|'local_file';verification_enforced:false};
+export type RecoveryCapabilities={delivery:'disabled'|'local_file'|'email';verification_enforced:boolean};
+export function requiresEmailVerification(caps:RecoveryCapabilities,user:{email_verified_at:string|null;email_verification_method:string|null}) {
+  return caps.verification_enforced&&!(user.email_verified_at&&user.email_verification_method==='resend');
+}
 export async function recoveryCapabilities():Promise<RecoveryCapabilities>{
   const body=await extract(await fetch(`${BASE}/api/v1/auth/recovery-capabilities`,{credentials:'omit'}));
-  if(!['disabled','local_file'].includes(body.delivery)||body.verification_enforced!==false)
+  if(!['disabled','local_file','email'].includes(body.delivery)||typeof body.verification_enforced!=='boolean')
     throw Error('Email action settings are unavailable.');
   return body;
 }

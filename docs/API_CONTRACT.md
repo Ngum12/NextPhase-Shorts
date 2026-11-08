@@ -88,13 +88,23 @@ GET `/health` remains process liveness. GET `/ready` returns 200 or 503 with onl
 guarantee workers or object-provider readiness. Detailed snapshots are operator-only
 CLI commands, with no public metrics endpoint. See OPERATIONS.md.
 
-## Local email action preview
+## Email actions and delivery capability
 
 Migration 0014 adds optional `email_verified_at` / `email_verification_method` to /me.
-Only local_file proof is implemented, with no enforced verification gate. Read-only
-GET `/api/v1/auth/recovery-capabilities` reports disabled/local_file availability.
+Local_file proof stays development-only. Migration 0016 adds optional Resend delivery
+via encrypted durable outbox. Read-only GET `/api/v1/auth/recovery-capabilities`
+reports `delivery: disabled | local_file | email` and boolean `verification_enforced`.
 POST password-reset/request takes email; email-verification/request requires bearer.
 Both use generic 202 acceptance, never codes. POST password-reset/confirm takes
 code/new_password; email-verification/confirm takes code. Confirmations require an
 expiring one-use proof and return 204, never a session. Default disabled mode rejects
 confirmation with 503. Auth input errors are sanitized 422/no-store. See AUTH_RECOVERY.md.
+
+Real-channel confirmation requires an accepted outbox and sets method `resend`.
+Different delivery methods cannot redeem one another's proofs. Generic request
+acceptance means queued/eligible, not sent, delivered or account existence proof.
+With verified policy enabled, upload creation, parts, direct grants/commits and
+completion return 403 until `email_verified_at` is set by the real channel.
+Sign-in/refresh/recovery, reads, abort/discard and deletion remain available.
+Default sending/policy remain disabled. See EMAIL_DELIVERY.md for retry/caps/expiry,
+in-flight cancellation and actual provider/inbox acceptance gates.

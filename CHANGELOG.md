@@ -1,5 +1,18 @@
 # Changelog
 
+## Phase 2 package 2 — optional Resend and verified email
+
+- Migration 0016 adds an encrypted durable outbox, shared attempt budgets and
+  action delivery-method tagging without promoting historical local proofs.
+- Separate fenced sender with stable idempotency, bounded retries, private reports,
+  payload/key lifecycle and password/reset/deletion cancellation.
+- Opt-in server verified-email gate on upload routes and accurate mobile delivery/
+  policy states; sign-in/recovery/deletion and existing-project reads remain open.
+- Private Windows-friendly configuration helper leaves sending disabled. Existing
+  smokes force real email off and include a separate mock-provider restart/crash proof.
+- Added pinned cryptography and preserved notices/inventory. Actual provider/inbox/
+  Pixel acceptance is pending; no real email, paid infrastructure or billing enabled.
+
 ## Phase 2 package 1 — rotating refresh sessions
 
 - Migration 0015 preserves access-only sessions; new logins get short access

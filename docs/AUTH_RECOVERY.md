@@ -1,5 +1,10 @@
 # Local authentication recovery and email proof preview
 
+Historical local-proof runbook. Package 2 now adds optional Resend delivery,
+encrypted durable retries and a verified-upload policy; see
+[EMAIL_DELIVERY.md](EMAIL_DELIVERY.md) for migration 0016 and current behavior.
+The local adapter below remains development-only, never real ownership authority.
+
 **No email provider is configured or contacted.** Delivery defaults to disabled.
 The only implemented adapter is an opt-in private local-file inbox for development
 and disposable-account QA. It is rejected in staging/production. This validates

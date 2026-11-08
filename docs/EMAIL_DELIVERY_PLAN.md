@@ -1,7 +1,9 @@
 # Phase 2 package 2 — real email verification and recovery
 
 Preparation started after the owner reported all package 1 Pixel checks passed.
-This document is a work checklist, not a claim that real delivery is implemented.
+Implementation and local automated verification are now ready for review; see
+[EMAIL_DELIVERY.md](EMAIL_DELIVERY.md). Real inbox/provider/Pixel/CI acceptance is
+still pending, and actual sending stays disabled. This is not production clearance.
 The fixed six-package checklist remains authoritative; no later package is skipped.
 
 ## Existing baseline
@@ -41,7 +43,9 @@ Local proof is deliberately not real-world email ownership; do not promote old
 
 ## Configuration and activation gates
 
-Need provider and sender-domain names first. Secrets belong in server/environment
+Owner selected Resend and reports `auth.techskillnow.com` verified, with a scoped
+API key privately prepared. The intended sender is `noreply@auth.techskillnow.com`.
+No key was supplied to this environment or contacted during tests. Secrets belong in server/environment
 secret storage, never chat, git, `EXPO_PUBLIC_*`, sample commands or logs. A sender
 domain must be controlled and authenticated per provider policy; document SPF/DKIM/
 DMARC, quotas, retention/privacy, terms and costs for the selected provider.

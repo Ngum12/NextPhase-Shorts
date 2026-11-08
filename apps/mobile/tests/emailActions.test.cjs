@@ -47,3 +47,16 @@ test('network failure propagates without success or session mutation',async()=>{
  const f=fixture();f.state.offline=true;
  await assert.rejects(f.actions.confirmPasswordReset('code','new password'),/offline/);assert.deepEqual(f.expired,[]);
 });
+test('real delivery capability permits the verified-email policy without trusting local proof',async()=>{
+ const f=fixture();f.state.status=200;f.state.body={delivery:'email',verification_enforced:true};
+ const caps=await f.actions.recoveryCapabilities();
+ assert.equal(caps.delivery,'email');
+ assert.equal(f.actions.requiresEmailVerification(caps,{email_verified_at:null,email_verification_method:null}),true);
+ assert.equal(f.actions.requiresEmailVerification(caps,{email_verified_at:'now',email_verification_method:'local_file'}),true);
+ assert.equal(f.actions.requiresEmailVerification(caps,{email_verified_at:'now',email_verification_method:'resend'}),false);
+ assert.equal(f.actions.requiresEmailVerification({...caps,verification_enforced:false},{email_verified_at:null,email_verification_method:null}),false);
+});
+test('invalid policy values fail closed without returning provider configuration',async()=>{
+ const f=fixture();f.state.status=200;f.state.body={delivery:'email',verification_enforced:'true'};
+ await assert.rejects(f.actions.recoveryCapabilities(),/unavailable/);
+});

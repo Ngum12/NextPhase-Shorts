@@ -166,7 +166,7 @@ For managed Docker builds behind a TLS-inspecting proxy, see
 For migration 0005, one-time re-login, authentication limits and physical-device
 acceptance, see [auth sessions](docs/AUTH_SESSIONS.md). Email verification, secure
 recovery delivery remain pending; no email service is enabled. Refresh rotation
-is implemented for review; see [session refresh](docs/SESSION_REFRESH.md).
+is implemented and owner-reported Pixel checks passed; see [session refresh](docs/SESSION_REFRESH.md).
 
 Migration 0006 records render-attempt timings and output sizes. Operators can run
 `PYTHONPATH=apps/api python -m app.telemetry` for sample-counted P50/P95 and optional
@@ -235,3 +235,9 @@ Package 1 adds short access tokens, rotating refresh credentials, family revocat
 and durable mobile retry. Back up and migrate **0015** before restarting. Existing
 access-only logins need a new sign-in to enable refresh. No paid service, real email
 or billing is enabled. See [upgrade and focused Pixel check](docs/SESSION_REFRESH.md).
+
+Package 2 implements opt-in Resend delivery, an encrypted durable outbox and
+verified-email upload policy. Default delivery/enforcement remain disabled; actual
+provider/inbox/Pixel acceptance is pending. Stop/back up, install updated Python
+requirements and migrate **0016** before restarting. A private setup helper keeps
+keys out of chat/history/Git and leaves sending off. See [email delivery runbook](docs/EMAIL_DELIVERY.md).

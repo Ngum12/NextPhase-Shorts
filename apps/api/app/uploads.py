@@ -20,7 +20,7 @@ from starlette.requests import ClientDisconnect
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .auth import current_user
+from .auth import current_user,upload_user
 from .catalog import STYLE_IDS
 from .config import get_settings
 from .db import session_dep, SessionLocal
@@ -129,7 +129,7 @@ def cleanup_parts(user_id, session_id):
 
 @router.post('', status_code=201)
 def create_session(payload: SessionRequest, response: Response, idempotency_key: KeyHeader,
-                   user: User = Depends(current_user), db: Session = Depends(session_dep)):
+                   user: User = Depends(upload_user), db: Session = Depends(session_dep)):
     title = payload.title.strip()
     extension = Path(payload.file_name).suffix.lower()
     if not title or payload.style not in STYLE_IDS:
@@ -214,7 +214,7 @@ def get_session(session_id: str, user: User = Depends(current_user), db: Session
 async def upload_part(session_id: str, request: Request, response: Response,
                       offset: Annotated[int, Query(ge=0)],
                       checksum: Annotated[str, Header(alias='X-Chunk-SHA256', pattern=r'^[a-fA-F0-9]{64}$')],
-                      user: User = Depends(current_user), db: Session = Depends(session_dep)):
+                      user: User = Depends(upload_user), db: Session = Depends(session_dep)):
     user_id = user.id
     row = owned(db, session_id, user_id)
     require_uploading(row)
@@ -292,7 +292,7 @@ def abort_session(session_id: str, user: User = Depends(current_user), db: Sessi
 
 
 @router.post('/{session_id}/complete', response_model=JobResponse)
-def complete_session(session_id: str, user: User = Depends(current_user), db: Session = Depends(session_dep)):
+def complete_session(session_id: str, user: User = Depends(upload_user), db: Session = Depends(session_dep)):
     user_id = user.id
     row = owned(db, session_id, user_id)
     if row.status == 'completed':
