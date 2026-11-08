@@ -23,7 +23,7 @@ def main():
     configuration.write_text('bind 0.0.0.0\nprotected-mode yes\nrequirepass '+password+
         '\ndir /data\nappendonly yes\nappendfsync always\nmaxmemory 64mb\nmaxmemory-policy noeviction\nsave ""\n')
     configuration.chmod(0o600)
-    docker_env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE'], '')}
+    docker_env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR'], '')}
     for key in ('DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH'):docker_env.pop(key,None)
     docker=['docker','--context','default'] if os.name=='nt' else ['docker','--host=unix:///var/run/docker.sock']
     def run(*args,**kwargs):return subprocess.run(docker+list(args),env=docker_env,check=True,timeout=60,**kwargs)
@@ -32,7 +32,7 @@ def main():
         run('cp',str(configuration),name+':/data/valkey.conf',stdout=subprocess.DEVNULL)
         run('start',name,stdout=subprocess.DEVNULL)
         port=run('port',name,'6379/tcp',capture_output=True,text=True).stdout.strip().rsplit(':',1)[1]
-        env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE'], '')};env.update(APP_ENV='test',QUEUE_BACKEND='valkey',QUEUE_HOST='127.0.0.1',QUEUE_PORT=port,
+        env={**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR'], '')};env.update(APP_ENV='test',QUEUE_BACKEND='valkey',QUEUE_HOST='127.0.0.1',QUEUE_PORT=port,
             QUEUE_PASSWORD=password,QUEUE_TLS='false',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',
             AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',
             JWT_SECRET=secrets.token_urlsafe(48),NEXTPHASE_SMOKE_BROKER='1')

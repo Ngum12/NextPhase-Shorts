@@ -5,6 +5,9 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+os.environ["RESTORE_JOURNAL_DIR"] = ""
+os.environ["RESTORE_JOURNAL_KEY"] = ""
+os.environ["RESTORE_JOURNAL_KEY_FILE"] = ""
 # Legacy regressions exercise owner limits; dedicated capacity tests set small global limits.
 os.environ['GLOBAL_ACTIVE_LIMIT']='10000'
 os.environ['GLOBAL_PROCESSING_LIMIT']='100'

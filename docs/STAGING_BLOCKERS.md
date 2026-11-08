@@ -100,7 +100,7 @@ or a privately reviewed inventory; do not publish real backup/config/secret file
 |---|---|---|
 | SDK/native migration | Apply this reviewed build and run one focused Pixel check | Owner device; cloud agent cannot replace real native acceptance |
 | Exact image security/licensing | Inventory the actual image, pin reviewed base/resolution and scan that artifact; retain notices/corresponding-source obligations | Engineering plus owner/legal decision on notices, codecs/patents/redistribution; inventory alone is not clearance |
-| Post-snapshot erasure/revocation | Add a separately protected durable journal, restore reconciliation and encrypted backup/key retention; replay later deletions before reopening access | Further engineering with approved journal/storage identity; never restore old accounts/media publicly from a snapshot alone |
+| Post-snapshot erasure/revocation | Local encrypted journal, schema binding and offline replay/release implemented/tested; configure immutable/offsite journal/checkpoint/key custody and encrypted backup retention | Local operator restore gate is reviewable; actual staging fencing/offsite policy and remote erasure remain open |
 | Private staging transport/edge | Build a separate PostgreSQL/private-storage/broker/worker deployment with valid TLS, bounded connections/body/rates and private networks; verify from Pixel | Free disposable local TLS protocol checks can be implemented; genuine publicly trusted deployment needs a selected host/domain and approval before any paid resource |
 | Secret manager and least privilege | Mount per-service scoped secrets through the existing `_FILE` adapter; rotate/revoke old credentials after a synthetic check | Owner-controlled runtime/provider credentials entered privately, not chat; no cloud vault was provisioned here |
 | Collector and alert delivery | Import the tested OTLP format into an approved collector, route CLI/metrics alarms and test detection | Further integration on the selected private staging runtime; no external recipient is messaged without authorization |
@@ -128,3 +128,14 @@ No broader media permission or sandbox bypass is required. Pull the fix, restart
 Metro and choose the video again; a previously selected host-cache URI remains
 unreadable. Keep original footage/app data. This changes no backend/schema or
 lockfile, so no backend rebuild/migration/npm reinstall is necessary.
+
+
+### Backup rollback protection update
+
+Independent encrypted local security journaling and offline replay/release are now
+implemented in the next increment; see [RESTORE_JOURNAL.md](RESTORE_JOURNAL.md).
+Protected restores invalidate all old credentials/passwords and reapply deletion
+intentions from a separately retained current stream/checkpoint. This supersedes
+the earlier "unimplemented journal" entry only for that tested local scope.
+Offsite/immutable journal custody, encrypted snapshots, key rotation, actual staging
+fencing and remote/versioned erasure remain open and are not waived.

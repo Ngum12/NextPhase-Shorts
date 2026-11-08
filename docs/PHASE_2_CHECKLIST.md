@@ -12,7 +12,7 @@ An external blocker remains visible and must be resolved before Phase 2 closes.
 | 3 | Queue/worker reliability | Robust durable queue implementation, confirmed completion/ACK, retries/dead-letter/cancellation/fairness, supervision/leases, enforced CPU/RAM/PID limits and tenant isolation/egress | Merged PR #22 (017bf20); owner supplied ready:true for all host protections, healthy Docker stack/operations and confirmed Pixel render/save/playback; managed cloud host still unsupported, remote CI unobserved |
 | 4 | Monitoring/secrets/costs | Trace correlation and OpenTelemetry-compatible export, resource/stage metrics, alerts/redaction, secret management/rotation, measured compute/storage/egress cost coverage | Merged PR #23 (4c565b0); owner supplied healthy monitoring/new measured render and confirmed Pixel save/playback; external collector/vault/provider-cost reconciliation explicitly pending staging acceptance |
 | 5 | Capacity/cleanup/security | Global admission/storage, retention/erasure scope, tested backup restoration, 100 concurrent submissions and representative soak/security checks, dependency/license/privacy review and risk disposition | Merged PR #24 (82f1ab1); owner supplied updated ready:true/healthy capacity report and confirmed Pixel Save/playback; historical 100-request/ten-minute/restore evidence retained; remaining privacy/legal/image/staging gates explicit |
-| 6 | Staging acceptance | PostgreSQL, private storage/signed access, HTTPS/edge limits, separated constrained workers, complete device-to-server-to-save flow, capacity/cost ceiling, runbooks/signoff | Preparation in review: SDK 58 graph/audit zero, 66 tests and Android/config checks; image inventory/drafts/private binding prepared. Native SDK 58, journal, TLS/edge/provider runtime/cost/collector/legal/CI gates remain OPEN; paid infrastructure needs approval |
+| 6 | Staging acceptance | PostgreSQL, private storage/signed access, HTTPS/edge limits, separated constrained workers, complete device-to-server-to-save flow, capacity/cost ceiling, runbooks/signoff | SDK 58 fixes merged, audit zero/70 mobile tests/Android bundle, owner confirmed Pixel flow passed. Local independent journal/binding/replay in review; TLS/edge, offsite custody/encrypted backups, provider runtime/cost/collector/legal/CI gates remain OPEN; paid infrastructure needs approval |
 
 ## Definition of done
 
@@ -26,3 +26,9 @@ No paid APIs/infrastructure, email sending or real billing may be activated with
 the required owner approval. Local adapters are not production proof. Throughout:
 9:16 output <=60 seconds, intensive processing on the server, licensed assets and
 privacy/security gates. No reference ZIP assets/code are introduced.
+
+
+Package 6 restore increment: independent local encrypted journal/replay/release
+implemented; protected snapshot-before-security-request HTTP drills pass on SQLite
+and PostgreSQL. Offsite/immutable custody, encrypted snapshot policy, real staging
+fencing and other legal/provider gates remain open. See RESTORE_JOURNAL.md.

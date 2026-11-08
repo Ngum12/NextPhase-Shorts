@@ -36,8 +36,8 @@ def main():
         else:raise RuntimeError('Disposable PostgreSQL failed readiness')
         with tempfile.TemporaryDirectory(prefix='nextphase-capacity-') as temporary:
             media=Path(temporary)/'media'
-            env={**os.environ,**{k+'_FILE':'' for k in ('JWT_SECRET','DATABASE_URL','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','QUEUE_PASSWORD','RESEND_API_KEY','AUTH_MAIL_ENCRYPTION_KEYS')}}
-            env.update(APP_ENV='test',QUEUE_BACKEND='database',MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false',
+            env={**os.environ,**{k+'_FILE':'' for k in ('JWT_SECRET','DATABASE_URL','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','QUEUE_PASSWORD','RESEND_API_KEY','AUTH_MAIL_ENCRYPTION_KEYS','RESTORE_JOURNAL_KEY')}}
+            env.update(RESTORE_JOURNAL_DIR='',RESTORE_JOURNAL_KEY='',APP_ENV='test',QUEUE_BACKEND='database',MEDIA_BACKEND='local',DIRECT_UPLOADS_ENABLED='false',
                 WORKER_REQUIRE_LIMITS='false',WORKER_REQUIRE_SANDBOX='false',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',
                 RESEND_API_KEY='',AUTH_MAIL_ENCRYPTION_KEYS='',AUTH_MAIL_DIR=temporary+'/mail',
                 DATABASE_URL=f'postgresql+psycopg://postgres:synthetic-local-test@127.0.0.1:{port}/source_test',STORAGE_DIR=str(media),

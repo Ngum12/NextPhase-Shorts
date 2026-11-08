@@ -5,6 +5,115 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Phase 2 package 6 — independent journal and protected restore
+
+Development branch `dev/phase-2-restore-journal`, based on merged main **e4789df**.
+Implementation **d1e482a** pushed. Automatic PR creation returned GitHub API
+**Forbidden**; no PR number or remote CI result is claimed.
+[Open the branch for review](https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-restore-journal).
+Owner reported the corrected SDK 58 Pixel selection/upload/render/save flow worked
+very well. That is owner device acceptance, not a cloud-executed phone test.
+Mobile source/lockfile unchanged in this increment; no repeated phone suite needed.
+
+### Implemented
+
+- Independent encrypted write-ahead account/project deletion and credential-change/
+  revocation intentions. Existing cryptography Fernet plus domain-separated HMAC
+  chain, stream/sequence continuity, canonical UUIDs, private owner-only files,
+  no links/hardlinks, process lock and fsync. Five-second lock acquisition bound,
+  64-MiB/100,000-record cap; missing/corrupt/full stream fails changes closed.
+  No email/password/code/token/path enters journal payloads or public reports.
+- Security requests record before their DB commit/HTTP success. Write-ahead intent
+  can survive failed commits/replies; restore deliberately prefers conservative
+  deletion over resurrecting data. No automatic reinitialization/repair after loss.
+- **Migration 0020_restore_binding** adds explicit stream binding. Offline binding
+  on the current stopped source bootstraps its existing deletion tombstones.
+  Pre-activation/unbound snapshots are refused; removing/replacing a protected
+  source's journal refuses API readiness/startup even in development. Never bind
+  an old restored snapshot to pretend missing history is known.
+- Offline preview verifies the stream and separately retained current checkpoint.
+  Apply revokes all old sessions/refresh families/actions, cancels pending mail/
+  active work/uploads, disables every surviving restored password and reapplies
+  account/project tombstones including identities missing from the dump.
+  Existing survivor completed media remains intact. Fresh recovery uses existing
+  approved proof flow; no password/reset bypass or email service activation.
+- Independent hold created before transaction, applied marker after commit;
+  interrupted/failed replay keeps access blocked. API middleware blocks held
+  traffic, liveness remains available. Explicit release requires successful replay,
+  exact current checkpoint and a 120-second capability retirement interval.
+  All old writers/hosts must be fenced; the offline flag is operator acknowledgement.
+- Create-only, network-disabled local Docker init/overlay keeps journal/key in a
+  volume independent of PostgreSQL/media. Root only owns the empty volume then
+  drops to app user; no keys printed. Existing volumes are never overwritten.
+  Staging API requires configured/bound protection. Independent offsite/immutable
+  custody, separate production key vault/rotation and encrypted snapshots remain open.
+- Disposable smoke environments now explicitly clear operator journal settings;
+  they cannot append synthetic events to an operator's mounted stream.
+
+### Validation and limits
+
+- New focused suite: **18 passed**, covering concurrent encrypted append, changed/
+  reordered/duplicated/partial/truncated/replaced/wrong-key streams, unsafe links/
+  permissions, write/fsync failure without acknowledged DB changes, old-snapshot/
+  missing/replaced stream refusal, existing-tombstone bootstrap, failed replay DB
+  rollback/hold, all-credential retirement and native release timing.
+- Protected HTTP drills on SQLite and PostgreSQL passed: snapshot BEFORE HTTP
+  account/project deletion, password change and logout; independently current
+  journal; NEW restored DB; replay/release; old access/refresh/password rejected;
+  fresh local-only survivor recovery; exact retained output SHA preserved; deleted
+  media cleanup verified. No real mail. Only stopped disposable fixture clocks
+  were advanced for release/cleanup, never operator/production clocks.
+  Bound evidence: `.data/restore-journal-ec2389d4ad0140dea02816726e7b485f/`
+  (SQLite), `.data/restore-journal-3160e76b1b9c4fafbac461105ccddffd/` (PostgreSQL).
+- Earlier complete suite at binding stage: **367 passed SQLite (89.04s)** and
+  **367 PostgreSQL (105.54s)**. A later run including the final bootstrap test was
+  interrupted by cloud disk exhaustion; final rerun results are recorded below.
+- Docker's VFS exhausted the cloud disk during temporary container creation.
+  Create-only init/user drop/key creation did succeed in one disposable container
+  with current source/crypto on the older validation image; final unprivileged
+  readiness/reinit and rebuilt overlay activation remain **pending host checks**.
+  No new production image or strict containment acceptance is claimed. All owned
+  temporary containers/volumes removed; existing development services preserved.
+- Freed regenerable npm caches/cloud node_modules and synthetic resumable smoke
+  videos to recover space. Source, lockfiles, test reports/logs, smaller outputs,
+  user footage and application DB/media volumes retained. No new mobile test run
+  is claimed after removal; prior 70-test/TypeScript/bundle plus owner Pixel
+  acceptance remains unchanged. Tests use synthetic media only.
+- No new dependency/license/API/provider, paid infrastructure, billing, AI, outgoing
+  mail or public deployment. 9:16 and <=60-second server-render contract unchanged.
+
+### Final regression results after disk cleanup
+
+- **368 passed on SQLite (86.82s)** and **368 on PostgreSQL (105.73s)**,
+  no skips, one existing Starlette/httpx deprecation warning per run. The final
+  bootstrap, schema binding, hold and failure-path regressions are included.
+- Complete baseline HTTP smoke passed after migration 0020: upload/replay/resume,
+  owner isolation, auth/revocation, cancellation, server render, download/decode,
+  deletion/retention, crash/restart, operations/monitoring; **1080×1920, 30fps,
+  4.9s**, measured baseline **3.0s**. Evidence
+  `.data/smoke-516bbc26b3b04df8925608a2ab4d8ca8/`.
+- Bound PostgreSQL pg_dump/restore drill passed after correcting disposable PG
+  readiness to require TCP (the initial Unix-socket readiness could observe the
+  initialization-only server). SQLite bound drill and 18 focused tests passed.
+- Compose overlay parse/read-back, py_compile, doctor, pip consistency and diff
+  checks passed. Full rebuilt Docker overlay activation remains the disclosed
+  host check; cloud disk limitations were not bypassed or called acceptance.
+
+### Upgrade / next gates
+
+Back up current DB/media, stop writers, rebuild updated services, migrate **0020**,
+initialize independent local journal once and explicitly bind the current source
+before new protected snapshots. Always include the journal Compose overlay after
+activation. [Exact setup/restore runbook](docs/RESTORE_JOURNAL.md). Do not run replay
+against the live account database as an upgrade test: replay intentionally locks
+all credentials and requires recovery. Use the disposable drill/CI instead.
+
+Local software restore protection is implemented; **Phase 2 remains open** for
+immutable/offsite current journal/checkpoint/key custody, encrypted snapshot policy,
+real deployment fencing/TLS/edge/private storage/collector/vault/cost ceiling and
+security/privacy/licensing/provider approval. Manual DB rollback without the
+protected procedure is not automatically detected; no universal erasure or DR SLA.
+
 ## SDK 58 Android picker/private-copy correction
 
 Implementation **a1feb3e** pushed; this branch includes the Windows test fix.

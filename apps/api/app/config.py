@@ -10,6 +10,14 @@ class Settings:
     def __init__(self):
         self.env = os.getenv("APP_ENV", "development")
         self.database_url = read_secret("DATABASE_URL", "sqlite:///./.data/nextphase.db")
+        self.restore_journal_dir=os.getenv('RESTORE_JOURNAL_DIR','')
+        self.restore_journal_key=read_secret('RESTORE_JOURNAL_KEY','')
+        if bool(self.restore_journal_dir)!=bool(self.restore_journal_key):
+            raise RuntimeError('Restore journal requires both an independent directory and key')
+        if self.restore_journal_dir:
+            from cryptography.fernet import Fernet
+            try:Fernet(self.restore_journal_key.encode())
+            except Exception:raise RuntimeError('Invalid restore journal key') from None
         self.storage_dir = Path(os.getenv("STORAGE_DIR", "./.data/media")).resolve()
         # Opt-in only. Existing rows retain their own backend across config changes.
         self.media_backend = os.getenv('MEDIA_BACKEND', 'local')

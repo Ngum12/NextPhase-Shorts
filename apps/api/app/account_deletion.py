@@ -54,6 +54,7 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
     if active is None:raise unauthorized()
     if not verify_password(payload.current_password,auth.user.password_hash):
         db.rollback();raise HTTPException(400,'Current password is incorrect')
+    from .restore_journal import record
     now=utcnow();uid=auth.user.id
     if db.scalar(select(AccountDeletion.user_id).where(AccountDeletion.receipt_hash==receipt_hash(payload.receipt_key))):
         raise HTTPException(409,'Deletion confirmation key is unavailable. Start a new request.')
@@ -71,6 +72,7 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
     if settings.media_backend=='s3':namespaces.add(store.namespace_id())
     # Keep an unknown marker; do not claim old remote media was erased by guessing.
     namespaces={value or 'unknown' for value in namespaces}
+    record('account_delete',uid,namespace=sorted(namespaces))
     row=AccountDeletion(user_id=uid,receipt_hash=receipt_hash(payload.receipt_key),
         receipt_expires_at=now+timedelta(days=7),requested_at=now,cleanup_after=after,
         namespaces=json.dumps(sorted(namespaces)))

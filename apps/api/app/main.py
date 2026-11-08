@@ -42,6 +42,10 @@ from .account_deletion import router as account_deletion_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     require_current_schema(engine)
+    from .restore_journal import configured
+    journal=configured()
+    from .restore_replay import require_binding
+    require_binding(engine,journal)
     if settings.worker_require_sandbox:
         from .worker_limits import require_unprivileged,require_worker_limits
         from .render_sandbox import require_support
@@ -55,6 +59,8 @@ from .observability import TraceMiddleware,bind_job
 from .ingress import IngressGuard
 app.add_middleware(IngressGuard)
 app.add_middleware(TraceMiddleware)
+from .restore_journal import RestoreGate
+app.add_middleware(RestoreGate)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                    allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Chunk-SHA256"],
@@ -81,6 +87,10 @@ def health():
 def ready():
     try:
         require_current_schema(engine)
+        from .restore_journal import configured
+        journal=configured()
+        from .restore_replay import require_binding
+        require_binding(engine,journal)
     except (SQLAlchemyError,RuntimeError):
         return JSONResponse({'ok':False,'service':'nextphase-shorts'},status_code=503,
                             headers={'Cache-Control':'no-store'})

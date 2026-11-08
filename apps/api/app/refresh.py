@@ -27,6 +27,8 @@ def replacement(purpose, token, key):
 
 
 def revoke_families(db, user_id, family_id=None):
+    from .restore_journal import record
+    record('revoke',user_id)
     families = update(RefreshFamily).where(RefreshFamily.user_id == user_id)
     sessions = update(AuthSession).where(AuthSession.user_id == user_id)
     if family_id is not None:

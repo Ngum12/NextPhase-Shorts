@@ -130,8 +130,11 @@ after the snapshot from a separately protected current journal before any user
 access**; invalidate sessions if credentials/deletion state is uncertain; verify
 owner isolation/known downloads/new render/monitoring; then approve cutover. Never
 restore over the only live copy, run blind tar extraction, or activate mail/billing.
-The independent post-snapshot journal/offsite/encrypted restore is an unresolved
-production privacy gate; this prototype cannot reconstruct missing later requests.
+Independent local post-snapshot journaling/replay is now implemented; see
+[restore journal](RESTORE_JOURNAL.md). It requires a current separately retained
+checkpoint, explicit offline replay and blanket credential recovery. Offsite/
+encrypted snapshot protection, immutable journal custody and real target fencing
+remain production gates; it cannot reconstruct lost/unrecorded later requests.
 
 ## Load and soak evidence
 
