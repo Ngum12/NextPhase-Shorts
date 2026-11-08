@@ -5,6 +5,27 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Owner acceptance and package 2 preparation
+
+- Confirmed upstream main **f200dc3**, merge of PR **#20** (session refresh).
+  Owner reports all five focused Pixel checks passed: fresh sign-in, app reopen,
+  access renewal after the 70-second check, upload/resume/render/save, and sign-out/
+  sign-in. These are owner-supplied device results, not independent observations.
+- Package 1 local automated proof remains 264 SQLite/264 PostgreSQL tests, 61
+  client logic tests, TypeScript/Android export and full HTTP/private-S3 workflows.
+  Remote CI lookup returned GitHub API **Forbidden**; its status is unobserved,
+  not passed. This gate remains explicit rather than being silently dropped.
+- Started `dev/phase-2-email-delivery` from the confirmed merge. Inspected current
+  auth-mail/actions/client capabilities: only disabled/private local-file delivery
+  is implemented; no durable real-delivery outbox, SMTP/provider or verified-email
+  policy is present. Package 2 is not complete. Its preparation checklist is in
+  [EMAIL_DELIVERY_PLAN.md](docs/EMAIL_DELIVERY_PLAN.md).
+- Asked only for provider/sender-domain names (or a request for a recommendation),
+  never passwords/API keys. No configured environment secrets are available.
+  Delivery stays disabled; no real email/provider, paid resource or billing was
+  activated. No runtime code/dependencies/schema changed in this acceptance note;
+  only documentation verification is required, not another device regression run.
+
 ## Fixed remaining Phase 2 scope — package 1 session refresh
 
 The owner approved the [six-package checklist](docs/PHASE_2_CHECKLIST.md), in order,

@@ -7,8 +7,8 @@ An external blocker remains visible and must be resolved before Phase 2 closes.
 
 | Order | Package | Completion evidence | Status |
 |---|---|---|---|
-| 1 | Session refresh | Short access lifetime; opaque rotation; replay revocation; durable lost-response recovery; logout/reset/deletion; secure mobile storage; DB/HTTP restart/device tests | Implemented and locally verified; review/CI/Pixel acceptance pending |
-| 2 | Real email verification/recovery | Approved channel, durable outbox/retries, safe delivery/cleanup, verified ownership policy and delivery-failure acceptance | Pending; provider approval before activation |
+| 1 | Session refresh | Short access lifetime; opaque rotation; replay revocation; durable lost-response recovery; logout/reset/deletion; secure mobile storage; DB/HTTP restart/device tests | Merged f200dc3; automated local tests passed; owner reports all focused Pixel checks passed; remote CI observation blocked by GitHub API Forbidden |
+| 2 | Real email verification/recovery | Approved channel, durable outbox/retries, safe delivery/cleanup, verified ownership policy and delivery-failure acceptance | Preparation started; provider/sender configuration unresolved; delivery remains disabled |
 | 3 | Queue/worker reliability | Robust durable queue implementation, confirmed completion/ACK, retries/dead-letter/cancellation/fairness, supervision/leases, enforced CPU/RAM/PID limits and tenant isolation/egress | Pending; current managed Docker host cannot enforce cgroup limits |
 | 4 | Monitoring/secrets/costs | Trace correlation and OpenTelemetry-compatible export, resource/stage metrics, alerts/redaction, secret management/rotation, measured compute/storage/egress cost coverage | Pending |
 | 5 | Capacity/cleanup/security | Global admission/storage, retention/erasure scope, tested backup restoration, 100 concurrent submissions and representative soak/security checks, dependency/license/privacy review and risk disposition | Pending |
