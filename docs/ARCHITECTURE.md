@@ -1,5 +1,11 @@
 # Architecture — current versus proposed
 
+Package 3 adds Valkey/Arq dispatch plus a bounded queue supervisor; PostgreSQL keeps
+the fair scheduler and authoritative job/attempt state. Required Linux decoding
+adds Landlock/seccomp and actual cgroup checks. Native DB mode remains a development
+adapter. See [queue protocol and acceptance](QUEUE_RELIABILITY.md) and
+[ADR 0003](adr/0003-durable-broker-dispatch.md); supported-host acceptance is open.
+
 ## Current Stage 1 (functional starter)
 
 Expo (Android / iOS) -> FastAPI (JWT auth, validated uploads, job listing, downloads)

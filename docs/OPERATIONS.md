@@ -1,5 +1,9 @@
 # Operational visibility in the developer preview
 
+Package 3 adds a separate claim supervisor and durable dispatch operator snapshot;
+see [QUEUE_RELIABILITY.md](QUEUE_RELIABILITY.md). Process-liveness pulses described
+here remain independent of actual claim renewal and do not prove render progress.
+
 This increment adds private operator snapshots, process liveness and structured
 worker events. It does not activate an external monitoring service, public admin
 console, alert delivery, paid infrastructure or AI. All intensive rendering remains

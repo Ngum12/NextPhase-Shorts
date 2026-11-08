@@ -127,9 +127,9 @@ def test_marker_waits_for_complete_json(monkeypatch):
 @pytest.mark.skipif(not sys.platform.startswith('linux'),reason='Linux kernel parent-death/rlimit behavior')
 def test_hard_worker_crash_kills_live_render_and_strips_credentials(tmp_path,monkeypatch):
     marker=tmp_path/'child.json';fake=tmp_path/'ffmpeg'
-    fake.write_text(f'#!{sys.executable}\nimport json,os,resource,sys,time\nfrom pathlib import Path\nPath(sys.argv[1]).write_text(json.dumps({{"pid":os.getpid(),"secret_present":any(key in os.environ for key in ("JWT_SECRET","S3_SECRET_ACCESS_KEY","RESEND_API_KEY","AUTH_MAIL_ENCRYPTION_KEYS")),"cpu":resource.getrlimit(resource.RLIMIT_CPU)[0],"core":resource.getrlimit(resource.RLIMIT_CORE)[0],"files":resource.getrlimit(resource.RLIMIT_NOFILE)[0]}}))\ntime.sleep(60)\n')
+    fake.write_text(f'#!{sys.executable}\nimport json,os,resource,sys,time\nfrom pathlib import Path\nPath(sys.argv[1]).write_text(json.dumps({{"pid":os.getpid(),"secret_present":any(key in os.environ for key in ("JWT_SECRET","S3_SECRET_ACCESS_KEY","RESEND_API_KEY","AUTH_MAIL_ENCRYPTION_KEYS","QUEUE_PASSWORD")),"cpu":resource.getrlimit(resource.RLIMIT_CPU)[0],"core":resource.getrlimit(resource.RLIMIT_CORE)[0],"files":resource.getrlimit(resource.RLIMIT_NOFILE)[0]}}))\ntime.sleep(60)\n')
     fake.chmod(0o700)
-    env=os.environ.copy();env.update(PATH=str(tmp_path)+os.pathsep+env['PATH'],JWT_SECRET='synthetic-secret',S3_SECRET_ACCESS_KEY='synthetic-key',RESEND_API_KEY='synthetic-email-key',AUTH_MAIL_ENCRYPTION_KEYS='synthetic-encryption-key')
+    env=os.environ.copy();env.update(PATH=str(tmp_path)+os.pathsep+env['PATH'],JWT_SECRET='synthetic-secret',S3_SECRET_ACCESS_KEY='synthetic-key',RESEND_API_KEY='synthetic-email-key',AUTH_MAIL_ENCRYPTION_KEYS='synthetic-encryption-key',QUEUE_PASSWORD='synthetic-queue-key')
     code="from app.media import run_render; import sys; run_render(['ffmpeg',sys.argv[1]],30,lambda:False)"
     parent=subprocess.Popen([sys.executable,'-c',code,str(marker)],env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     pid=None

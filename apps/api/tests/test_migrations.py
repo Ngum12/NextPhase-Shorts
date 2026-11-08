@@ -317,3 +317,23 @@ def test_mail_outbox_preserves_local_proof_meaning_and_existing_account(migratio
         assert tuple(connection.execute(sa.text("SELECT password_hash,email_verification_method FROM users WHERE id='mail-owner'")).one())==('keep-hash','local_file')
         assert connection.scalar(sa.text("SELECT delivery_method FROM auth_actions WHERE id='mail-action'"))=='local_file'
         assert connection.scalar(sa.text('SELECT count(*) FROM mail_outbox'))==0
+
+
+def test_queue_migration_preserves_deadline_media_and_scrubs_legacy_dead_letter_reason(migration_engine):
+    from alembic import command
+    from app.migrate import configuration
+    with migration_engine.begin() as connection:
+        command.upgrade(configuration(connection),'0016_email_outbox')
+        connection.execute(sa.text("INSERT INTO users (id,email,password_hash,created_at) VALUES ('queue-owner','queue@example.com','keep-hash',CURRENT_TIMESTAMP)"))
+        for identity,state,error in [('old-live','processing',None),('old-failed','failed','private-customer-path')]:
+            connection.execute(sa.text("""INSERT INTO render_jobs
+                (id,user_id,title,style,desired_seconds,source_duration_seconds,source_path,output_path,status,attempt_count,created_at,
+                 lease_expires_at,error_code) VALUES (:id,'queue-owner','Keep','vlog',15,5,'keep/source.mp4','keep/output.mp4',:state,1,
+                 CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,:error)"""),{'id':identity,'state':state,'error':error})
+    upgrade_schema(migration_engine);upgrade_schema(migration_engine)
+    with migration_engine.connect() as connection:
+        row=connection.execute(sa.text("SELECT source_path,output_path,lease_expires_at,claim_deadline_at,next_attempt_at FROM render_jobs WHERE id='old-live'")).one()
+        assert row.source_path=='keep/source.mp4' and row.output_path=='keep/output.mp4'
+        assert row.lease_expires_at==row.claim_deadline_at and row.next_attempt_at is None
+        assert connection.scalar(sa.text("SELECT reason FROM render_dead_letters WHERE job_id='old-failed'"))=='LEGACY_FAILURE'
+        assert connection.scalar(sa.text('SELECT count(*) FROM queue_signals'))==0

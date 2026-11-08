@@ -19,6 +19,8 @@ EVENTS={
     'storage_unavailable':(logging.WARNING,'private storage unavailable'),
     'render_internal_error':(logging.ERROR,'unexpected render error'),
     'lease_recovery':(logging.INFO,'expired claims recovered'),
+    'claim_renewal_unavailable':(logging.WARNING,'claim renewal unavailable; original lease still enforced'),
+    'queue_unavailable':(logging.WARNING,'durable queue unavailable; dispatch deferred'),
 }
 logger=logging.getLogger('nextphase.worker')
 

@@ -23,10 +23,13 @@ def delete_project(job_id:str,user:User=Depends(current_user),db:Session=Depends
     if job is None:raise HTTPException(404,'Project not found')
     if job.status!='deleted':
         now=utcnow()
-        # A bounded lease includes render/probe margin. Revoke now; defer file
-        # cleanup past that lease so open worker files can close (notably Windows).
-        expiry=job.lease_expires_at
-        if expiry and not expiry.tzinfo:expiry=expiry.replace(tzinfo=timezone.utc)
+        # Short renewable leases are not writer-lifetime bounds. Preserve the
+        # hard deadlines of cancelled/lost attempts before revoking their tokens.
+        attempt=db.scalar(select(func.max(RenderAttempt.deadline_at)).where(RenderAttempt.job_id==job_id,
+            RenderAttempt.status.in_(('running','lease_lost','cancelled'))))
+        deadlines=[value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+            for value in (job.lease_expires_at,job.claim_deadline_at,attempt) if value]
+        expiry=max(deadlines) if deadlines else None
         job.cleanup_after=max(now,expiry+timedelta(seconds=30)) if expiry else now
         job.status='deleted';job.deleted_at=now;job.finished_at=now
         job.claim_token=None;job.lease_expires_at=None;job.error_code=None

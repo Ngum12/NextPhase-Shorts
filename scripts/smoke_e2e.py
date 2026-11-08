@@ -360,11 +360,13 @@ def main():
     processes = []
     with tempfile.TemporaryDirectory(prefix='nextphase-smoke-') as temporary:
         env = os.environ.copy()
-        env.update(APP_ENV='test',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',AUTH_MAIL_DIR=temporary+'/auth-mail', PYTHONPATH=str(ROOT / 'apps/api'),
+        env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',AUTH_MAIL_DIR=temporary+'/auth-mail', PYTHONPATH=str(ROOT / 'apps/api'),
                    DATABASE_URL='sqlite:///' + temporary + '/db.sqlite3', STORAGE_DIR=temporary + '/media',
                    JWT_SECRET=secrets.token_urlsafe(48), AI_PROVIDER='disabled', BILLING_PROVIDER='disabled',
                    WORKER_POLL_SECONDS='0.1', WORKER_HEARTBEAT_SECONDS='1', AUTH_LOGIN_ACCOUNT_LIMIT='5', AUTH_LOGIN_IP_LIMIT='30',
                    AUTH_REGISTER_IP_LIMIT='10', AUTH_PASSWORD_LIMIT='5', AUTH_WINDOW_SECONDS='900')
+        broker_mode=os.getenv('NEXTPHASE_SMOKE_BROKER')=='1'
+        if broker_mode:env['QUEUE_BACKEND']='valkey'
         subprocess.run([sys.executable, '-m', 'app.migrate'], cwd=ROOT, env=env, check=True, timeout=30)
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
@@ -404,6 +406,9 @@ def main():
                         time.sleep(.1)
                     else: raise RuntimeError('Restarted API not ready')
                 finish_auth(base, args.output_dir, auth_state, restarted=True)
+                if broker_mode:
+                    processes.append(subprocess.Popen([sys.executable,'-m','app.queue_supervisor'],cwd=ROOT,env=env,
+                        stdout=worker_log,stderr=subprocess.STDOUT))
                 processes.append(subprocess.Popen([sys.executable, '-m', 'app.worker'], cwd=ROOT, env=env,
                                                   stdout=worker_log, stderr=subprocess.STDOUT))
                 finish_resumable(base, args.output_dir, transfer, restarted=True)

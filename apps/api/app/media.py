@@ -21,7 +21,18 @@ class MediaCancelled(MediaError):
     pass
 
 
+def teardown_decoder(process):
+    if os.name=='posix':
+        try:os.killpg(process.pid,signal.SIGKILL)
+        except ProcessLookupError:pass
+    elif process.poll() is None:process.kill()
+    process.wait(timeout=5)
+
+
 def decoder_invocation(cmd,timeout):
+    # Read only the explicit guard flag here; decoder-launch tests and tools do
+    # not need to initialize server credentials just to construct a subprocess.
+    sandbox_required=os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true'
     # No JWT, database, S3, proxy or provider credentials reach the decoder.
     child_env={key:value for key,value in os.environ.items() if key.upper() in
                {'PATH','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR','LANG','LC_ALL'}}
@@ -30,8 +41,15 @@ def decoder_invocation(cmd,timeout):
     if sys.platform.startswith('linux'):
         # Absolute helper path also works with uvicorn --app-dir, which changes
         # sys.path without exporting PYTHONPATH. Isolated Python ignores user sites.
+        sandbox=[]
+        if sandbox_required:
+            source=cmd[cmd.index('-i')+1] if cmd[0]=='ffmpeg' else cmd[-1]
+            output=str(Path(cmd[-1]).resolve().parent) if cmd[0]=='ffmpeg' else None
+            sandbox=['--sandbox',json.dumps({'source':str(Path(source).resolve()),'output':output},separators=(',',':'))]
         child_cmd=[sys.executable,'-I',str(Path(__file__).with_name('render_child.py')),
-                   str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),*cmd]
+                   str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),*sandbox,*cmd]
+    elif sandbox_required:
+        raise MediaError('Required decoder isolation needs supported Linux')
     kwargs={'start_new_session':True} if os.name=='posix' else {}
     return child_cmd,child_env,kwargs
 
@@ -43,7 +61,7 @@ def run_render(cmd, timeout, should_cancel):
     child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout)
     # Diagnostics are deliberately discarded: malformed media cannot grow a
     # PIPE buffer without bound or put private source paths into general logs.
-    with subprocess.Popen(child_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env, **kwargs) as process:
+    with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:
         try:
             while True:
                 if should_cancel():
@@ -60,12 +78,7 @@ def run_render(cmd, timeout, should_cancel):
                     if time.monotonic() - started >= timeout:
                         raise
         finally:
-            if os.name=='posix':
-                try:os.killpg(process.pid,signal.SIGKILL)
-                except ProcessLookupError:pass
-            elif process.poll() is None:
-                process.kill()
-            process.wait(timeout=5)
+            teardown_decoder(process)
 
 
 def probe_video(path: Path) -> dict:
@@ -73,9 +86,13 @@ def probe_video(path: Path) -> dict:
         cmd,env,kwargs=decoder_invocation(
             ["ffprobe", "-v", "error", "-max_alloc", "67108864", *input_args(), "-show_entries", "format=duration,format_name:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,sample_rate,channels:stream_disposition=attached_pic",
              "-of", "json", str(path)],30)
-        result = subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
-            text=True,timeout=30,check=True,env=env,**kwargs)
-        data = json.loads(result.stdout)
+        with subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
+                text=True,env=env,close_fds=True,**kwargs) as process:
+            try:
+                output,_=process.communicate(timeout=30)
+                if process.returncode:raise subprocess.CalledProcessError(process.returncode,cmd)
+            finally:teardown_decoder(process)
+        data = json.loads(output)
         return validate_metadata(data)
     except (OSError, subprocess.SubprocessError, ValueError, TypeError, KeyError, ZeroDivisionError, OverflowError, AttributeError, json.JSONDecodeError) as exc:
         raise MediaError("Could not inspect the uploaded media") from exc

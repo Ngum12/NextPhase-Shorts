@@ -91,3 +91,14 @@ test proofs while keeping sign-in/recovery/deletion and existing-project reads
 reachable. Provider acceptance is not inbox delivery; in-flight mail cannot be
 recalled. Real inbox/provider/privacy/Pixel acceptance remains unobserved. See
 EMAIL_DELIVERY.md for activation, key rotation, external copies and cleanup scope.
+
+Package 3 adds strict JSON-only Valkey/Arq signals (no pickle/user commands),
+transactional DB recovery authority, short fenced renewal with absolute deadlines,
+bounded transient attempts/dead letters, and preserved older-writer cleanup bounds.
+Required decoder mode combines unprivileged/cgroup checks, Landlock input/attempt
+filesystem rules and seccomp network/selected escape denial. No Docker socket is
+mounted in application services. Unsupported hosts fail closed; this managed host
+does not pass cgroups/Landlock, so production containment is not accepted. Shared
+kernel/runtime paths are not a VM or exploit certification. Native development
+mode remains explicitly weaker. See QUEUE_RELIABILITY.md for exact limits, TLS,
+RPO/reconciliation and remote-store late-write/erasure boundaries.

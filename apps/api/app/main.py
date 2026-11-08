@@ -38,6 +38,10 @@ from .account_deletion import router as account_deletion_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     require_current_schema(engine)
+    if settings.worker_require_sandbox:
+        from .worker_limits import require_unprivileged,require_worker_limits
+        from .render_sandbox import require_support
+        require_unprivileged();require_worker_limits();require_support()
     if settings.media_backend == 's3':
         object_store.check_bucket()
     yield

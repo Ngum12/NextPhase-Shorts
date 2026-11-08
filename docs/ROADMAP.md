@@ -12,6 +12,11 @@ Package 2 Resend/outbox/policy implementation is locally verified for review;
 real provider/inbox/Pixel acceptance stays open. See [delivery runbook](EMAIL_DELIVERY.md).
 No later package is declared complete or skipped by this preparation.
 
+Package 3 uses Valkey/Arq dispatch with PostgreSQL job authority, fenced renewable
+claims, transient retries/dead letters and required Linux decoder isolation. Local
+functional verification does not close its strict processing-host gate: this
+managed host lacks enforced worker cgroups and Landlock. See QUEUE_RELIABILITY.md.
+
 | Priority | Work | Acceptance / dependency |
 |---|---|---|
 | P0, Phase 0/1 | Resolve mobile peers, lock dependencies, validate baseline, document audit | Automated checks and live smoke; tracked evidence in IMPLEMENTATION_STATUS.md |

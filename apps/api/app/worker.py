@@ -1,6 +1,6 @@
 """DB-backed queue with bounded leases and fenced, attempt-specific artifacts.
 
-This remains a polling queue, not a full durable broker or exactly-once execution.
+Development can poll the DB; Valkey/Arq dispatch shares the same fenced scheduler.
 """
 import logging
 import signal
@@ -8,14 +8,14 @@ import time
 import uuid
 from datetime import timedelta
 from pathlib import Path
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, update,or_
 from sqlalchemy.exc import SQLAlchemyError
 from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
 from .media import MediaCancelled, MediaError, OutputLimitExceeded, render_baseline
 from .models import RenderAttempt, RenderJob, User, utcnow
-from .queue import lock_owner
+from .queue import lock_owner,dead_letter
 from . import object_store
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -34,8 +34,9 @@ def request_stop(*_):
 
 def claim_job():
     with SessionLocal.begin() as db:
+        due=or_(RenderJob.next_attempt_at.is_(None),RenderJob.next_attempt_at<=utcnow())
         queued = select(func.min(RenderJob.created_at)).where(
-            RenderJob.user_id == User.id, RenderJob.status == 'queued',
+            RenderJob.user_id == User.id, RenderJob.status == 'queued',due,
             RenderJob.attempt_count < MAX_ATTEMPTS).correlate(User).scalar_subquery()
         running = select(func.count()).where(RenderJob.user_id == User.id,
             RenderJob.status == 'processing').correlate(User).scalar_subquery()
@@ -58,12 +59,13 @@ def claim_job():
         if count >= settings.max_processing_jobs_per_user:
             return None
         job_id = db.scalar(select(RenderJob.id).where(RenderJob.user_id == owner_id,
-            RenderJob.status == 'queued', RenderJob.attempt_count < MAX_ATTEMPTS)
+            RenderJob.status == 'queued',due, RenderJob.attempt_count < MAX_ATTEMPTS)
             .order_by(RenderJob.created_at, RenderJob.id).limit(1))
         if job_id is None:
             return None
         now = utcnow()
         token = str(uuid.uuid4())
+        budget=settings.render_timeout_seconds+(300 if db.get(RenderJob,job_id).media_backend=='s3' else 90)
         # Compare-and-set also protects SQLite, which has no SKIP LOCKED.
         job = db.execute(update(RenderJob).where(
             RenderJob.id == job_id, RenderJob.status == 'queued',
@@ -71,12 +73,12 @@ def claim_job():
                 status='processing', attempt_count=RenderJob.attempt_count + 1,
                 started_at=now, finished_at=None, error_code=None,
                 output_path=None, output_duration_seconds=None, claim_token=token,
-                lease_expires_at=now + timedelta(seconds=settings.render_timeout_seconds +
-                    (300 if db.get(RenderJob, job_id).media_backend == 's3' else 90)))
+                next_attempt_at=None,lease_expires_at=now+timedelta(seconds=min(settings.worker_lease_seconds,budget)),
+                claim_deadline_at=now+timedelta(seconds=budget))
             .returning(RenderJob)).scalar_one_or_none()
         if job is None:
             return None
-        db.add(RenderAttempt(id=token,job_id=job.id,number=job.attempt_count,started_at=now,status='running'))
+        db.add(RenderAttempt(id=token,job_id=job.id,number=job.attempt_count,started_at=now,status='running',deadline_at=job.claim_deadline_at))
         return {'id': job.id, 'user_id': job.user_id, 'source': job.source_path,
                 'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
                 'claim_token': token, 'media_backend': job.media_backend,
@@ -84,20 +86,28 @@ def claim_job():
                 'max_render_bytes': job.max_render_bytes or settings.max_render_bytes}
 
 
-def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None):
+def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None,retryable=False):
     now = utcnow()
-    values = dict(finished_at=now, lease_expires_at=None,
+    values = dict(finished_at=now, lease_expires_at=None,claim_deadline_at=None,next_attempt_at=None,
                   status='failed' if error_code else 'succeeded', error_code=error_code,
                   output_path=None if error_code else str(output_path),
                   output_duration_seconds=None if error_code else output_duration)
     with SessionLocal.begin() as db:
+        job=db.get(RenderJob,job_id)
+        requeue=bool(error_code and retryable and job and job.attempt_count<MAX_ATTEMPTS)
+        if requeue:
+            values.update(status='queued',finished_at=None,started_at=None,error_code=None,claim_token=None,
+                next_attempt_at=now+timedelta(seconds=settings.retry_backoff_seconds*2**max(0,job.attempt_count-1)))
         result = db.execute(update(RenderJob).where(
             RenderJob.id == job_id, RenderJob.status == 'processing',
-            RenderJob.claim_token == claim_token, RenderJob.lease_expires_at > now).values(**values))
+            RenderJob.claim_token == claim_token, RenderJob.lease_expires_at > now,
+            or_(RenderJob.claim_deadline_at.is_(None),RenderJob.claim_deadline_at>now)).values(**values),
+            execution_options={'synchronize_session':False})
         if result.rowcount == 1:
             db.execute(update(RenderAttempt).where(RenderAttempt.id == claim_token,
-                RenderAttempt.status == 'running').values(status=values['status'],finished_at=now,
+                RenderAttempt.status == 'running').values(status='failed' if error_code else 'succeeded',finished_at=now,
                     wall_seconds=wall_seconds,output_bytes=None if error_code else output_bytes))
+            if error_code and not requeue:dead_letter(db,job_id,error_code,job.attempt_count)
         return result.rowcount == 1
 
 
@@ -105,10 +115,17 @@ def owns_claim(job):
     with SessionLocal() as db:
         return db.scalar(select(RenderJob.id).where(
             RenderJob.id == job['id'], RenderJob.status == 'processing',
-            RenderJob.claim_token == job['claim_token'], RenderJob.lease_expires_at > utcnow())) is not None
+            RenderJob.claim_token == job['claim_token'], RenderJob.lease_expires_at > utcnow(),
+            or_(RenderJob.claim_deadline_at.is_(None),RenderJob.claim_deadline_at>utcnow()))) is not None
 
 
 def process(job):
+    from .job_supervision import ClaimSupervisor
+    with ClaimSupervisor(job) as supervisor:
+        _process(job,supervisor)
+
+
+def _process(job,supervisor):
     token = job['claim_token']
     output = settings.storage_dir / job['user_id'] / job['id'] / token / 'output.mp4'
     began = time.monotonic()
@@ -117,7 +134,7 @@ def process(job):
     if remote:
         source = output.parent / 'input.media'
     try:
-        if stop:
+        if stop or supervisor.lost.is_set():
             raise MediaCancelled('Worker stopping')
         if remote:
             object_store.require_namespace(job.get('object_store_id'))
@@ -126,7 +143,7 @@ def process(job):
             object_store.fetch(job['source'], object_store.source_key(job['user_id'], job['id'], extension),
                                source, settings.max_upload_bytes)
         duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
-        info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: stop or not owns_claim(job))
+        info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: stop or supervisor.lost.is_set() or not owns_claim(job))
         output_bytes = output.stat().st_size
         output_reference = output.resolve()
         if remote:
@@ -151,11 +168,11 @@ def process(job):
         mark_done(job['id'], token, error_code='RENDER_FAILED', wall_seconds=time.monotonic()-began)
     except object_store.ObjectStoreError:
         emit('storage_unavailable',job_id=job['id'])
-        mark_done(job['id'], token, error_code='STORAGE_UNAVAILABLE', wall_seconds=time.monotonic()-began)
+        mark_done(job['id'], token, error_code='STORAGE_UNAVAILABLE', wall_seconds=time.monotonic()-began,retryable=True)
     except Exception:
         # Do not log raw exception messages/tracebacks containing customer paths.
         emit('render_internal_error',job_id=job['id'])
-        mark_done(job['id'], token, error_code='INTERNAL_ERROR', wall_seconds=time.monotonic()-began)
+        mark_done(job['id'], token, error_code='INTERNAL_ERROR', wall_seconds=time.monotonic()-began,retryable=True)
 
     finally:
         if stop:
@@ -183,7 +200,8 @@ def recover_stale_jobs(limit=100):
     if not 1 <= limit <= 1000:
         raise ValueError('Recovery batch must be 1–1000')
     now = utcnow()
-    expired = (RenderJob.status == 'processing', RenderJob.lease_expires_at <= now)
+    expired = (RenderJob.status == 'processing', or_(RenderJob.lease_expires_at.is_(None),
+        RenderJob.lease_expires_at <= now,RenderJob.claim_deadline_at<=now))
     with SessionLocal.begin() as db:
         # Lock expired jobs before recording loss, so completion cannot win between
         # the attempt record and recovery. SQLite's first write serializes writers.
@@ -200,20 +218,32 @@ def recover_stale_jobs(limit=100):
         failed = db.execute(update(RenderJob).where(*expired,
             RenderJob.attempt_count >= MAX_ATTEMPTS).values(
                 status='failed', error_code='MAX_RETRIES', finished_at=now,
-                claim_token=None, lease_expires_at=None))
+                claim_token=None, lease_expires_at=None,claim_deadline_at=None,next_attempt_at=None))
         requeued = db.execute(update(RenderJob).where(*expired,
             RenderJob.attempt_count < MAX_ATTEMPTS).values(
                 status='queued', started_at=None, error_code=None,
-                claim_token=None, lease_expires_at=None))
+                claim_token=None, lease_expires_at=None,claim_deadline_at=None,next_attempt_at=None))
+        for identity in ids:
+            job=db.get(RenderJob,identity)
+            if job.status=='failed':dead_letter(db,identity,'MAX_RETRIES',job.attempt_count)
         return requeued.rowcount, failed.rowcount
 
 
 def main():
+    if settings.env in ('staging','production') and (settings.queue_backend!='valkey' or
+            not settings.worker_require_limits or not settings.worker_require_sandbox):
+        raise RuntimeError('Production workers require durable broker and enforced resource/filesystem/network guards')
+    if settings.queue_backend=='valkey':
+        from .broker_worker import main as broker_main
+        broker_main();return
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
     if settings.worker_require_limits:
-        from .worker_limits import require_worker_limits
-        require_worker_limits()
+        from .worker_limits import require_worker_limits,require_unprivileged
+        require_unprivileged();require_worker_limits()
+    if settings.worker_require_sandbox:
+        from .render_sandbox import require_support
+        require_support()
     require_current_schema(engine)
     if settings.media_backend == 's3':
         object_store.check_bucket()
