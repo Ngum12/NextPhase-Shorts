@@ -1,9 +1,9 @@
 name: Backend tests
 on:
   push:
-    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/smoke_broker_queue.py', 'scripts/configure_queue.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', 'scripts/operations_smoke.py', 'scripts/smoke_auth_recovery.py', 'scripts/smoke_session_refresh.py', 'scripts/smoke_email_delivery.py', 'scripts/mail_fixture_worker.py', 'scripts/configure_auth_email.py', 'compose.yaml', '.github/workflows/backend.yml']
+    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/smoke_broker_queue.py', 'scripts/configure_queue.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', 'scripts/operations_smoke.py', 'scripts/smoke_auth_recovery.py', 'scripts/smoke_session_refresh.py', 'scripts/smoke_email_delivery.py', 'scripts/mail_fixture_worker.py', 'scripts/configure_auth_email.py', 'scripts/capacity_exercise.py', 'compose.yaml', '.github/workflows/backend.yml']
   pull_request:
-    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/smoke_broker_queue.py', 'scripts/configure_queue.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', 'scripts/operations_smoke.py', 'scripts/smoke_auth_recovery.py', 'scripts/smoke_session_refresh.py', 'scripts/smoke_email_delivery.py', 'scripts/mail_fixture_worker.py', 'scripts/configure_auth_email.py', 'compose.yaml', '.github/workflows/backend.yml']
+    paths: ['apps/api/**', 'scripts/smoke_e2e.py', 'scripts/smoke_object_store.py', 'scripts/smoke_broker_queue.py', 'scripts/configure_queue.py', 'scripts/retention_smoke.py', 'scripts/smoke_account_deletion.py', 'scripts/smoke_worker_recovery.py', 'scripts/operations_smoke.py', 'scripts/smoke_auth_recovery.py', 'scripts/smoke_session_refresh.py', 'scripts/smoke_email_delivery.py', 'scripts/mail_fixture_worker.py', 'scripts/configure_auth_email.py', 'scripts/capacity_exercise.py', 'compose.yaml', '.github/workflows/backend.yml']
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -27,6 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: python -m pip install --upgrade pip==26.3
       - run: python -m pip install -r apps/api/requirements-dev.txt
       - run: python -m pytest apps/api/tests -q
         env:
@@ -37,6 +38,9 @@ jobs:
       - name: Durable broker restart and private S3 upload/render/download
         if: matrix.database == 'sqlite'
         run: python scripts/smoke_broker_queue.py --s3
+      - name: Disposable 100-request capacity burst and restore drill
+        if: matrix.database == 'sqlite'
+        run: python scripts/capacity_exercise.py --soak-seconds 30
       - name: Retain sanitized local S3 startup diagnostics
         if: failure() && matrix.database == 'sqlite'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

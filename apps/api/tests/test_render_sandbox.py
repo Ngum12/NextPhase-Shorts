@@ -67,3 +67,16 @@ def test_probe_teardown_kills_descendants_even_when_probe_parent_already_exited(
         assert not running(pid)
     finally:
         if pid and running(pid):os.kill(pid,9)
+
+
+@pytest.mark.skipif(not sys.platform.startswith('linux'),reason='Linux decoder resource limits')
+def test_decoder_file_size_limit_is_kernel_enforced(tmp_path):
+    import os,subprocess
+    from pathlib import Path
+    from app import render_child
+    fake=tmp_path/'ffmpeg';output=tmp_path/'bounded.bin'
+    fake.write_text(f'#!{sys.executable}\nfrom pathlib import Path\nimport sys\nPath(sys.argv[1]).write_bytes(b"x"*8192)\n')
+    fake.chmod(0o700)
+    result=subprocess.run([sys.executable,'-I',str(Path(render_child.__file__)),str(os.getpid()),'90','--file-limit','1024','ffmpeg',str(output)],
+        env={**os.environ,'PATH':str(tmp_path)+os.pathsep+os.environ['PATH']},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)
+    assert result.returncode!=0 and output.stat().st_size<=1024

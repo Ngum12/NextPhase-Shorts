@@ -6621,9 +6621,9 @@
     {
       "ecosystem": "pypi",
       "name": "pip",
-      "version": "25.0.1",
-      "license": "OSI Approved :: MIT License",
-      "source": "https://pypi.org/project/pip/25.0.1/",
+      "version": "26.3",
+      "license": "MIT",
+      "source": "https://pypi.org/project/pip/26.3/",
       "license_location": "Installed distribution .dist-info/licenses or LICENSE metadata"
     },
     {

@@ -110,6 +110,20 @@ class Settings:
         import math
         if not 1<=self.render_timeout_seconds<=7200 or not math.isfinite(self.worker_poll_seconds) or not .05<=self.worker_poll_seconds<=60:
             raise RuntimeError('Render timeout must be 1–7200 seconds; worker poll must be 0.05–60 seconds')
+        self.api_request_concurrency=int(os.getenv('API_REQUEST_CONCURRENCY','8'))
+        self.global_active_limit=int(os.getenv('GLOBAL_ACTIVE_LIMIT','100'))
+        self.global_processing_limit=int(os.getenv('GLOBAL_PROCESSING_LIMIT','2'))
+        self.global_storage_bytes=int(os.getenv('GLOBAL_STORAGE_BYTES','53687091200'))
+        self.global_ingress_bytes=int(os.getenv('GLOBAL_INGRESS_BYTES','1073741824'))
+        self.ingress_limit=int(os.getenv('INGRESS_LIMIT','4'))
+        self.min_free_disk_bytes=int(os.getenv('MIN_FREE_DISK_BYTES','134217728'))
+        self.ingress_timeout_seconds=int(os.getenv('INGRESS_TIMEOUT_SECONDS','600'))
+        self.observation_retention_days=int(os.getenv('OBSERVATION_RETENTION_DAYS','7'))
+        if not (1<=self.api_request_concurrency<=12 and 1<=self.global_processing_limit<=self.global_active_limit<=10000 and
+                self.global_storage_bytes>0 and self.global_ingress_bytes>0 and 1<=self.ingress_limit<=100 and
+                self.min_free_disk_bytes>=0 and 30<=self.ingress_timeout_seconds<=1800 and
+                1<=self.observation_retention_days<=30):
+            raise RuntimeError('Invalid global capacity or observation retention configuration')
         self.max_active_jobs_per_user = int(os.getenv("MAX_ACTIVE_JOBS_PER_USER", "3"))
         self.max_processing_jobs_per_user = int(os.getenv("MAX_PROCESSING_JOBS_PER_USER", "1"))
         if not 1 <= self.max_processing_jobs_per_user <= self.max_active_jobs_per_user:

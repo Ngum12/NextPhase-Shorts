@@ -7,8 +7,9 @@ COPY requirements.txt .
 # BuildKit mounts it only for this step; it is never copied into the image.
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then \
+      PIP_CERT=/run/secrets/proxy_ca pip install --no-cache-dir pip==26.3 && \
       PIP_CERT=/run/secrets/proxy_ca pip install --no-cache-dir -r requirements.txt; \
-    else pip install --no-cache-dir -r requirements.txt; fi
+    else pip install --no-cache-dir pip==26.3 && pip install --no-cache-dir -r requirements.txt; fi
 COPY app ./app
 RUN chmod -R a+rX /srv/app && useradd --create-home nextphase && mkdir -p /var/nextphase/media && chown -R nextphase:nextphase /var/nextphase
 USER nextphase

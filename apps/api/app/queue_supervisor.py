@@ -60,7 +60,8 @@ def maintenance():
     from .auth_limits import cleanup_auth
     from .deletion import cleanup_deleted
     from .account_deletion import cleanup_accounts
-    cleanup_uploads();cleanup_auth();cleanup_deleted();cleanup_accounts()
+    from .metadata_cleanup import cleanup
+    cleanup_uploads();cleanup_auth();cleanup_deleted();cleanup_accounts();cleanup()
 
 
 def main():

@@ -259,3 +259,8 @@ See [queue upgrade and the one host check](docs/QUEUE_RELIABILITY.md).
 
 Package 4 adds private trace/metrics exports, local alert evaluation, mounted secret
 files and explicit measured-cost coverage. See [monitoring, secrets and costs](docs/MONITORING_SECRETS_COSTS.md).
+
+Package 5 adds shared capacity/intake limits, pre-parser upload caps, bounded
+operational cleanup and a disposable load/backup-restore drill. See
+[capacity/security runbook](docs/CAPACITY_SECURITY.md) and the
+[explicit security/privacy launch blockers](docs/SECURITY_REVIEW_2026-11-08.md).
