@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+os.environ["BUDGET_STATE_FILE"] = ""
 os.environ["RESTORE_JOURNAL_DIR"] = ""
 os.environ["RESTORE_JOURNAL_KEY"] = ""
 os.environ["RESTORE_JOURNAL_KEY_FILE"] = ""

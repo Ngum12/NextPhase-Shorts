@@ -147,3 +147,14 @@ requires a configured ready journal; local development is opt-in. This cannot
 automatically detect arbitrary manual DB rollback or replace old-host fencing,
 immutable/offsite journal/key custody, encrypted backups or complete remote erasure.
 See RESTORE_JOURNAL.md for failure, privacy and recovery boundaries.
+
+
+Consolidated acceptance now exercises encrypted streaming local-media backups,
+protected restore after decryption, verified private Caddy TLS, body/private-route/
+IP/log boundaries, bounded authenticated operator delivery and fail-closed budget
+admission/claim controls. Staging/production requires budget state configuration;
+synthetic fixture rates are refused there. Application pauses cannot stop provider
+billing/idle resources. CA signing/backup keys stay offline from runtime services.
+See CONSOLIDATED_ACCEPTANCE.md: private PKI is not phone/public trust, local media
+bundles exclude remote S3 objects/versions, and external hosting/IAM/cost/privacy/
+license/provider approvals remain open. No local acceptance is a release waiver.

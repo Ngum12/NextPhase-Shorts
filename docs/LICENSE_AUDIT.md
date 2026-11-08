@@ -237,3 +237,20 @@ No dependency, reference-kit code/media/font, paid provider or license change.
 Journal encryption uses the already inventoried cryptography 50.0.2 Fernet API;
 HMAC/fsync/flock and snapshot fixtures use standard Python/Linux/PostgreSQL tools.
 Existing notices and unresolved full OS/transitive/codec/legal gates remain.
+
+
+## Consolidated private staging tool
+
+Added **Caddy 2.11.9**, upstream https://github.com/caddyserver/caddy/tree/v2.11.9 ,
+Apache-2.0. Official release archive LICENSE is preserved verbatim at
+`docs/licenses/caddy-2.11.9-LICENSE.txt`; official archive SHA-512 checksums at
+`deploy/private-staging/caddy-2.11.9-checksums.txt`. Linux amd64 archive checksum
+was verified before native execution. Docker reference is pinned to
+`caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee`.
+Retain license/notices with redistribution. This covers the upstream project
+notice, not full Go/Alpine/image/native/transitive license or vulnerability clearance.
+
+All Python additions use existing cryptography/HTTP/ASGI/database dependencies;
+no new Python/npm dependency or reference-kit source/media/font was introduced.
+Local certificate/backup keys are generated, private and never included in Git.
+No paid service, provider contract, billing, AI or public certificate was activated.

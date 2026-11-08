@@ -32,3 +32,21 @@ Package 6 restore increment: independent local encrypted journal/replay/release
 implemented; protected snapshot-before-security-request HTTP drills pass on SQLite
 and PostgreSQL. Offsite/immutable custody, encrypted snapshot policy, real staging
 fencing and other legal/provider gates remain open. See RESTORE_JOURNAL.md.
+
+
+## Consolidated completion build
+
+Owner requested the remaining four areas be built/tested together, replacing
+further small review batches. They are one branch and one automated report:
+
+| Area | Local software acceptance | External gate retained |
+|---|---|---|
+| Encrypted backups/recovery | Authenticated streaming bundles; new-target read-back; current journal replay; SQLite and PostgreSQL drills | Approved offsite/key/current-journal custody, remote-object/version backup policy |
+| Private deployment | Real verified Caddy TLS, private routes/body/IP/log checks, one Docker profile/init script | Approved host, real certificate/mobile trust, cloud private storage/IAM/queue TLS |
+| Operations/costs | Authenticated trace/alert receipt, failure/budget alerts, provider-export adapter and fail-closed admission/claim gate | Real provider exports/quotes, scheduled reconciliation, provider billing quotas and approved human alert routing |
+| Final review | Combined source-hashed report, advisory checks, preserved licenses and explicit pending approvals | Controller/privacy/terms/licensing/provider and actual staging signoff |
+
+Use [CONSOLIDATED_ACCEPTANCE.md](CONSOLIDATED_ACCEPTANCE.md); no new mini-phase or
+repeated owner regression checklist. Phase 2/public release stays gated where real
+external evidence is missing. No paid deployment/real mail/billing is authorized
+by a green local report.

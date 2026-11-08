@@ -47,13 +47,13 @@ class Journal:
         if not directory and metadata.st_nlink!=1:raise JournalError()
 
     @contextmanager
-    def locked(self):
+    def locked(self,*,read_only=False):
         try:
             import fcntl
             self.safe(self.root,directory=True)
             self.safe(self.root/'lock')
-            descriptor=os.open(self.root/'lock',os.O_RDWR|os.O_NOFOLLOW|os.O_NONBLOCK)
-            with os.fdopen(descriptor,'r+b') as handle:
+            descriptor=os.open(self.root/'lock',(os.O_RDONLY if read_only else os.O_RDWR)|os.O_NOFOLLOW|os.O_NONBLOCK)
+            with os.fdopen(descriptor,'rb' if read_only else 'r+b') as handle:
                 deadline=time.monotonic()+5
                 while True:
                     try:fcntl.flock(handle,fcntl.LOCK_EX|fcntl.LOCK_NB);break
@@ -131,7 +131,7 @@ class Journal:
             return self._read()[0]
 
     def checkpoint(self):
-        with self.locked():return self._read()[0]
+        with self.locked(read_only=True):return self._read()[0]
 
     def append(self,payload):
         self.validate(payload)

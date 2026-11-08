@@ -5,6 +5,126 @@ validation and the server portion of Phase 1 are verified below. The owner has n
 reported a successful physical Pixel upload/render/download test. This establishes
 the reported Android baseline flow, not production readiness or AI functionality.
 
+## Consolidated Phase 2 completion build — four areas, one review
+
+Requested by owner to consolidate remaining backup, private deployment,
+operations/cost and final-review work instead of further small PR/device cycles.
+Branch `dev/phase-2-consolidated-acceptance`, based on merged main **bda9a56**.
+**Local software acceptance is green; public/hosted release and Phase 2 remain
+blocked on real external evidence/approvals explicitly listed below.** No paid
+resource/API, real mail, billing, AI, DNS/public certificate or hosting activated.
+
+Owner previously supplied protected Docker readiness and journal count **0 → 1**
+with unchanged stream ID after actual sign-out. That closes the prior local journal
+activation/write check; it is owner-supplied evidence, not a cloud-run Pixel test.
+No mobile source/lock/native dependency changed here; no new phone regression
+sequence or reinstall is requested.
+
+### Built together
+
+1. **Encrypted backups/recovery:** bounded streaming Fernet frames authenticate
+   archive identity/order/finality plus file manifest hashes. Create-only private
+   outputs, key exclusion, exact checkpoint/offline acknowledgement, changed-source/
+   unsafe-path/link checks and low-disk guards. Recovery uses a NEW target,
+   authenticates before extraction, rejects unsafe/duplicate members and never
+   deploys a DB or replaces the current journal. Snapshot journal remains archival;
+   the independent CURRENT journal/replay/release protects later deletions.
+   Local media only: remote S3 objects/versions/provider state are not silently
+   claimed backed up. Prior plaintext safety snapshots remain private and retained.
+2. **Private deployment rehearsal:** pinned Caddy **2.11.9**, official archive
+   SHA-512 verified, immutable Docker manifest digest. Real certificate-verified
+   localhost HTTPS, private route/body/time/header controls, forwarded-IP defense
+   and raw edge-request/error logging exclusion. Private CA/leaf and separate role
+   credentials generated once; signing/backup keys stay in offline-only volume.
+   Three-file Compose profile is loopback/private; actual cloud/IAM/certificate/
+   queue-TLS/mobile trust remains a real deployment gate, not emulated acceptance.
+3. **Operational/cost checks:** TLS-verified token-authenticated trace/coarse-alert
+   delivery into a private bounded local archive/receipt sink; no human notification
+   or full production collector claim. Source data includes no titles, credentials,
+   raw URLs or arbitrary fields. Operator agent is role-separated, has no customer-media mount/direct external
+   network and requests read-only DB transactions; media-disk measurement is
+   explicitly not observed by that role, with API/worker guards retained. Provider-export reconciliation uses Decimal amounts,
+   explicit coverage/freshness/approval, source hash and operator-controlled resume.
+   Configured missing/stale/breached state pauses new admission/claims and emits a
+   coarse alert; recovery/reads/deletion stay reachable. Actual provider costs,
+   quotas/idle bills and human alert routing remain externally unverified.
+   Staging/production requires budget configuration and rejects fixture mode.
+4. **Final review/report:** one acceptance runner and explicit null external
+   approvals template. Local software checks can pass while `release_ready:false`.
+   Current PyPI/npm advisory checks and Caddy provenance/notice are recorded, not
+   upgraded to complete OS/image/native/commercial legal certification.
+
+### Actual verification
+
+- **389 SQLite backend tests passed (85.43s)** through the combined runner and
+  **389 PostgreSQL tests passed (102.55s)**; no skips, one existing Starlette/httpx
+  deprecation warning each. Includes 21 new backup/control/review regressions.
+- Complete consolidated command passed all five software checks: encrypted
+  recovery, real private HTTPS renderer, monitoring delivery, budget admission
+  gate and backend regressions. Final report
+  `.data/consolidated-acceptance-81be9ac8cb6f44ca89aa0e2ec943568e/report.json`,
+  with honest pre-commit dirty-tree flag/software hash and all external approvals
+  false. CI now runs this as one SQLite acceptance step plus PostgreSQL regression/
+  encrypted restore, not an owner-driven sequence of repeated small checks.
+- Actual Caddy TLS test rejects an untrusted CA, verifies the trusted certificate,
+  bounds body size, denies private routes on public listener, preserves rate
+  limiting against forged forwarding headers, uploads/renders/downloads/fully
+  decodes **1080×1920 output <=5s**, and proves sentinel query/header values do
+  not enter proxy-failure logs. Worker-loss and budget-pause alerts are delivered
+  and acknowledged; budget breach returns 503 for new upload with reads intact.
+- Actual encrypted **PostgreSQL pg_dump → authenticated bundle → NEW database
+  pg_restore → current-journal replay/release** passed, including old credential
+  rejection, fresh local-only survivor recovery, retained output SHA and deletion
+  cleanup. Evidence `.data/restore-journal-62b2e6e4f29b4ba5a84b8f56ec9856ca/`.
+  Only fresh UUID databases on the existing local `_test` service were created
+  and removed; no application database/container/volume was overwritten.
+  SQLite encrypted counterpart also passed in the consolidated command.
+- Official PyPI installed-version metadata: **52 packages, zero published
+  findings, zero unavailable lookups**. Locked npm advisory refresh: **zero**
+  info/low/moderate/high/critical findings. No new Python/npm dependency.
+  These checks are narrower than full image/native/Go/OS advisory clearance.
+- Combined Compose parse/read-back passed: loopback TLS, internal-only receiver,
+  offline backup role, read-only DB/media/journal inputs and offline-key separation.
+  Compilation, pip consistency and diff checks passed. Standard Nginx installer
+  was unavailable (no sudo/helper); verified official Caddy was used and actually
+  tested. No insecure TLS or package policy bypass.
+- Managed Docker VFS disk remains too constrained for full rebuilt-stack execution;
+  **Windows Docker activation script/actual new profile startup are the one owner
+  host check**, not claimed executed by Linux/native tests. Existing services and
+  data retained. Mobile's prior 70-test/TypeScript/export/owner acceptance is
+  unchanged, not rerun/claimed new here.
+
+### Final observer permission check
+
+After removing the observer's media mount/direct external network, the final
+SQLite suite again passed **389 tests (78.29s)** and the complete real Caddy TLS/
+render/trace/failure-alert/budget/log-redaction rehearsal passed; evidence
+`.data/private-staging-a2c5f57c577e418b93983ab1d0c547eb/`. A fresh isolated PostgreSQL
+schema also passed actual monitoring/trace queries with
+`default_transaction_read_only=on` and explicitly unobserved media-disk state.
+That schema was removed; no application database or Docker layer was replaced.
+The PostgreSQL full-suite result above remains the recorded 389-pass run, not
+relabeled as a second full run for this observer-only adjustment.
+
+### One review and one owner activation
+
+After review/merge, finish uploads, pull and run
+`scripts/activate_private_staging.ps1`. It privately snapshots current PostgreSQL/
+local media, builds the roles, checks/creates private PKI once, encrypts and
+read-backs a bundle without deploying the DB, starts the profile and checks TLS
+readiness/acknowledged operator delivery. Failure stops; existing keys/volumes
+are never reinitialized. Use all **three Compose files** afterward. Existing
+USB/Expo Go HTTP loopback preview stays unchanged; private CA trust is not silently
+installed on the phone. [Single runbook](docs/CONSOLIDATED_ACCEPTANCE.md).
+
+Still required for actual hosted release: approved host/budget and quotas, actual
+provider cost exports and human alert routing, externally trusted mobile HTTPS,
+private S3/IAM/queue-TLS deployment, independent offsite key/current-journal/backup
+custody and remote-version recovery, full license/native/image/security review,
+controller/privacy/terms/provider approval and actual staging device acceptance.
+These are **gates inside the four consolidated areas**, not new mini-phases or
+waived risks. No claim that a local app admission stop halts provider billing.
+
 ## Phase 2 package 6 — independent journal and protected restore
 
 Development branch `dev/phase-2-restore-journal`, based on merged main **e4789df**.

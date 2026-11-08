@@ -56,7 +56,7 @@ def main():
         'actions':['Admin','Read','Write','List','Tagging']}]}))
     config.chmod(0o600)
     # Preserve registry credentials/proxies but select only the local daemon.
-    docker_env = {**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR'], '')}
+    docker_env = {**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR', 'BUDGET_STATE_FILE'], '')}
     for key in ('DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH'):
         docker_env.pop(key, None)
     docker = ['docker','--host=unix:///var/run/docker.sock'] if os.name != 'nt' else ['docker','--context','default']
@@ -66,7 +66,7 @@ def main():
         start_store(run, name, config)
         port = run('port',name,'8333/tcp',capture_output=True,text=True,timeout=10).stdout.strip().rsplit(':',1)[1]
         endpoint = f'http://127.0.0.1:{port}'
-        env = {**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR'], '')}
+        env = {**os.environ, **dict.fromkeys(['JWT_SECRET_FILE', 'DATABASE_URL_FILE', 'S3_ACCESS_KEY_ID_FILE', 'S3_SECRET_ACCESS_KEY_FILE', 'QUEUE_PASSWORD_FILE', 'RESEND_API_KEY_FILE', 'AUTH_MAIL_ENCRYPTION_KEYS_FILE', 'RESTORE_JOURNAL_KEY_FILE', 'RESTORE_JOURNAL_KEY', 'RESTORE_JOURNAL_DIR', 'BUDGET_STATE_FILE'], '')}
         env.update(APP_ENV='test',QUEUE_BACKEND='database',WORKER_REQUIRE_SANDBOX='false',WORKER_REQUIRE_LIMITS='false',AUTH_MAIL_BACKEND='disabled',AUTH_MAIL_SEND_ENABLED='false',AUTH_REQUIRE_VERIFIED_EMAIL='false',MEDIA_BACKEND='s3',S3_ENDPOINT=endpoint,S3_PUBLIC_ENDPOINT=endpoint,
             S3_BUCKET='nextphase-smoke',S3_ACCESS_KEY_ID=access,S3_SECRET_ACCESS_KEY=secret,
             SIGNED_DOWNLOAD_SECONDS='5',NEXTPHASE_SMOKE_S3_CHECKS='1',
