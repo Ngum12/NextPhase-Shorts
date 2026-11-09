@@ -278,3 +278,15 @@ then explicitly bind the current stopped source before protected snapshots.
 API staging/production now requires the journal. Local Docker activation uses the
 reviewed `compose.restore-journal.yaml` overlay; preserve its independent volume
 when restoring DB/media. See [setup, automated proof and remaining offsite gates](docs/RESTORE_JOURNAL.md).
+
+
+### One consolidated Phase 2 acceptance build
+
+The remaining backup/TLS/operations/review software is now grouped into one
+[consolidated build and acceptance runbook](docs/CONSOLIDATED_ACCEPTANCE.md).
+`python scripts/consolidated_acceptance.py` runs one Linux/CI report for encrypted
+recovery, real certificate-verified HTTPS/render/download, private operator delivery,
+budget admission gates and external approval gaps. Windows owners use the single
+reviewed `scripts/activate_private_staging.ps1` after merging. No mobile reinstall
+or repeated phone test suite is needed. Local software acceptance does not approve
+public hosting, real provider costs, offsite custody or legal/provider signoff.

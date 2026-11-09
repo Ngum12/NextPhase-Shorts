@@ -1,5 +1,11 @@
 # Changelog
 
+## Consolidated Phase 2 backup, TLS, operations and review build
+
+- Add streaming authenticated backup bundles and encrypted SQLite/PostgreSQL recovery drills using the independent current journal.
+- Add pinned Caddy private TLS/role-separated local PKI, bounded authenticated OTLP/alert delivery and tested budget admission/claim controls.
+- Add one consolidated acceptance report, one Windows activation script, current advisory review and explicit external release approvals. No paid/public deployment or mobile changes.
+
 ## Independent restore journal and replay gate
 
 - Record encrypted independent write-ahead security intentions; reapply post-snapshot deletions, invalidate restored credentials/passwords, and require explicit offline release after a capability-retirement interval.

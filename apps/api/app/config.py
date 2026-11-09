@@ -10,6 +10,7 @@ class Settings:
     def __init__(self):
         self.env = os.getenv("APP_ENV", "development")
         self.database_url = read_secret("DATABASE_URL", "sqlite:///./.data/nextphase.db")
+        self.budget_state_file=os.getenv('BUDGET_STATE_FILE','')
         self.restore_journal_dir=os.getenv('RESTORE_JOURNAL_DIR','')
         self.restore_journal_key=read_secret('RESTORE_JOURNAL_KEY','')
         if bool(self.restore_journal_dir)!=bool(self.restore_journal_key):
@@ -169,6 +170,8 @@ class Settings:
             raise RuntimeError("Set a strong random JWT_SECRET before production")
         if self.env in {"staging", "production"} and not self.database_url.startswith(("postgresql://", "postgresql+psycopg://")):
             raise RuntimeError("Staging and production require PostgreSQL and migrations")
+        if self.env in {'staging','production'} and not self.budget_state_file:
+            raise RuntimeError('Staging and production require an operator budget state file')
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
     def validate_s3(self):

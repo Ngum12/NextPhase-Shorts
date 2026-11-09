@@ -139,3 +139,14 @@ intentions from a separately retained current stream/checkpoint. This supersedes
 the earlier "unimplemented journal" entry only for that tested local scope.
 Offsite/immutable journal custody, encrypted snapshots, key rotation, actual staging
 fencing and remote/versioned erasure remain open and are not waived.
+
+
+### Consolidated completion build
+
+The remaining backup/private-TLS/operations/review software is packaged together;
+[CONSOLIDATED_ACCEPTANCE.md](CONSOLIDATED_ACCEPTANCE.md) supersedes fragmented
+local implementation steps. Authenticated local bundles, actual verified Caddy
+TLS/renderer, private trace/alert receipt and application budget gates pass the
+single automation report. Nine explicitly external release approvals remain
+false by default; no public-hosting, provider-bill, offsite-custody or legal proof
+is invented. One Windows activation script is the remaining owner host check.

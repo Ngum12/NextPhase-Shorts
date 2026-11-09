@@ -1,0 +1,109 @@
+# Local private rehearsal only. Layer after compose.yaml and compose.restore-journal.yaml.
+services:
+  edge:
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    user: '1000:1000'
+    entrypoint: caddy
+    command: run --config /etc/caddy/Caddyfile --adapter caddyfile
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 1.0
+    mem_limit: 128m
+    pids_limit: 64
+    ports: ['127.0.0.1:8443:8443']
+    volumes:
+      - ./deploy/private-staging/Caddyfile:/etc/caddy/Caddyfile:ro
+      - staging-edge:/var/nextphase/staging-edge:ro
+    tmpfs: ['/data:uid=1000,gid=1000,mode=0700,size=16777216','/config:uid=1000,gid=1000,mode=0700,size=1048576']
+    networks: [default, operator-private]
+    restart: unless-stopped
+  operator-receiver:
+    build: {context: ./apps/api}
+    command: uvicorn app.operator_receiver:app --host 0.0.0.0 --port 9090 --no-access-log --no-proxy-headers
+    environment:
+      OPERATOR_RECEIVER_TOKEN_FILE: /var/nextphase/staging-receiver/receiver.token
+      OPERATOR_SINK_DIR: /var/nextphase/staging-receiver/sink
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 0.5
+    mem_limit: 256m
+    pids_limit: 64
+    volumes: [staging-receiver:/var/nextphase/staging-receiver]
+    networks: [operator-private]
+    restart: unless-stopped
+  operator-agent:
+    build: {context: ./apps/api}
+    command: python -m app.operator_agent --url https://edge:9443 --ca-file /var/nextphase/staging-agent/root.crt
+    environment:
+      DATABASE_URL: postgresql+psycopg://nextphase:localdev@db:5432/nextphase?options=-cdefault_transaction_read_only%3Don
+      JWT_SECRET_FILE: /var/nextphase/staging-agent/config.key
+      STORAGE_DIR: /tmp/operator-state
+      OPERATOR_RECEIVER_TOKEN: ''
+      OPERATOR_RECEIVER_TOKEN_FILE: /var/nextphase/staging-agent/receiver.token
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 0.5
+    mem_limit: 256m
+    pids_limit: 64
+    volumes: [staging-agent:/var/nextphase/staging-agent:ro]
+    tmpfs: ['/tmp:uid=1000,gid=1000,mode=0700,size=1048576']
+    networks: [operator-private]
+    depends_on: {edge: {condition: service_started}, api: {condition: service_healthy}}
+    restart: unless-stopped
+  db:
+    networks: [default, operator-private]
+  backup-tool:
+    profiles: [maintenance]
+    build: {context: ./apps/api}
+    entrypoint: python
+    command: -m app.backup_bundle --help
+    network_mode: none
+    environment:
+      STORAGE_DIR: /tmp/backup-placeholder
+      JWT_SECRET_FILE: /var/nextphase/staging-offline/config.key
+      RESTORE_JOURNAL_DIR: /source/journal/events
+      RESTORE_JOURNAL_KEY_FILE: /source/journal/journal.key
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 1.0
+    mem_limit: 512m
+    pids_limit: 32
+    tmpfs: ['/tmp:uid=1000,gid=1000,mode=0700,size=1048576']
+    volumes:
+      - staging-offline:/var/nextphase/staging-offline:ro
+      - media:/source/media:ro
+      - restore-journal-data:/source/journal:ro
+      - ./.data/staging-input:/input:ro
+      - ./.data/encrypted-backups:/backups
+    restart: 'no'
+  staging-init:
+    profiles: [maintenance]
+    build: {context: ./apps/api}
+    entrypoint: python
+    command: -m app.staging_setup
+    user: '0:0'
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    cpus: 1.0
+    mem_limit: 128m
+    pids_limit: 32
+    volumes:
+      - staging-edge:/var/nextphase/staging-edge
+      - staging-agent:/var/nextphase/staging-agent
+      - staging-receiver:/var/nextphase/staging-receiver
+      - staging-offline:/var/nextphase/staging-offline
+    restart: 'no'
+networks:
+  operator-private: {internal: true}
+volumes:
+  staging-edge:
+  staging-agent:
+  staging-receiver:
+  staging-offline:

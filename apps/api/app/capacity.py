@@ -47,6 +47,8 @@ def usage(db):
 def admit(db,amount):
     # Admission callers hold owner first, then global mutex. Never acquire owner
     # locks while holding this global gate. Reductions/cleanup may proceed freely.
+    from .budget_control import require_open
+    require_open()
     settings=get_settings();lock(db);current=usage(db)
     if current['unknown_records']:
         raise HTTPException(503,'Server storage inventory must be verified before new uploads',headers={'Retry-After':'30'})
@@ -58,6 +60,9 @@ def admit(db,amount):
 
 
 def worker_available(db):
+    from .budget_control import require_open
+    try:require_open()
+    except HTTPException:return False
     lock(db)
     if db.scalar(select(func.count()).select_from(RenderJob).where(RenderJob.status=='processing'))>=get_settings().global_processing_limit:
         return False

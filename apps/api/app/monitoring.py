@@ -14,14 +14,20 @@ from .observability import export
 from .secret_config import sources
 
 
-def snapshot(db,*,hours=24,rates=None,ceiling=None,queue_age=300,failures=5,limit=10000):
+def snapshot(db,*,hours=24,rates=None,ceiling=None,queue_age=300,failures=5,limit=10000,check_disk=True):
     now=utcnow();ops=operations.report(db,hours=min(hours,168),now=now)
     usage=costs.report(db,since=now-timedelta(hours=hours),now=now,rates=rates,limit=limit)
     from .capacity import report as capacity_report
     capacity=capacity_report(db)
     issues=list(ops['issues'])
+    from .config import get_settings
+    if get_settings().budget_state_file:
+        from .budget_control import require_open
+        from fastapi import HTTPException
+        try:require_open()
+        except HTTPException:issues.append('budget_admission_paused')
     if capacity['stale_ingress_reservations']:issues.append('stale_ingress_reservations')
-    if capacity['disk']!='ok':issues.append('local_disk_low_or_unavailable')
+    if check_disk and capacity['disk']!='ok':issues.append('local_disk_low_or_unavailable')
     if capacity['unknown_records']:issues.append('global_storage_inventory_unknown')
     if (ops['queue']['oldest_queued_seconds'] or 0)>queue_age:issues.append('queue_wait_threshold')
     if sum(ops['failed_job_codes_finished_in_window'].values())>=failures:issues.append('render_failure_threshold')
@@ -32,7 +38,7 @@ def snapshot(db,*,hours=24,rates=None,ceiling=None,queue_age=300,failures=5,limi
         if any(usage['coverage'][k] for k in ('unmeasured_wall_attempts','attempts_without_spans','retained_jobs_without_artifact_measurements','successful_attempts_without_output_measurements')):
             issues.append('cost_coverage_incomplete')
     return {'schema_version':1,'status':'attention_required' if issues else 'ok','issues':issues,
-        'operations':ops,'capacity':capacity,'costs':usage,'secret_sources':sources(),
+        'operations':ops,'capacity':capacity if check_disk else {**capacity,'local_free_bytes':None,'disk':'not_observed_by_this_role'},'costs':usage,'secret_sources':sources(),
         'alerts':'local evaluation only; schedule --check and route exit codes with your approved operator tooling',
         'cost_ceiling_scope':'alert on observed partial window estimate only, never a provider billing stop'}
 

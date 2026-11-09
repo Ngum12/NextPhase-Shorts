@@ -1,0 +1,47 @@
+{
+    admin off
+    persist_config off
+    auto_https off
+    log default {
+        exclude http.log.error http.log.access
+    }
+    servers {
+        timeouts {
+            read_header 10s
+            read_body 3m
+            write 3m
+            idle 30s
+        }
+    }
+}
+https://edge:8443, https://localhost:8443, https://127.0.0.1:8443 {
+    tls /var/nextphase/staging-edge/server.crt /var/nextphase/staging-edge/server.key
+    request_body {
+        max_size 315MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        Cache-Control no-store
+    }
+    @operator path /v1/traces /v1/alerts /docs* /redoc* /openapi.json /private-ops/*
+    respond @operator 404
+    reverse_proxy api:8000 {
+        header_up -Forwarded
+        header_up -X-Real-IP
+        header_up -X-Forwarded-For
+    }
+}
+https://edge:9443, https://localhost:9443 {
+    tls /var/nextphase/staging-edge/server.crt /var/nextphase/staging-edge/server.key
+    request_body {
+        max_size 2MB
+    }
+    @receiver path /v1/traces /v1/alerts /health
+    handle @receiver {
+        reverse_proxy operator-receiver:9090
+    }
+    handle {
+        respond 404
+    }
+}

@@ -115,3 +115,12 @@ Protected restores invalidate all old credentials/passwords and require fresh
 recovery; unbound/pre-activation snapshots are refused. This does not complete
 immutable/offsite custody, encrypted snapshot retention, actual production fencing
 or remote/versioned erasure. This draft remains unpublished and unapproved.
+
+
+Consolidated engineering update: new local-media backup bundles are authenticated/
+encrypted with a separate key; prior plaintext safety snapshots and remote S3
+copies are outside that retroactive promise. Private operator delivery stores
+only validated trace metadata/coarse alerts in a bounded local sink; no provider
+or human message channel was activated. CA signing/backup keys remain outside
+runtime mounts. Real retention/offsite custody, controller identity, provider
+agreements and legal signoff remain unapproved; this draft is not published.

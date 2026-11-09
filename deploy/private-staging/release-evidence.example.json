@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "scope": "operator attestations; not automated legal certification",
+  "approvals": {
+    "hosting_budget": null,
+    "privacy_terms": null,
+    "license_review": null,
+    "provider_terms": null,
+    "offsite_key_journal_custody": null,
+    "actual_provider_costs_and_quotas": null,
+    "actual_staging_device_acceptance": null,
+    "trusted_certificate_and_tls_edge": null,
+    "private_storage_and_least_privilege": null
+  }
+}
