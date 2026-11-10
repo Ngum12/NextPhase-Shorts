@@ -63,6 +63,11 @@ fresh private disposable trial and run its single acceptance command. Accept act
 host/performance results before reviewing real hosted configuration/data migration.
 Phase 2 stays open for its remaining external gates; Phase 3 has not been started.
 
+Implementation **d8eb579** pushed to `dev/phase-2-vps-preparation`. Automatic PR
+creation returned GitHub GraphQL **Forbidden**; no PR number or remote CI success
+is claimed. [Open the prepared review](https://github.com/Ngum12/NextPhase-Shorts/pull/new/dev/phase-2-vps-preparation).
+No PC pull/rebuild/device test is required before the VPS is available.
+
 This is a **developer prototype**, not a production AI editor. Phase 0 engineering
 validation and the server portion of Phase 1 are verified below. The owner has now
 reported a successful physical Pixel upload/render/download test. This establishes
