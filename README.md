@@ -290,3 +290,12 @@ budget admission gates and external approval gaps. Windows owners use the single
 reviewed `scripts/activate_private_staging.ps1` after merging. No mobile reinstall
 or repeated phone test suite is needed. Local software acceptance does not approve
 public hosting, real provider costs, offsite custody or legal/provider signoff.
+
+### Preparing a new VPS
+
+The [VPS preparation and migration runbook](docs/VPS_DEPLOYMENT.md) provides a
+dedicated disposable Linux trial with fresh credentials, private loopback ports,
+one-render limits and `scripts/vps_trial.py accept --synthetic`. It preserves the
+working PC installation. This is private host acceptance preparation; trusted
+public HTTPS, private cloud storage, offsite recovery and external approvals
+remain required before an actual hosted release.

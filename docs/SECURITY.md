@@ -1,5 +1,12 @@
 # Security / privacy — gating checklist, not completed certification
 
+The [private VPS trial](VPS_DEPLOYMENT.md) uses fresh development credentials,
+dedicated project/volumes, loopback-only access and required worker containment.
+Its reports cannot approve public release. SSH tunnel transport is not public
+mobile HTTPS acceptance; local media/private CA and environment credentials are
+not production S3/IAM/vault/queue-TLS controls. Actual host testing, independent
+offsite recovery, approved costs and external review remain required.
+
 ### What Stage 1 already does
 
 - Revocable, DB-backed JWT bearer sessions with required issuer/audience/expiry, current/all-session logout and authenticated password change; salted scrypt passwords; user-owned job/download filtering.

@@ -1,4 +1,67 @@
-# Implementation Status — 2026-11-08
+# Implementation Status — 2026-11-10
+
+## Private VPS deployment preparation
+
+Branch `dev/phase-2-vps-preparation`, based on merged main **fe22703**. Owner
+selected a prospective Contabo 4-vCPU/8-GB/150-GB one-month trial; purchase and
+provisioning are not claimed. No remote host credentials were supplied or used.
+
+- Added a four-file private VPS trial overlay with dedicated Compose project/
+  volumes, fresh database/session/broker credentials, loopback-only API/TLS ports,
+  no published broker, bounded supervisor/database and one-render DB admission.
+  Preparation is create-only, private and refuses unsafe links/permissions.
+  Inherited PC env files, project/profile selectors and VPS interpolation values
+  cannot silently select the working installation through the Python entry point.
+- Added one acceptance command for actual worker containment, verified private
+  HTTPS, monitoring and acknowledged operator delivery; explicit `--synthetic`
+  then exercises the existing HTTP resumable upload/render/download/ownership flow.
+  Private reports retain fixed failure codes and no raw command diagnostics or
+  credential values. Missing prerequisites fail closed; no automatic init/restore,
+  public exposure, mail sending, AI, billing or paid provisioning.
+- Added `docs/VPS_DEPLOYMENT.md`: SSH access/recovery, fresh-only initialization,
+  private tunnel preview, consistent encrypted transfer, independently current
+  journal/key/checkpoint custody, old-host fencing and distinct before/after-write
+  rollback rules. Trial uses local storage and APP_ENV=development explicitly;
+  production S3/IAM, queue TLS, trusted mobile HTTPS, real budget feed, offsite
+  recovery, human alerts and security/privacy/provider/legal acceptance remain open.
+- **394 SQLite backend tests passed (78.09s)**, one existing Starlette/httpx
+  deprecation warning. Includes five new deployment regressions and actual Compose
+  resolution proving private ports, resource limits, fresh credentials and project
+  isolation; no Docker engine/new application container is needed for that check.
+  Final targeted deployment suite again passed **5 tests (0.16s)** after tightening
+  local Docker selection, permissions and host-network refusal. Compilation, pip
+  consistency and diff checks passed; no new dependency was needed.
+- Complete real HTTP smoke passed: API restart/auth/refresh, interrupted 51-MiB
+  resumable transfer/checksum/one-job publication, queue/render/download/decode,
+  ownership, deletion/retention, telemetry/monitoring and worker crash/restart.
+  Output **1080×1920 / 30fps / 4.9s**, baseline flow **2.01s**, not a load/SLA
+  benchmark. Evidence `.data/smoke-cae4ed01bc8849d1aa66aaa1052f1ae3/`;
+  mail companion used local MockTransport only, never Resend.
+- The first smoke failed with a job still queued: free space was below the
+  worker's configured reserve plus output allowance. That run is not a pass.
+  Removed only two recognized generated 53,554,551-byte stress inputs and 186
+  stale, structurally recognized pytest-only roots (about 187 MB total), retaining
+  reports and all application volumes/data. The complete rerun passed with disk
+  guards unchanged. No broad Docker pruning or resource-limit bypass.
+- No mobile source/native/dependency change; prior owner Pixel acceptance remains
+  valid, not relabeled as a new device test. No new PostgreSQL full-suite run or
+  actual VPS/whole new Docker stack acceptance is claimed. Managed host still lacks
+  enforced containment and has limited disk; guards were not weakened.
+
+### Owner-reported consolidated activation now accepted
+
+Owner supplied successful Windows activation after merging **fe22703**: consistent
+PG/local-media safety snapshot, encrypted **13-file** bundle/authenticated readback,
+private PKI with no runtime CA signing key, healthy stack, verified TLS readiness,
+acknowledged operator delivery and actual rebuilt worker inventory (**292 OS / 47
+Python packages**). This closes the earlier owner activation pending note below.
+It is supplied owner evidence, not a cloud-executed Windows test or legal/image
+vulnerability certification. No repeated activation or phone regression requested.
+
+**Next:** review/merge this preparation; when the VPS exists, initialize only its
+fresh private disposable trial and run its single acceptance command. Accept actual
+host/performance results before reviewing real hosted configuration/data migration.
+Phase 2 stays open for its remaining external gates; Phase 3 has not been started.
 
 This is a **developer prototype**, not a production AI editor. Phase 0 engineering
 validation and the server portion of Phase 1 are verified below. The owner has now
