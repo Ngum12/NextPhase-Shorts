@@ -1,5 +1,13 @@
 # Implementation Status — 2026-11-10
 
+## CI package-index timeout repair
+
+The reported PostgreSQL CI job stopped before tests while APT fetched an Ubuntu
+English translation index. Backend CI now disables translation downloads and sets
+three retries and 30-second HTTP/HTTPS timeouts for FFmpeg installation. Package
+signature and TLS verification remain enabled. Workflow YAML and shell syntax were
+checked locally; the GitHub-hosted install and PostgreSQL job require a fresh CI run.
+
 ## Private VPS deployment preparation
 
 Branch `dev/phase-2-vps-preparation`, based on merged main **fe22703**. Owner
