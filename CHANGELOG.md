@@ -1,5 +1,13 @@
 # Changelog
 
+## Private VPS deployment preparation
+
+- Add create-only fresh VPS trial credentials, isolated Compose project/volumes,
+  private loopback ports, strict worker guards and one-render admission.
+- Add one private acceptance entry point and staged migration/fencing/rollback
+  instructions. Preserve the working PC; no public deployment or paid activation.
+- Record owner-reported consolidated Windows activation success.
+
 ## Consolidated Phase 2 backup, TLS, operations and review build
 
 - Add streaming authenticated backup bundles and encrypted SQLite/PostgreSQL recovery drills using the independent current journal.

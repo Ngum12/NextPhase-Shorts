@@ -1,0 +1,43 @@
+# PRIVATE disposable VPS trial, not APP_ENV=staging or public hosting.
+# Compose >=2.24.4. Always use scripts/vps_trial.py's four-file project selection.
+services:
+  api:
+    env_file: !override [.data/vps-trial/server.env]
+    environment:
+      DATABASE_URL: ${VPS_DATABASE_URL:?Run vps_trial.py prepare first}
+    ports: !override ['127.0.0.1:18000:8000']
+  migrate:
+    env_file: !override [.data/vps-trial/server.env]
+    environment:
+      DATABASE_URL: ${VPS_DATABASE_URL:?Run vps_trial.py prepare first}
+  worker:
+    env_file: !override [.data/vps-trial/server.env]
+    environment:
+      DATABASE_URL: ${VPS_DATABASE_URL:?Run vps_trial.py prepare first}
+  queue-supervisor:
+    env_file: !override [.data/vps-trial/server.env]
+    environment:
+      DATABASE_URL: ${VPS_DATABASE_URL:?Run vps_trial.py prepare first}
+    cpus: 0.5
+    mem_limit: 256m
+    pids_limit: 64
+  mail-worker:
+    env_file: !override [.data/vps-trial/server.env]
+    environment:
+      DATABASE_URL: ${VPS_DATABASE_URL:?Run vps_trial.py prepare first}
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${VPS_DB_PASSWORD:?Run vps_trial.py prepare first}
+    cpus: 1.0
+    mem_limit: 1g
+    pids_limit: 128
+  queue:
+    ports: !reset []
+    volumes: !override
+      - queue-data:/data
+      - ./.data/vps-trial/valkey.conf:/etc/valkey/valkey.conf:ro
+  operator-agent:
+    environment:
+      DATABASE_URL: ${VPS_DATABASE_URL:?Run vps_trial.py prepare first}?options=-cdefault_transaction_read_only%3Don
+  edge:
+    ports: !override ['127.0.0.1:18443:8443']

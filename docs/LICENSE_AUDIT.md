@@ -1,5 +1,14 @@
 # License provenance and integration gates
 
+## Private VPS preparation — 2026-11-10
+
+No dependency, third-party image/version, reference-kit code, media, model or font
+added. The trial overlay reuses existing reviewed image references; preparation
+and acceptance code is independently authored using Python's standard library
+and the existing HTTP smoke. Existing notices and full OS/transitive/codec/legal
+review gates remain. No provider contract, paid resource or public deployment
+was activated by this preparation.
+
 IMPORTANT: This starter repository is newly authored scaffolding. It deliberately does **not** redistribute user-provided ZIP skill packs, fonts, clips, sample media, source code or branded assets.
 
 Three uploaded reference materials reviewed, not included here:
