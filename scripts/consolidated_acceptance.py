@@ -65,6 +65,7 @@ def main():
         if args.postgres:command+=['--postgres']
         run('encrypted-restore',command);checks['encrypted_restore']=True
         run('private-staging',[sys.executable,'scripts/private_staging_smoke.py','--caddy',caddy])
+        run('trial-https-routing',[sys.executable,'scripts/smoke_trial_https.py','--caddy',caddy])
         checks.update(private_https_renderer=True,monitoring_delivery=True,budget_admission_gate=True)
     finally:
         sys.path.insert(0,str(ROOT/'apps/api'))

@@ -1,0 +1,42 @@
+# Separate opt-in front door for a disposable trial, restricted to one client IP.
+# Never replace the existing private edge or reuse this as production acceptance.
+services:
+  certificate-init:
+    profiles: [maintenance]
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    entrypoint: /bin/sh
+    command: ['-ec', 'chmod 700 /data && chown 1000:1000 /data']
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: [no-new-privileges:true]
+    volumes: [trial-certificates:/data]
+    restart: 'no'
+  public-edge:
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    user: '1000:1000'
+    entrypoint: caddy
+    command: run --config /etc/caddy/Caddyfile --adapter caddyfile
+    environment:
+      TRIAL_DOMAIN: ${TRIAL_DOMAIN:?Set the trial domain in the dedicated HTTPS env file}
+      TRIAL_CLIENT_IP: ${TRIAL_CLIENT_IP:?Set the single administrator public IP in the dedicated HTTPS env file}
+    ports: ['0.0.0.0:80:8080', '0.0.0.0:443:8443']
+    volumes:
+      - ./deploy/trial-https/Caddyfile:/etc/caddy/Caddyfile:ro
+      - trial-certificates:/data
+    tmpfs: ['/config:uid=1000,gid=1000,mode=0700,size=1048576']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    cpus: 0.5
+    mem_limit: 128m
+    pids_limit: 64
+    networks: [trial]
+    restart: unless-stopped
+networks:
+  trial:
+    external: true
+    name: nextphase-vps-trial_default
+volumes:
+  trial-certificates:

@@ -1,0 +1,51 @@
+{
+	admin off
+	persist_config off
+	http_port 8080
+	https_port 8443
+	log default {
+		exclude http.log.error http.log.access
+	}
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 3m
+			write 3m
+			idle 30s
+		}
+	}
+}
+
+# ACME handles its challenge path before this route. No API over plain HTTP.
+http://{$TRIAL_DOMAIN}:8080 {
+	respond 404
+}
+
+{$TRIAL_DOMAIN} {
+	request_body {
+		max_size 315MB
+	}
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Cache-Control no-store
+	}
+	route {
+		# Direct socket peer only: forwarded headers never grant access.
+		@denied not remote_ip {$TRIAL_CLIENT_IP}
+		respond @denied 403
+		@private path /docs* /redoc* /openapi.json /private-ops/* /v1/*
+		respond @private 404
+		@application path /health /ready /api/v1/*
+		handle @application {
+			reverse_proxy api:8000 {
+				header_up -Forwarded
+				header_up -X-Real-IP
+				header_up -X-Forwarded-For
+			}
+		}
+		handle {
+			respond 404
+		}
+	}
+}
