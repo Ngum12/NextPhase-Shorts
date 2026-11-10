@@ -143,6 +143,10 @@ and certificate verification must never be bypassed.
 
 ## 5. Migration, fencing and rollback — separate from the disposable trial
 
+For optional trusted domain HTTPS restricted to the administrator's personal
+public IP, follow [the separate trial front door](TRIAL_HTTPS.md). It retains the
+private trial and is not a public release or customer migration.
+
 Do not automatically migrate existing accounts into this trial. First accept its
 host/performance results, select approved private S3/offsite destinations, approve
 provider costs/quotas and arrange trusted mobile HTTPS and human alert routing.

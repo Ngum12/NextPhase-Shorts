@@ -1,5 +1,22 @@
 # Implementation Status — 2026-11-10
 
+## Restricted domain HTTPS preparation
+
+Owner supplied actual Contabo VPS evidence: Ubuntu 24.04, 4 CPUs, 8 GB RAM,
+strict worker hostcheck ready, healthy private stack and all six
+`vps_trial.py accept --synthetic` checks true. SSH key-only administrator access
+and active UFW with SSH allowed were also owner-reported. These supersede the
+earlier prospective-host status below; no public release is accepted.
+
+Added an opt-in separate Caddy front door with persistent private certificate
+state, one direct-client-IP restriction, hidden operator/docs routes and no
+customer-data migration. Existing private services and operator TLS remain.
+Local official SHA-512-verified Caddy routing checks passed allowed/denied peers,
+forged forwarding headers, route exclusions and API forwarding; Compose validated
+with required settings and refused missing settings. CI includes this routing
+check. Actual ACME issuance, denied external network and phone HTTPS/upload/Save
+remain unverified until run on the VPS. Public release stays blocked.
+
 ## Private VPS deployment preparation
 
 Branch `dev/phase-2-vps-preparation`, based on merged main **fe22703**. Owner
