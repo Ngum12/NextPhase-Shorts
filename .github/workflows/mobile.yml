@@ -37,6 +37,9 @@ jobs:
       - name: Test refresh rotation and network recovery
         working-directory: apps/mobile
         run: npm run test:refresh
+      - name: Test private English review contracts
+        working-directory: apps/mobile
+        run: npm run test:analysis
       - name: Test patched Expo build-tool compatibility
         working-directory: apps/mobile
         run: npm run test:toolchain

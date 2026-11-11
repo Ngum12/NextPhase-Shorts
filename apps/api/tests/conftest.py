@@ -28,6 +28,8 @@ os.environ['WORKER_REQUIRE_LIMITS']='false'
 os.environ["AUTH_MAIL_DIR"] = str(ROOT / "auth-mail")
 os.environ['MEDIA_BACKEND'] = 'local'
 os.environ['DIRECT_UPLOADS_ENABLED'] = 'false'
+os.environ['ENGLISH_REVIEW_ENABLED'] = 'false'
+os.environ['ENGLISH_REVIEW_USER_IDS'] = ''
 # Regression suites create many isolated accounts behind one test-client IP.
 # Auth-specific tests set small limits explicitly and exercise enforcement.
 for key in ('AUTH_LOGIN_ACCOUNT_LIMIT', 'AUTH_LOGIN_IP_LIMIT', 'AUTH_REGISTER_IP_LIMIT', 'AUTH_PASSWORD_LIMIT'):
