@@ -2,6 +2,13 @@
 
 ## VPS maintenance preparation — 2026-11-11
 
+Actual-host scheduled-backup command subsequently passed authenticated readback
+and copied-ciphertext hash verification; offsite copy remains false. Email setup
+was saved privately, but its test returned HTTP 403/non-JSON. Added explicit
+User-Agent/Accept request headers and fixed-field HTTP diagnostics to distinguish
+API errors from edge filtering without printing provider bodies or credentials.
+Actual sending success remains unverified until the VPS retry.
+
 Owner reported trusted domain HTTPS readiness, unauthenticated jobs 401/docs 404,
 and successful phone upload/render/Save/playback on the private VPS. An encrypted
 120-MB backup authenticated/read back, restored into a new PostgreSQL test DB

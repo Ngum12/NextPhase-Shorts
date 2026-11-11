@@ -20,6 +20,7 @@ import ssl
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 import uuid
 
@@ -303,13 +304,35 @@ def notify(result, *, test=False, topic='monitor'):
                        '\nCheck the private server maintenance status. No customer data is included.'}
     request = urllib.request.Request('https://api.resend.com/emails',
         data=json.dumps(payload).encode(), headers={'Authorization': 'Bearer '+key,
-        'Content-Type': 'application/json'}, method='POST')
+        'Content-Type': 'application/json', 'Accept': 'application/json',
+        'User-Agent': 'NextPhase-VPS-Maintenance/1.0'}, method='POST')
     with urllib.request.urlopen(request, timeout=20) as response:
         receipt = json.load(response)
         if not receipt.get('id'):
             raise RuntimeError('Email provider did not acknowledge acceptance')
     save('email-last-'+topic+'.json', {'sent_at': time.time(), 'failed': failed, 'fingerprint': fingerprint})
     return 'provider_accepted_not_inbox_verified'
+
+
+def email_error(error):
+    """Expose fixed classifications, never raw bodies, headers or credentials."""
+    result = {'issue': 'email_delivery_failed'}
+    if isinstance(error, urllib.error.HTTPError):
+        result['http_status'] = error.code
+        body = error.read(8192)
+        try:
+            name = json.loads(body).get('name')
+            allowed = {'validation_error', 'missing_api_key', 'invalid_api_key',
+                       'restricted_api_key', 'rate_limit_exceeded', 'application_error',
+                       'not_found', 'security_error'}
+            result['provider_error'] = name if name in allowed else 'unclassified'
+            result['response_format'] = 'json'
+        except (ValueError, AttributeError, TypeError):
+            result['response_format'] = 'non_json'
+            result['edge_filter_marker'] = b'cloudflare' in body.lower() or b'error code: 1010' in body.lower()
+    elif isinstance(error, urllib.error.URLError):
+        result['issue'] = 'email_connection_failed'
+    return result
 
 
 def units():
@@ -405,14 +428,16 @@ def main():
                 save(args.action+'-failure.json', result)
             try:
                 result['email'] = notify(result, topic=args.action)
-            except Exception:
+            except Exception as error:
                 result['email'] = 'delivery_failed'
+                result['email_error'] = email_error(error)
                 result['ok'] = False
-                save('email-failure.json', {'checked_at': time.time(), 'issue': 'email_delivery_failed'})
+                save('email-failure.json', {'checked_at': time.time(), **result['email_error']})
         print(json.dumps(result))
         return 0 if result.get('ok', True) else 1
-    except Exception:
-        print(json.dumps({'ok': False, 'issue': 'maintenance_refused_no_credentials_printed'}))
+    except Exception as error:
+        details = email_error(error) if args.action == 'email-test' else {'issue': 'maintenance_refused_no_credentials_printed'}
+        print(json.dumps({'ok': False, **details}))
         return 1
 
 
