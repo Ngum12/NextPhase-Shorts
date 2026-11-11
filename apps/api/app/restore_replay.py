@@ -79,11 +79,18 @@ def hold(journal,value):
 def tombstone_job(db,job,now,after):
     from .models import ProjectAnalysis
     from sqlalchemy import delete
+    # Preview generations cannot have children of their own. Replay parent
+    # tombstones as well as individually journaled child identities.
+    if job.preview_parent_id is None:
+        for child in list(db.scalars(select(RenderJob).where(RenderJob.preview_parent_id==job.id,
+                RenderJob.user_id==job.user_id))):
+            tombstone_job(db,child,now,after)
     db.execute(delete(ProjectAnalysis).where(ProjectAnalysis.job_id==job.id))
     job.status='deleted';job.deleted_at=now;job.finished_at=now;job.cleanup_after=after
     job.claim_token=None;job.lease_expires_at=None;job.claim_deadline_at=None
     job.title='Deleted project';job.source_path='';job.output_path=None
     job.error_code=None;job.output_duration_seconds=None;job.media_deleted_at=None
+    job.preview_spec_json=None
     db.execute(update(RenderAttempt).where(RenderAttempt.job_id==job.id,RenderAttempt.status=='running')
         .values(status='cancelled',finished_at=now))
     db.execute(update(UploadSession).where(UploadSession.job_id==job.id)

@@ -1,5 +1,64 @@
 # Implementation Status — 2026-11-10
 
+## Bounded hosted CI FFmpeg setup — 2026-11-11
+
+The three owner-supplied failed-check logs show Ubuntu package download stalls,
+including Azure mirror DNS failures and repeated delayed downloads during the
+FFmpeg setup step. They do not establish an application-test assertion failure.
+
+Pinned the backend runner to Ubuntu 24.04 and reuse existing FFmpeg/ffprobe only
+after verifying both tools and libx264/AAC encoders. The fallback uses isolated
+package lists and signed official Ubuntu HTTPS sources, skipping translation
+indexes and recommended packages. Downloads have connection timeouts and bounded
+retries; update/install have 90/240-second deadlines, the setup step has an
+eight-minute limit and each job has a 30-minute limit. Superseded runs of the same
+event/ref are canceled. Existing acceptance, migration and test steps remain.
+
+Validation: seven mocked setup tests passed, covering reuse, signed-source wiring,
+failure/timeout propagation, cleanup and post-install tool verification. Bash
+syntax, workflow structure and the real installed-tool reuse path passed locally.
+No real Ubuntu package installation or hosted GitHub rerun was performed here;
+hosted results remain pending. No VPS configuration or deployed app was changed.
+
+## Selected English preview queue and native playback — 2026-11-11
+
+Owner completed the deployed 0021 phone flow: the matching 80-word English
+transcript appeared, review saved with five suggestions, and marks/suggestions
+persisted after reopening. This is owner-reported private-pilot acceptance, not
+public release or broad speech/semantic-quality acceptance.
+
+Added a confirmed selected-candidate POST that admits a separate immutable,
+parent-linked RenderJob through existing owner/global budgets and dispatch. It
+requires the current saved human review, accepted source identity and original
+local project; it rejects S3/nested sources and arbitrary client edits. Durable
+per-option keys recover lost responses without duplicate renders. New jobs reserve
+two source copies plus two output caps; the original baseline output is preserved.
+
+The worker hashes/probes an attempt-private source copy, renders a fixed numeric
+excerpt through the shared frame-checked helper and retains normal lease/retry/
+cancel/publication fences. Native decoder credentials, protocol/resource limits
+and required sandbox behavior are reused. Source deletion journals and tombstones
+linked previews, delays cleanup through relevant child deadlines and protected
+restore replay cascades tombstones. Account deletion erases stored preview specs.
+Migration 0022 adds nullable parent/spec fields; existing data is preserved.
+
+The app now requests a preview project, polls it, downloads through owner auth to
+private cache and offers in-app native playback. Leaving/changing sessions releases
+the player/cache; late/failed downloads are removed. Save/Share remain explicit.
+Added SDK-matched expo-video 58.0.14 with retained MIT notice/inventory entry; no
+model, reference-kit content, paid provider, captions/styles or online ASR added.
+See QUEUED_CLIP_PREVIEWS.md for exact scope, storage and deployment requirements.
+
+Validation: all 532 backend tests passed on SQLite and disposable PostgreSQL,
+including 12 new excerpt/migration cases and the existing real FFmpeg/operator
+preview checks. All 105 mobile tests, TypeScript, SDK-version check and Android
+export passed; npm audit reported zero vulnerabilities. The additional required-
+decoder exercise refused this unsupported managed host and produced no unguarded
+output. Real render fixtures used native development mode and synthetic media;
+they do not certify worker cgroups, actual VPS containment, speech quality or
+native-phone playback. No live VPS change was made. The next owner acceptance is
+one rendered real English suggestion played in the app after the 0022 update.
+
 ## English project-review verification and client hardening — 2026-11-11
 
 Owner explicitly requested migration/API/lifecycle verification before updating

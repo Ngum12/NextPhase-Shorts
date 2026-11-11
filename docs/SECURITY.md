@@ -9,7 +9,11 @@ accepted resumable upload's checksum/duration and fixed metadata limits. Stale
 edits are fenced; project/account deletion and protected restore replay remove
 stored analysis. See ENGLISH_PROJECT_REVIEW.md for migration, bounded metadata,
 backup/phone copies and unverified runtime/lifecycle acceptance. These routes do
-not invoke the native ASR adapter or admit preview renders.
+not invoke the native ASR adapter. The selected-preview route admits only
+source-bound numeric candidates from a saved review to the existing fenced queue.
+Same-owner source copies, byte reservations, required decoder guards, child/source
+deletion and private native playback are described in QUEUED_CLIP_PREVIEWS.md.
+S3 previews/public rollout remain disabled; actual VPS/phone acceptance is needed.
 
 Human review annotations are separate from ASR words/scores/timestamps and are
 bound to source and canonical transcript hashes. The bounded closed import accepts

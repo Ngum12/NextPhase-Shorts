@@ -88,7 +88,8 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
     # Revoke all claims in the same owner transaction, before any media I/O.
     db.execute(update(RenderJob).where(RenderJob.user_id==uid).values(status='deleted',deleted_at=now,
         cleanup_after=after,finished_at=now,claim_token=None,lease_expires_at=None,error_code=None,
-        title='Deleted project',source_path='',output_path=None,output_duration_seconds=None,media_deleted_at=None))
+        title='Deleted project',source_path='',output_path=None,output_duration_seconds=None,media_deleted_at=None,
+        preview_spec_json=None))
     db.execute(update(RenderAttempt).where(RenderAttempt.job_id.in_(select(RenderJob.id).where(RenderJob.user_id==uid)),
         RenderAttempt.status=='running').values(status='cancelled',finished_at=now))
     db.execute(update(UploadSession).where(UploadSession.user_id==uid).values(

@@ -14,7 +14,11 @@ function harness(){
  };react.default=react;
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
-  'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route})}},
+  'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
+  '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate)=>{
+    h.calls.push({preview:id,token,revision,candidate});if(h.previewError)throw h.previewError;
+    if(h.delayedPreview)return h.delayedPreview;
+    return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
   '../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
@@ -75,4 +79,29 @@ test('a late response from an old project cannot replace the current review',asy
  h.id='project-2';h.value=document();h.value.job_id='project-2';h.value.transcript.words[0].text='Current';
  h.delayedGet=null;h.pending=true;await h.flush();assert(h.text().includes('Current'));
  resolve(document());await h.flush();assert(h.text().includes('Current'));assert(!h.text().includes('Original'));
+});
+
+function enablePreviews(h){
+ h.value.queued_preview_supported=true;
+ h.value.review={sentence_end_words:[2],confirmed_low_confidence_words:[1]};
+ h.value.proposal.candidates=[{first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360}];
+}
+test('only a saved selected suggestion can request a confirmed queued preview',async()=>{
+ const h=harness();enablePreviews(h);await h.flush();
+ h.button('Render selected preview').props.onPress();
+ const confirmation=h.alerts.at(-1);assert.equal(confirmation[0],'Render this clip preview?');
+ await confirmation[2][1].onPress();await h.flush();
+ const request=h.calls.find(c=>c.preview);assert.equal(request.candidate,1);
+ assert.equal(request.revision,h.value.revision);
+ assert(h.calls.find(c=>c.push)?.push.params.id==='preview-job');
+ h.check('Word 2:').props.onPress();await h.flush();assert(!h.button('Render selected preview'));
+});
+test('duplicate confirmations share one UI request and old-session results cannot navigate',async()=>{
+ const h=harness();enablePreviews(h);await h.flush();let complete;
+ h.delayedPreview=new Promise(r=>{complete=r;});h.button('Render selected preview').props.onPress();
+ const action=h.alerts.at(-1)[2][1].onPress;
+ const first=action();const second=action();await h.flush();assert.equal(h.calls.filter(c=>c.preview).length,1);
+ h.token='new-session';h.pending=true;await h.flush();
+ complete({id:'old-preview',status:'queued'});await Promise.all([first,second]);await h.flush();
+ assert(!h.calls.some(c=>c.push));
 });

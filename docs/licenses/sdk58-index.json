@@ -301,6 +301,15 @@
         "back-icon@3x.ios.png": false,
         "back-icon@2x.android.png": false
       }
+    },
+    {
+      "name": "expo-video",
+      "version": "58.0.14",
+      "declared_license": "MIT",
+      "source": "https://www.npmjs.com/package/expo-video/v/58.0.14",
+      "preserved_notices": [
+        "docs/licenses/sdk58/expo-video-58.0.14/LICENSE"
+      ]
     }
   ]
 }

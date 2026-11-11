@@ -21,26 +21,33 @@ def delete_project(job_id:str,user:User=Depends(current_user),db:Session=Depends
     lock_owner(db,user.id)
     job=db.scalar(select(RenderJob).where(RenderJob.id==job_id,RenderJob.user_id==user.id).with_for_update())
     if job is None:raise HTTPException(404,'Project not found')
-    db.execute(delete(ProjectAnalysis).where(ProjectAnalysis.job_id==job_id))
-    if job.status!='deleted':
+    descendants=list(db.scalars(select(RenderJob).where(RenderJob.preview_parent_id==job_id,
+        RenderJob.user_id==user.id).order_by(RenderJob.id)))
+    jobs=[job,*descendants]
+    ids=[item.id for item in jobs]
+    attempt=db.scalar(select(func.max(RenderAttempt.deadline_at)).where(RenderAttempt.job_id.in_(ids),
+        RenderAttempt.status.in_(('running','lease_lost','cancelled'))))
+    deadlines=[value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        for value in [attempt,*[v for item in jobs for v in (item.lease_expires_at,item.claim_deadline_at)]] if value]
+    expiry=max(deadlines) if deadlines else None
+    now=utcnow()
+    after=max(now,expiry+timedelta(seconds=30)) if expiry else now
+    for job in jobs:
+      db.execute(delete(ProjectAnalysis).where(ProjectAnalysis.job_id==job.id))
+      if job.status!='deleted':
         from .restore_journal import record
         record('project_delete',user.id,project=job.id,backend=job.media_backend,namespace=job.object_store_id)
-        now=utcnow()
         # Short renewable leases are not writer-lifetime bounds. Preserve the
         # hard deadlines of cancelled/lost attempts before revoking their tokens.
-        attempt=db.scalar(select(func.max(RenderAttempt.deadline_at)).where(RenderAttempt.job_id==job_id,
-            RenderAttempt.status.in_(('running','lease_lost','cancelled'))))
-        deadlines=[value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-            for value in (job.lease_expires_at,job.claim_deadline_at,attempt) if value]
-        expiry=max(deadlines) if deadlines else None
-        job.cleanup_after=max(now,expiry+timedelta(seconds=30)) if expiry else now
+        job.cleanup_after=after
         job.status='deleted';job.deleted_at=now;job.finished_at=now
         job.claim_token=None;job.lease_expires_at=None;job.error_code=None
         job.title='Deleted project';job.source_path='';job.output_path=None
         job.output_duration_seconds=None
-        db.execute(update(RenderAttempt).where(RenderAttempt.job_id==job_id,
+        job.preview_spec_json=None
+        db.execute(update(RenderAttempt).where(RenderAttempt.job_id==job.id,
             RenderAttempt.status=='running').values(status='cancelled',finished_at=now))
-        db.execute(update(UploadSession).where(UploadSession.job_id==job_id,
+        db.execute(update(UploadSession).where(UploadSession.job_id==job.id,
             UploadSession.user_id==user.id).values(status='deleted',title='Deleted project',
                 file_name='deleted.mp4',source_sha256=None,parts_cleaned=False))
     db.commit()

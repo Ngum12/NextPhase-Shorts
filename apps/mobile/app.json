@@ -35,7 +35,8 @@
           "granularPermissions": [],
           "isAccessMediaLocationEnabled": false
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": false
