@@ -1,13 +1,43 @@
 """Fixed, frame-checked excerpt renderer shared by operator and queued previews."""
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
+import tempfile
 
 from .media import (MediaCancelled, MediaError, OutputLimitExceeded, decoder_invocation,
                     probe_video, run_render, teardown_decoder)
 from .media_policy import CODEC_THREADS, input_args
 from .observability import stage
+from .caption_plan import validate_cues
+
+CAPTION_FONT=Path('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf')
+
+
+def caption_filters(cues, source, start_ms):
+    """Text stays in private UTF-8 files, outside FFmpeg's filter grammar."""
+    filters=[];paths=[]
+    try:
+        if not CAPTION_FONT.is_file():raise MediaError('Caption font is unavailable')
+        for cue in cues:
+            fd,name=tempfile.mkstemp(prefix='caption-',suffix='.txt',dir=source.parent)
+            path=Path(name);paths.append(path)
+            with os.fdopen(fd,'w',encoding='utf-8') as handle:handle.write(cue.text)
+            # Internal canonical paths only; reject filter punctuation rather
+            # than attempting multilayer quoting of a configurable media root.
+            if not re.fullmatch(r'/[A-Za-z0-9_./-]+',str(path)):
+                raise MediaError('Caption preview needs a canonical Linux media path')
+            begin=(start_ms+cue.start_ms)/1000
+            end=(start_ms+cue.end_ms)/1000
+            filters.append(f"drawtext=fontfile={CAPTION_FONT}:textfile={path}:expansion=none:"
+                "fontsize=56:fontcolor=white:box=1:boxcolor=black@0.82:boxborderw=18:"
+                "line_spacing=12:x=(w-text_w)/2:y=1500:"
+                f"enable='gte(t,{begin:.3f})*lt(t,{end:.3f})'")
+        return filters,paths
+    except BaseException:
+        for path in paths:path.unlink(missing_ok=True)
+        raise
 
 
 def output_frames(path):
@@ -30,7 +60,8 @@ def output_frames(path):
 
 
 def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_seconds,
-                   max_output_bytes, should_cancel=lambda:False, timeout=300):
+                   max_output_bytes, should_cancel=lambda:False, timeout=300, captions=()):
+    captions=validate_cues(captions,frames)
     if (any(type(n) is not int for n in (start_ms,end_ms,frames,requested_seconds))
             or not 0<=start_ms<end_ms<=600000 or not 5<=requested_seconds<=60
             or end_ms-start_ms>requested_seconds*1000
@@ -54,13 +85,18 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
         '-c:v','libx264','-threads',str(CODEC_THREADS),'-preset','veryfast','-crf','24',
         '-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ar','48000','-ac','2',
         '-movflags','+faststart','-max_muxing_queue_size','1024',str(temporary)]
+    caption_paths=[]
     try:
+        if captions:
+            filters,caption_paths=caption_filters(captions,source,start_ms)
+            command[command.index('-vf')+1]+=','+','.join(filters)
         def guard():
             if temporary.stat().st_size>=max_output_bytes:
                 raise OutputLimitExceeded('Preview output exceeds bound')
             return should_cancel()
         with stage('encode') as observed:
-            observed.update(run_render(command,timeout,guard,max_file_bytes=max_output_bytes) or {})
+            caption_options={'read_files':caption_paths} if caption_paths else {}
+            observed.update(run_render(command,timeout,guard,max_file_bytes=max_output_bytes,**caption_options) or {})
         if guard():raise MediaCancelled('Preview cancelled')
         with stage('output_probe'):
             info=probe_video(temporary)
@@ -73,4 +109,6 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
         return info
     except subprocess.SubprocessError:
         raise MediaError('Preview rendering failed') from None
-    finally:temporary.unlink(missing_ok=True)
+    finally:
+        temporary.unlink(missing_ok=True)
+        for path in caption_paths:path.unlink(missing_ok=True)

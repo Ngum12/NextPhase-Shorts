@@ -31,7 +31,7 @@ def teardown_decoder(process):
     process.wait(timeout=5)
 
 
-def decoder_invocation(cmd,timeout,max_file_bytes=None):
+def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=()):
     # Read only the explicit guard flag here; decoder-launch tests and tools do
     # not need to initialize server credentials just to construct a subprocess.
     sandbox_required=os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true'
@@ -48,7 +48,8 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None):
             source=cmd[cmd.index('-i')+1] if cmd[0]=='ffmpeg' else cmd[-1]
             output=str(Path(cmd[-1]).resolve()) if cmd[0]=='ffmpeg' else None
             if cmd[0]=='ffmpeg' and max_file_bytes is None:raise MediaError('Strict renderer needs a fixed output file bound')
-            sandbox=['--sandbox',json.dumps({'source':str(Path(source).resolve()),'output':output},separators=(',',':'))]
+            sandbox=['--sandbox',json.dumps({'source':str(Path(source).resolve()),'output':output,
+                'read_files':[str(Path(path).resolve(strict=True)) for path in read_files]},separators=(',',':'))]
         child_cmd=[sys.executable,'-I',str(Path(__file__).with_name('render_child.py')),
                    str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),
                    *(['--file-limit',str(max_file_bytes if cmd[0]=='ffmpeg' else 0)] if sandbox_required else []),*sandbox,*cmd]
@@ -58,12 +59,12 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None):
     return child_cmd,child_env,kwargs
 
 
-def run_render(cmd, timeout, should_cancel, max_file_bytes=None):
+def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=()):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
     samples=DecoderSamples()
-    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes)
+    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes,read_files)
     # Diagnostics are deliberately discarded: malformed media cannot grow a
     # PIPE buffer without bound or put private source paths into general logs.
     with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:

@@ -1,6 +1,7 @@
 """Private English review and selected-excerpt queue admission; inference is offline."""
 import hashlib
 import math
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import Field, UUID4
@@ -98,7 +99,7 @@ def document(row):
         'transcript': transcript.model_dump(mode='json'),
         'review': review.model_dump(mode='json') if review else None,
         'proposal': proposal.model_dump(mode='json'), 'render_enabled': False,
-        'queued_preview_supported': True}
+        'queued_preview_supported': True, 'clean_captions_supported': True}
 
 
 class PreviewRequest(ClosedModel):
@@ -106,6 +107,7 @@ class PreviewRequest(ClosedModel):
     candidate_number: int = Field(strict=True,ge=1,le=5)
     idempotency_key: UUID4
     acknowledged_preview: bool = Field(strict=True)
+    caption_style: Literal['none','clean-1']='none'
 
 
 @router.post('/{job_id}/analysis/previews',status_code=202)
@@ -123,7 +125,9 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     if parent.preview_parent_id is not None or parent.media_backend!='local':
         raise HTTPException(409,'Preview requires an original local project',headers=PRIVATE)
     key='excerpt_'+str(payload.idempotency_key)
-    request_hash=hashlib.sha256(f'{parent.id}:{payload.revision}:{payload.candidate_number}'.encode()).hexdigest()
+    identity=f'{parent.id}:{payload.revision}:{payload.candidate_number}'
+    if payload.caption_style != 'none':identity += ':'+payload.caption_style
+    request_hash=hashlib.sha256(identity.encode()).hexdigest()
     previous=db.scalar(select(RenderJob).where(RenderJob.user_id==user.id,RenderJob.idempotency_key==key))
     if previous:
         if previous.status=='deleted':raise HTTPException(410,'This preview was deleted; start a new request',headers=PRIVATE)
@@ -139,6 +143,11 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     plan=Proposal.model_validate_json(row.proposal_json)
     if payload.candidate_number>len(plan.candidates):raise HTTPException(422,'Choose an available clip suggestion',headers=PRIVATE)
     candidate=plan.candidates[payload.candidate_number-1]
+    from .caption_plan import captions_for
+    try:
+        captions=captions_for(Transcript.model_validate_json(row.transcript_json), candidate) if payload.caption_style=='clean-1' else ()
+    except ValueError:
+        raise HTTPException(422,'This clip does not fit the clean caption limits. Choose a plain preview.',headers=PRIVATE) from None
     accepted=db.scalar(select(UploadSession).where(UploadSession.job_id==parent.id,
         UploadSession.user_id==user.id,UploadSession.status=='completed'))
     if accepted is None or accepted.source_sha256!=plan.source_sha256:
@@ -148,12 +157,14 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
         source_start_ms=candidate.source_start_ms,source_end_ms=candidate.source_end_ms,
         output_frames=candidate.output_frames,requested_seconds=parent.desired_seconds,
         review_sha256=plan.review_sha256,transcript_sha256=plan.transcript_sha256,
-        review_revision=row.revision,candidate_number=payload.candidate_number)
+        review_revision=row.revision,candidate_number=payload.candidate_number,
+        caption_style=payload.caption_style,captions=captions)
     settings=get_settings()
     if not 0<accepted.total_bytes<=min(settings.max_upload_bytes,314572800):
         raise HTTPException(409,'Source exceeds the preview profile',headers=PRIVATE)
     preview_cap=min(settings.max_render_bytes,64*1024**2)
-    child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:90]+f' · preview {payload.candidate_number}',
+    label='captions' if captions else 'preview'
+    child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:85]+f' · {label} {payload.candidate_number}',
         style=parent.style,desired_seconds=parent.desired_seconds,source_duration_seconds=parent.source_duration_seconds,
         source_path='',media_backend='local',status='queued',rights_version=parent.rights_version,
         rights_confirmed_at=parent.rights_confirmed_at,max_render_bytes=preview_cap,

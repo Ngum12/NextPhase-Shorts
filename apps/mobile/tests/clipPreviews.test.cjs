@@ -66,6 +66,19 @@ test('preview playback downloads only to private cache with refreshed credential
  assert.equal(f.calls[1].options.headers.Authorization,'Bearer new-token');
  await result.remove();assert.equal(f.files.size,0);
 });
+
+test('plain and captioned versions retain distinct durable keys after restart',async()=>{
+ const f=fixture();
+ await f.actions.requestClipPreview(parent,'token',revision,1);
+ await f.actions.requestClipPreview(parent,'token',revision,1,'clean-1');
+ await f.reload().requestClipPreview(parent,'token',revision,1,'clean-1');
+ const bodies=f.calls.map(c=>JSON.parse(c.init.body));
+ assert.notEqual(bodies[0].idempotency_key,bodies[1].idempotency_key);
+ assert.equal(bodies[0].caption_style,undefined); // Old servers keep accepting plain requests.
+ assert.equal(bodies[1].idempotency_key,bodies[2].idempotency_key);
+ assert.equal(bodies[1].caption_style,'clean-1');
+ await assert.rejects(f.actions.requestClipPreview(parent,'token',revision,1,'drawtext=bad'));
+});
 test('failed, empty and oversized preview downloads remove their private file',async()=>{
  for(const condition of ['network','empty','large','denied']){
   const f=fixture();if(condition==='network')f.state.downloadFailure=true;

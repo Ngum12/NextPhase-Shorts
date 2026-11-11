@@ -6,10 +6,13 @@ toolchain_ready() {
   command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null || return 1
   timeout 15s ffmpeg -version >/dev/null 2>&1 || return 1
   timeout 15s ffprobe -version >/dev/null 2>&1 || return 1
-  local encoders
+  local encoders filters
   encoders="$(timeout 15s ffmpeg -hide_banner -encoders 2>/dev/null)" || return 1
+  filters="$(timeout 15s ffmpeg -hide_banner -filters 2>/dev/null)" || return 1
+  test -r /usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf || return 1
   [[ "$encoders" =~ [[:space:]]libx264[[:space:]] ]] &&
-    [[ "$encoders" =~ [[:space:]]aac[[:space:]] ]]
+    [[ "$encoders" =~ [[:space:]]aac[[:space:]] ]] &&
+    [[ "$filters" =~ [[:space:]]drawtext[[:space:]] ]]
 }
 
 ubuntu_codename() {
@@ -51,17 +54,17 @@ EOF
   sudo -n env DEBIAN_FRONTEND=noninteractive timeout --signal=TERM --kill-after=10s 90s \
     apt-get "${options[@]}" update
   sudo -n env DEBIAN_FRONTEND=noninteractive timeout --signal=TERM --kill-after=10s 240s \
-    apt-get "${options[@]}" install -y --no-install-recommends ffmpeg
+    apt-get "${options[@]}" install -y --no-install-recommends ffmpeg fonts-dejavu-core
 )
 
 main() {
   if toolchain_ready; then
-    printf '%s\n' 'Using available FFmpeg/ffprobe with libx264 and AAC.'
+    printf '%s\n' 'Using available FFmpeg/ffprobe with libx264, AAC, drawtext and DejaVu.'
   else
     printf '%s\n' 'Installing FFmpeg from isolated signed Ubuntu sources (bounded timeouts).'
     install_signed_ubuntu
     if ! toolchain_ready; then
-      printf '%s\n' 'FFmpeg setup failed: working ffmpeg, ffprobe, libx264 and AAC are required.' >&2
+      printf '%s\n' 'FFmpeg setup failed: working ffmpeg, ffprobe, libx264, AAC, drawtext and DejaVu are required.' >&2
       return 1
     fi
   fi

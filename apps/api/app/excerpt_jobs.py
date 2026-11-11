@@ -13,6 +13,7 @@ from .config import get_settings
 from .db import SessionLocal
 from .media import MediaCancelled, MediaError, probe_video
 from .models import RenderJob
+from .caption_plan import CaptionCue, validate_cues
 
 
 class ExcerptSpec(ClosedModel):
@@ -29,9 +30,14 @@ class ExcerptSpec(ClosedModel):
     transcript_sha256: Digest
     review_revision: Digest
     candidate_number: Annotated[int,Field(strict=True,ge=1,le=5)]
+    caption_style: Literal['none','clean-1']='none'
+    captions: tuple[CaptionCue,...] = Field(default=(), max_length=80)
 
     @model_validator(mode='after')
     def valid(self):
+        validate_cues(self.captions, self.output_frames)
+        if (self.caption_style == 'clean-1') != bool(self.captions):
+            raise ValueError('Caption style and cues disagree')
         duration=self.source_end_ms-self.source_start_ms
         if (not 0<duration<=self.requested_seconds*1000
                 or self.source_end_ms>self.source_duration_ms

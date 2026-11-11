@@ -19,15 +19,16 @@ async function readIntents(name:string):Promise<Intents|null> {
   if(!raw||raw.length>2048)return null;
   try{const value=JSON.parse(raw);
     if(!digest.test(value.revision)||!value.keys||typeof value.keys!=='object'||Array.isArray(value.keys)||
-        Object.keys(value.keys).length>5||Object.entries(value.keys).some(([k,v])=>!(/^[1-5]$/).test(k)||typeof v!=='string'||!uuid.test(v)))return null;
+        Object.keys(value.keys).length>10||Object.entries(value.keys).some(([k,v])=>!(/^[1-5](?:-clean-1)?$/).test(k)||typeof v!=='string'||!uuid.test(v)))return null;
     return value as Intents;
   }catch{return null;}
 }
 
-export async function requestClipPreview(parent:string,token:string,revision:string,candidate:number):Promise<Job> {
-  if(!uuid.test(parent)||!digest.test(revision)||!Number.isInteger(candidate)||candidate<1||candidate>5)
+export async function requestClipPreview(parent:string,token:string,revision:string,candidate:number,captionStyle:'none'|'clean-1'='none'):Promise<Job> {
+  if(!uuid.test(parent)||!digest.test(revision)||!Number.isInteger(candidate)||candidate<1||candidate>5||!['none','clean-1'].includes(captionStyle))
     throw new Error('Refresh the review before choosing a clip.');
-  const scope=`${token}:${parent}:${revision}:${candidate}`;
+  const scope=`${token}:${parent}:${revision}:${candidate}:${captionStyle}`;
+  const option=captionStyle==='none'?String(candidate):`${candidate}-clean-1`;
   const existing=pending.get(scope);if(existing)return existing;
   const task=(async()=>{
     // One durable key per reviewed option survives lost responses/app restarts.
@@ -35,16 +36,17 @@ export async function requestClipPreview(parent:string,token:string,revision:str
     const key=await serial(parent,async()=>{
       const old=await readIntents(name);
       const intent:Intents=old?.revision===revision?old:{revision,keys:{}};
-      const key=intent.keys[candidate]||randomUUID();intent.keys[candidate]=key;
+      const key=intent.keys[option]||randomUUID();intent.keys[option]=key;
       await SecureStore.setItemAsync(name,JSON.stringify(intent));return key;
     });
     const response=await authenticatedFetch(token,`${BASE}/api/v1/jobs/${parent}/analysis/previews`,{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision,
-        candidate_number:candidate,idempotency_key:key,acknowledged_preview:true}),
+        candidate_number:candidate,idempotency_key:key,acknowledged_preview:true,
+        ...(captionStyle==='clean-1'?{caption_style:captionStyle}:{})}),
     });
     if(response.status===410){await serial(parent,async()=>{
       const intent=await readIntents(name);
-      if(intent?.revision===revision&&intent.keys[candidate]===key){delete intent.keys[candidate];
+      if(intent?.revision===revision&&intent.keys[option]===key){delete intent.keys[option];
         await SecureStore.setItemAsync(name,JSON.stringify(intent));}
     });
       throw new ApiError(410,'This preview was deleted. Tap Render preview again to create another.');}

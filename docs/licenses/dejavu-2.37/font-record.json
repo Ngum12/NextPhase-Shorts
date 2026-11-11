@@ -1,0 +1,12 @@
+{
+  "name": "DejaVu Sans Mono Bold",
+  "upstream_version": "2.37",
+  "source": "https://dejavu-fonts.github.io/",
+  "installed_by": "fonts-dejavu-core (distribution package)",
+  "font_path": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
+  "observed_local_sha256": "0d3c03d1b667192f91223660a3163325cf83132662fe4d9f7d6e596bf7a995c2",
+  "observed_local_package_version": "2.37-8",
+  "notice": "copyright",
+  "license": "Bitstream Vera font terms; DejaVu changes public domain",
+  "scope": "unmodified font used by server drawtext; no font binary vendored; OS image versions remain distribution-managed"
+}

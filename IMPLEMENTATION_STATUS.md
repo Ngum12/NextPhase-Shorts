@@ -1,5 +1,42 @@
 # Implementation Status — 2026-11-10
 
+## Optional clean phrase captions — 2026-11-11
+
+Owner reported the deployed selected-preview flow working on the phone after
+updating the private front-door IP restriction. This is private owner-reported
+acceptance, not public release or broad content-quality acceptance.
+
+Added an optional clean caption version to saved English suggestions. The API
+derives bounded phrase cues only from the saved source-bound transcript and
+candidate; it snapshots them with the immutable excerpt spec. A closed style
+enum and separate idempotency identity preserve plain previews and retries.
+Existing plain hashes, old specs and mobile intent keys remain usable. No new
+migration is required (schema remains 0022). Captions remain opt-in/default off,
+with estimated timing disclosed before render. No ASR, rewritten speech,
+word highlighting, speaker tracking, cropping, music or paid provider added.
+
+The fixed renderer uses <=80 private UTF-8 files, expansion disabled and generated
+canonical paths; user text never enters filter grammar. Required decoder mode
+adds only exact read grants for small caption files in that attempt, retaining
+single-output writes/network/credential restrictions and fail-closed behavior.
+Cleanup covers success/failure/cancellation, not guaranteed hard-kill erasure.
+Existing project/account deletion clears stored specs; exported media/backups
+remain subject to existing custody limits. DejaVu Sans Mono Bold 2.37 is installed
+through the OS package, with retained notice and scoped font provenance record.
+
+Validation: final full SQLite suite passed (546 tests). Disposable PostgreSQL
+passed its full 544-test run and all seven final caption regressions, including
+two subsequently added guard/cleanup cases. These exercise source/review-bound
+admission, variant retries, actual queued render/private download, pixel timing,
+filter-like text as data, caption cleanup and restricted file validation.
+Full mobile suite passed (107 tests), TypeScript passed, and Android Metro/Hermes
+export passed. A synthetic 6-second 1080x1920/30-fps caption MP4 and inspected PNG
+were generated outside Git under /workspace/artifacts/clean-captions/.
+Unsupported Landlock on this cloud host was refused; the protected-caption test
+is conditional on host support and does not establish VPS containment acceptance.
+No VPS image build/deployment or actual phone/caption synchronization acceptance
+was performed here. See CLEAN_CAPTION_PREVIEWS.md for owner review and deployment.
+
 ## Bounded hosted CI FFmpeg setup — 2026-11-11
 
 The three owner-supplied failed-check logs show Ubuntu package download stalls,

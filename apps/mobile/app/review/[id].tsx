@@ -18,6 +18,7 @@ export default function EnglishReview() {
   const [dirty,setDirty]=useState(false),[selected,setSelected]=useState(0);
   const generation=useRef(0),saving=useRef(false),loadPending=useRef(false);
   const [rendering,setRendering]=useState(false);const requestingPreview=useRef(false);
+  const [captionStyle,setCaptionStyle]=useState<'none'|'clean-1'>('none');
   const scope=`${token||''}:${id}`,loadedScope=useRef('');
   const adopt=(value:EnglishAnalysis)=>{
     loadedScope.current=scope;
@@ -37,6 +38,7 @@ export default function EnglishReview() {
     setData(null);setEnds([]);setConfirmed([]);setAcknowledged(false);setDirty(false);setError('');
     saving.current=false;loadPending.current=false;requestingPreview.current=false;
     setRendering(false);setBusy(false);setLoading(false);load();
+    setCaptionStyle('none');
     return()=>{generation.current++;loadedScope.current='';requestingPreview.current=false;};
   },[id,token]);
   const refresh=()=>dirty?Alert.alert('Discard unsaved review?',
@@ -66,14 +68,14 @@ export default function EnglishReview() {
   };
   const render=()=>{
     if(!data||!token||dirty||conflict||requestingPreview.current)return;
-    const revision=data.revision,number=selected+1;
+    const revision=data.revision,number=selected+1,style=data.clean_captions_supported?captionStyle:'none';
     Alert.alert('Render this clip preview?',
-      'The server will render this selected excerpt. Watch the result to check the cut and meaning.',[
+      style==='clean-1'?'The server will add phrase captions from your reviewed words. Timings are estimated: check the captions against the audio before sharing.':'The server will render this selected excerpt. Watch the result to check the cut and meaning.',[
         {text:'Keep reviewing',style:'cancel'},
         {text:'Render preview',onPress:async()=>{
           if(requestingPreview.current)return;
           requestingPreview.current=true;setRendering(true);setError('');const request=++generation.current;
-          try{const job=await requestClipPreview(id,token,revision,number);
+          try{const job=await requestClipPreview(id,token,revision,number,style);
             if(request===generation.current)router.push({pathname:'/project/[id]',params:{id:job.id}});
           }catch(e:any){if(request===generation.current){setError(e.message||'Could not confirm preview. Retry the same clip.');
             if(e instanceof ApiError&&e.status===409)setConflict(true);}}
@@ -134,6 +136,13 @@ export default function EnglishReview() {
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
               <Body>This is a clip suggestion. Watch the rendered preview before using it.</Body>
+              {data.clean_captions_supported&&<View style={{gap:10}}>
+                <Button title={captionStyle==='none'?'Plain preview · selected':'Plain preview'} secondary
+                  disabled={blocked} onPress={()=>setCaptionStyle('none')}/>
+                <Button title={captionStyle==='clean-1'?'Clean captions · selected':'Clean captions'} secondary
+                  disabled={blocked} onPress={()=>setCaptionStyle('clean-1')}/>
+                {captionStyle==='clean-1'&&<Body>White phrase captions on a dark background. Timing is estimated; watch and check before sharing.</Body>}
+              </View>}
               {data.queued_preview_supported&&data.review&&<Button title={rendering?'Requesting preview…':'Render selected preview'}
                 onPress={render} disabled={blocked||conflict}/>}
             </>}

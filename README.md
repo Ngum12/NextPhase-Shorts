@@ -15,6 +15,11 @@
 
 **No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, subscription quotas, production hardened auth, production cloud deployment yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
 
+The private English review pilot can render selected reviewed excerpts and optional
+[clean phrase captions](docs/CLEAN_CAPTION_PREVIEWS.md). This requires a prepared,
+human-reviewed transcript; estimated timing still needs video review. It is not
+automatic transcription/captioning for new uploads or a public release.
+
 ## Step 1 — Run local or Docker backend
 
 ### Recommended: Docker Desktop

@@ -30,7 +30,7 @@ raise SystemExit(subprocess.run(args).returncode)
     program('ffmpeg', '''import os,sys
 from pathlib import Path
 if not Path(os.environ['SETUP_READY']).exists():raise SystemExit(1)
-print(' V..... libx264 fixture\\n A..... aac fixture' if '-encoders' in sys.argv else 'ffmpeg fixture')
+print(' V..... libx264 fixture\\n A..... aac fixture' if '-encoders' in sys.argv else ' T.C drawtext fixture' if '-filters' in sys.argv else 'ffmpeg fixture')
 ''')
     program('ffprobe', '''import os
 from pathlib import Path
