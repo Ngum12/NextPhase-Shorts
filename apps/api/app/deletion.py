@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from .auth import current_user
 from .config import get_settings
 from .db import SessionLocal, engine, session_dep
-from .models import RenderAttempt, RenderJob, UploadPart, UploadSession, User, utcnow
+from .models import ProjectAnalysis, RenderAttempt, RenderJob, UploadPart, UploadSession, User, utcnow
 from .queue import lock_owner
 
 router=APIRouter(tags=['projects'])
@@ -21,6 +21,7 @@ def delete_project(job_id:str,user:User=Depends(current_user),db:Session=Depends
     lock_owner(db,user.id)
     job=db.scalar(select(RenderJob).where(RenderJob.id==job_id,RenderJob.user_id==user.id).with_for_update())
     if job is None:raise HTTPException(404,'Project not found')
+    db.execute(delete(ProjectAnalysis).where(ProjectAnalysis.job_id==job_id))
     if job.status!='deleted':
         from .restore_journal import record
         record('project_delete',user.id,project=job.id,backend=job.media_backend,namespace=job.object_store_id)

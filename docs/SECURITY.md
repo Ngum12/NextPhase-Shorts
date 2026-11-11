@@ -2,6 +2,15 @@
 
 ## Experimental local analysis boundary — 2026-11-11
 
+The separate English project-review preparation adds authenticated owner-only
+transcript/review routes and a mobile editor, disabled by default and restricted
+to explicitly allowlisted development/test owners. Operator imports must match an
+accepted resumable upload's checksum/duration and fixed metadata limits. Stale
+edits are fenced; project/account deletion and protected restore replay remove
+stored analysis. See ENGLISH_PROJECT_REVIEW.md for migration, bounded metadata,
+backup/phone copies and unverified runtime/lifecycle acceptance. These routes do
+not invoke the native ASR adapter or admit preview renders.
+
 Human review annotations are separate from ASR words/scores/timestamps and are
 bound to source and canonical transcript hashes. The bounded closed import accepts
 word indices and explicit acknowledgement only; it cannot supply replacement text,
@@ -10,7 +19,7 @@ without raising its original model score. Content hashes are not reviewer
 authentication/signatures. Private trusted-operator custody and actual recording/
 cut review remain required; annotations are outside automated customer retention.
 
-The optional operator pilot has no API/mobile/worker entry point. Transcript text
+The optional native ASR adapter has no API/mobile/worker invocation. Transcript text
 is untrusted data, validated/bounded and escaped into a private offline review
 page with a fixed-script CSP. Local file hashes bind source and reviewed native
 artifacts; they do not independently prove artifact origin or legal clearance.

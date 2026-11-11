@@ -38,6 +38,7 @@ from .catalog import STYLES, STYLE_IDS
 from .uploads import router as uploads_router
 from .direct_uploads import router as direct_uploads_router
 from .account_deletion import router as account_deletion_router
+from .project_analysis import router as project_analysis_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -72,11 +73,14 @@ app.include_router(account_deletion_router)
 app.include_router(auth_router)
 app.include_router(auth_actions_router)
 app.include_router(deletion_router)
+app.include_router(project_analysis_router)
 
 @app.exception_handler(RequestValidationError)
 async def safe_auth_validation(request,error):
     if request.url.path.startswith('/api/v1/auth/'):
         return JSONResponse({'detail':'Invalid authentication request'},status_code=422,headers={'Cache-Control':'no-store'})
+    if request.url.path.startswith('/api/v1/jobs/') and request.url.path.endswith('/analysis/review'):
+        return JSONResponse({'detail':'Invalid review request'},status_code=422,headers={'Cache-Control':'no-store'})
     return await request_validation_exception_handler(request,error)
 
 @app.get("/health")

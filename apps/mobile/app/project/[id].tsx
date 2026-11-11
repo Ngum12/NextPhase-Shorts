@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import { api, ApiError, cancelJob, deleteJob, Job } from '../../src/api';
 import { exportVideo } from '../../src/videoExports';
+import {englishReviewVisible} from '../../src/analysis';
 import { useAuth } from '../../src/auth';
 import { colors as c } from '../../src/theme';
 import { Body, Button, Loading, Page, Title, s } from '../../src/ui';
@@ -75,6 +76,7 @@ export default function Project() {
       </View>
       {['queued','processing'].includes(job.status)&&<Button title={cancelling?'Cancelling…':'Cancel render'} onPress={cancel} disabled={cancelling||deleting||downloading} secondary/>}
       <Button title="Refresh status" onPress={refresh} disabled={deleting} secondary />
+      {englishReviewVisible&&<Button title="Review English clips" onPress={()=>router.push({pathname:'/review/[id]',params:{id}})} disabled={deleting||downloading||cancelling} secondary/>}
       {job.status==='succeeded'&&<>
         <Button title={downloading?'Please wait…':'Save video to phone'} onPress={()=>download('save')} disabled={downloading||deleting||cancelling}/>
         <Button title="Share video" onPress={()=>download('share')} disabled={downloading||deleting||cancelling} secondary/>

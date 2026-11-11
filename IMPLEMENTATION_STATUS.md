@@ -1,5 +1,34 @@
 # Implementation Status — 2026-11-10
 
+## English review inside projects — gated preparation — 2026-11-11
+
+Added a mobile English review screen connected to authenticated project analysis
+GET/review PUT routes. It supports explicit sentence boundaries, individual/all-
+checked flagged-word confirmation, original-recording acknowledgement and saved
+clip suggestions. Typed bounded responses, in-memory drafts, stale-request guards,
+loading/error/conflict states and idempotent lost-response save retries are included.
+No speech model or video processing runs on the phone. The baseline render remains
+separate; this screen cannot request/render/play a new selected clip yet.
+
+Operator-only import binds an English transcript to an owned accepted resumable
+upload's checksum and source duration, preserves provenance/reviews on identical
+reimport, and refuses different replacement transcripts. Fixed 1,000-word/256-KiB,
+10-project/owner and 100-global metadata limits plus owner/global locks bound the
+private pool. Server review is disabled by default, development/test only and
+restricted to 1–5 explicit owner UUIDs; mobile visibility is a separate public flag.
+French, online ASR and preview admission were not enabled.
+
+Migration 0021 adds project_analyses. Project/account deletion and journal restore
+replay remove associated transcript/review/proposal records. Responses are private/
+no-store; request validation omits submitted payload details. No new dependency,
+restricted asset, provider call, billing or live VPS change was introduced.
+
+Static/build evidence: Python syntax, mobile TypeScript compilation and Android
+Metro/Hermes export (1,377 modules) passed with the pilot UI flag enabled. No tests were
+added or run. Migration/ownership/concurrent deletion/restore and actual phone
+acceptance remain unverified; keep this pilot disabled until those checks pass.
+See ENGLISH_PROJECT_REVIEW.md for the exact current boundary and operator path.
+
 ## Owner language pilot decision — 2026-11-11
 
 Owner approved continuing development with English while French remains

@@ -28,6 +28,11 @@ cancellation and artifact lifecycle handling plus the applicable Phase 2 gates.
 
 ## What can be exercised now
 
+The subsequent [English project review preparation](ENGLISH_PROJECT_REVIEW.md)
+adds an opt-in owner-bound mobile/server review flow for operator-imported
+transcripts. It remains disabled and unaccepted pending runtime/lifecycle checks;
+it does not turn this native ASR pilot into an online analysis worker.
+
 - Strict English/French transcript contracts with source SHA-256, bounded word
   timestamps, token-probability provenance and explicit manual/model labeling.
 - Candidate windows that preserve source order and punctuation-complete sentence
