@@ -2,13 +2,15 @@
 
 Prerequisite: successful `vps_trial.py accept --synthetic` on the actual host.
 This optional separate Compose project adds trusted domain TLS and allows API
-requests only from one direct client public IP. It retains the existing private
+requests only from one direct client public IP. Exact GET/HEAD `/backup-info` and
+`/backup-privacy` paths serve public static OAuth information; they never proxy to
+the API. See BACKUP_GOOGLE_OAUTH.md. It retains the existing private
 edge, operator channel, DB/media, journal and credentials. It does not migrate
 data or establish public release readiness. No email, billing or AI is enabled.
 
 Use a domain whose A record points directly at the VPS; do not enable a CDN/proxy
 or add an AAAA record for this IPv4-only listener. Requests from all other IPs get
-403, even with a forged forwarding header. Phones must share the allowed public
+403 outside those two information paths, even with a forged forwarding header. Phones must share the allowed public
 IPv4 (turn off cellular fallback); dynamic IP changes require a reviewed update.
 This is a network access restriction, not a substitute for app authentication.
 

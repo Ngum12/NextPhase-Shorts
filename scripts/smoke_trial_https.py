@@ -47,6 +47,7 @@ def main():
                             '--adapter', 'caddyfile'], env=env, check=True,
                            stdout=subprocess.DEVNULL)
             source = (ROOT / 'deploy/trial-https/Caddyfile').read_text()
+            source = source.replace('/srv/backup-info',str(ROOT / 'deploy/backup-info'))
             source = source.replace('http://{$TRIAL_DOMAIN}:8080 {\n\trespond 404\n}', '')
             for allowed, expected in [('127.0.0.1', 200), ('192.0.2.1', 403)]:
                 with socket.socket() as sock:
@@ -63,8 +64,9 @@ def main():
                                                 '--adapter', 'caddyfile'], env=env,
                                                stdout=log, stderr=log)
                     try:
-                        def request(route):
+                        def request(route, method='GET'):
                             req = urllib.request.Request(f'http://127.0.0.1:{port}{route}',
+                                method=method,
                                 headers={'Forwarded': 'for=192.0.2.1', 'X-Real-IP': '192.0.2.1',
                                          'X-Forwarded-For': '192.0.2.1'})
                             try:
@@ -92,10 +94,32 @@ def main():
                                 assert response.status == (404 if expected == 200 else 403)
                         with request('/api/v1/styles') as response:
                             assert response.status == expected
+                        for route in ('/backup-info','/backup-privacy'):
+                            with request(route) as response:
+                                body=response.read()
+                                assert response.status==200 and b'NextPhase Backups' in body
+                                assert response.headers.get_content_type()=='text/html'
+                                assert "default-src 'none'" in response.headers['Content-Security-Policy']
+                                assert 'Set-Cookie' not in response.headers
+                                assert b'backend reached' not in body and b'<script' not in body
+                            with request(route,'HEAD') as response:
+                                assert response.status==200 and response.read()==b''
+                            with request(route,'POST') as response:
+                                assert response.status==(404 if expected==200 else 403)
+                        for route in ('/index.html','/privacy.html','/backup-info/','/backup-info/private'):
+                            with request(route) as response:
+                                assert response.status==(404 if expected==200 else 403),(route,response.status)
+                        # Caddy can normalize these to the API route. A denied
+                        # socket peer must still get 403; a public-page prefix
+                        # cannot carry its access exemption through traversal.
+                        for route in ('/backup-info/../api/v1/jobs','/backup-info%2f..%2fapi%2fv1%2fjobs'):
+                            with request(route) as response:
+                                assert response.status in ((200,404) if expected==200 else (403,)),(route,response.status)
+                                if response.status==200:assert response.read()==b'backend reached'
                     finally:
                         process.terminate()
                         process.wait(timeout=10)
-        print('Passed: production config adaptation, allowed API, denied peer, forged headers, private routes.')
+        print('Passed: config adaptation, allowed API, denied peer, forged headers, private routes, public static information only.')
     finally:
         backend.shutdown()
         backend.server_close()

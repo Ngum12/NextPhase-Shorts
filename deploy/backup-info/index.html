@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>NextPhase Backups — private server recovery</title>
+  <style>
+    :root { color-scheme: dark; font: 18px/1.65 system-ui, sans-serif; background: #101d28; color: #ecf4f7; }
+    body { max-width: 740px; margin: 0 auto; padding: 48px 24px; }
+    .label { color: #85e0cf; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { font-size: clamp(2rem, 7vw, 3.1rem); line-height: 1.15; margin: 16px 0 24px; }
+    h2 { font-size: 1.25rem; margin-top: 32px; }
+    a { color: #85e0cf; text-underline-offset: .2em; }
+    .card { background: #1c303e; border: 1px solid #355363; border-radius: 16px; padding: 24px; }
+    footer { margin-top: 40px; color: #bdced7; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="label">Personal administrative utility</div>
+    <h1>NextPhase Backups</h1>
+    <p>Encrypted server backups for recovery of the privately operated NextPhase Shorts trial.</p>
+  </header>
+  <main>
+    <section class="card" aria-labelledby="purpose">
+      <h2 id="purpose">What this utility does</h2>
+      <p>The server administrator uses rclone to upload encrypted backup bundles to their own Google Drive, then download the copies to verify their integrity.</p>
+      <p>Google authorization is for the administrator's backup account. This page has no sign-in or file-upload form.</p>
+    </section>
+    <h2>Google Drive access</h2>
+    <p>The requested <code>drive.file</code> permission covers only files created or explicitly opened with this backup application. Backup filenames, sizes and Drive metadata are visible to Google; bundle contents are encrypted before upload.</p>
+    <p>Read the <a href="/backup-privacy">backup privacy notice</a> for permissions, credential storage, retention and access revocation.</p>
+    <h2>Contact</h2>
+    <p>Administrator: <a href="mailto:dieudonnen450@gmail.com">dieudonnen450@gmail.com</a>.</p>
+  </main>
+  <footer>These pages describe the backup utility. They do not announce a public release of the NextPhase Shorts app.</footer>
+</body>
+</html>

@@ -24,6 +24,7 @@ services:
     ports: ['0.0.0.0:80:8080', '0.0.0.0:443:8443']
     volumes:
       - ./deploy/trial-https/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/backup-info:/srv/backup-info:ro
       - trial-certificates:/data
     tmpfs: ['/config:uid=1000,gid=1000,mode=0700,size=1048576']
     read_only: true
