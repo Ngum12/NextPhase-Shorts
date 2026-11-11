@@ -51,7 +51,8 @@ Open the review page locally. If browser policy blocks file URLs, use a trusted
 local HTTP server bound to loopback and the single synthetic demo folder; do not
 publish the transcript directory. The page does not upload data or render media.
 Its downloaded proposed EDL has `render_supported:false` and cannot be supplied
-to the baseline renderer. Renderer integration is a later reviewed change.
+to the baseline renderer. The separate operator preview below takes the validated
+saved `proposal.json`; the live renderer still does not accept planning EDLs.
 
 ## Analyze an operator-owned consented source with manual annotations
 
@@ -101,6 +102,47 @@ statistics to bound scoring work. It retains the 0.45 probability exclusion,
 five-second minimum/full-frame and source/requested-duration limits. A weak late
 sentence can be excluded while earlier clean complete sentences remain eligible.
 This is a timing/probability heuristic, not semantic-storytelling acceptance.
+
+## Render a reviewed candidate for private viewing
+
+After reviewing the highlighted text, render one option from the saved proposal:
+
+```bash
+.venv/bin/python scripts/preview_short.py \
+  --source /private/consented-copy.mp4 \
+  --proposal /private/new-proposal/proposal.json --candidate 1 \
+  --output /private/new-preview --acknowledge-preview
+```
+
+Option numbers start at 1 and match the review page. Supply `proposal.json`, not
+the downloaded `proposed-edl-option-N.json`. The explicit acknowledgement means
+you reviewed the proposed text and will watch/listen to the actual cut. Estimated
+timestamps can still clip speech; text approval does not verify the video.
+
+This isolated development/test operator tool copies the bounded source into
+private scratch storage, verifies its SHA-256/probed duration against the proposal,
+then decodes that verified snapshot. It renders only the selected numeric source
+range through fixed FFmpeg arguments: 1080×1920, 30 fps, letterbox without cropping,
+H.264/AAC (audio optional). No captions, face tracking, effects or voice generation
+are added. Duration floors to whole frames, dropping less than one frame at the
+tail. It verifies actual decoded frame count, frame rate, dimensions, duration and
+output size before reporting success. The requested cap and 60-second limit remain.
+
+The new mode-0700 output directory contains mode-0600 `preview.mp4`,
+`preview-report.json` and `reviewed-proposed-edl.json`. The report records source,
+proposal and preview hashes, not transcript text. Scratch is removed on completion;
+failed new output is removed and existing output is refused. Allow scratch space
+for up to 300 MiB of source and 64 MiB of preview, a 300-second render timeout and
+two codec threads. Explicitly delete these operator artifacts when no longer needed;
+they are outside app retention/backups. This does not enqueue jobs or alter the
+live API/worker/mobile app. Staging/production and required-worker mode refuse the
+pilot; do not disable a live worker's guard to run it. The existing bounded decoder
+launcher strips credentials and restricts input protocols; native operator mode
+is not a production tenant sandbox.
+
+Download the preview privately using your existing SSH key and open it in a local
+video player. Check the first/last spoken words, audio/video alignment, meaning and
+letterboxing. Source identity/frame QA cannot establish those human judgments.
 
 ## Optional native ASR — not yet accepted for rollout
 

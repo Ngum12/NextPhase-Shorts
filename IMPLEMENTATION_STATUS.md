@@ -1,5 +1,29 @@
 # Implementation Status — 2026-11-10
 
+## Reviewed candidate video preview pilot — 2026-11-11
+
+The owner ran sentence-window-v2 on the saved generated-English/base-model
+transcript, obtained two candidates and approved the highlighted text. Added
+`scripts/preview_short.py` for an explicit operator acknowledgement and one numbered
+candidate from the saved validated proposal. A private bounded source snapshot
+must match its hash and probed duration before decoding. Fixed FFmpeg arguments
+render only the selected range, 1080×1920/30-fps letterbox H.264/AAC (audio optional),
+with frame-floor timing, actual frame-count/rate/duration/size QA, private reports,
+no-overwrite admission, scratch cleanup and input preservation. Report hashes bind
+source, proposal and output; actual audio/video meaning and cut review remain human.
+No live API/worker/mobile entry point, captions/style/semantic claim, dependency,
+restricted reference-kit asset, paid service or production rollout was added.
+Staging/production and required-worker mode refuse the standalone pilot.
+
+Validation: all 482 backend tests and 63 focused analysis/preview tests passed,
+including real offset audio
+verification, fractional-frame durations, a 60-second silent preview, mismatched/
+invalid proposal rejection, private permissions, output preservation and cleanup.
+The actual analysis-to-preview CLI demo produced a verified 442-frame/14.733333-s
+synthetic preview. Synthetic manual annotations/tone are not ASR-quality evidence.
+The owner's original generated-speech preview has not been rendered/viewed here;
+the source remains on their VPS. See ANALYSIS_PILOT.md for operator commands.
+
 ## Disposable capacity CI database readiness — 2026-11-11
 
 SQLite-matrix capacity CI failed before migrations with a closed published
