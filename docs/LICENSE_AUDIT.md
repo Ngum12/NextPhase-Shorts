@@ -1,5 +1,20 @@
 # License provenance and integration gates
 
+## Clean preview caption font — 2026-11-11
+
+Server images now explicitly install Debian `fonts-dejavu-core`, upstream
+**DejaVu 2.37**, https://dejavu-fonts.github.io/ . The unmodified
+`DejaVuSansMono-Bold.ttf` is used by FFmpeg drawtext. Upstream DejaVu modifications
+are public domain; original Bitstream Vera font terms permit use, copying,
+distribution and embedding subject to copyright/trademark/permission notices,
+modified-font naming and no standalone font sale. The full packaged copyright
+notice is retained at `docs/licenses/dejavu-2.37/copyright`; image installations
+also retain `/usr/share/doc/fonts-dejavu-core/copyright`. Debian packaging has its
+own GPL-2+ terms in that notice; font terms are distinct. No font binary, sample
+footage or reference-kit asset is copied into the repository. This is scoped
+font provenance review, not full image/FFmpeg/codec/patent/legal signoff. No new
+Python/npm package, provider or model was added.
+
 ## Native private-preview playback — 2026-11-11
 
 Added SDK-matched **expo-video 58.0.14** (range ~58.0.13), declared MIT. Sources:

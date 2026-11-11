@@ -4,7 +4,8 @@ After saving a human review, select a suggestion and press **Render selected
 preview**. The app acknowledges the need to check the actual cut and opens a new
 preview project. It polls the existing queue; when successful, **Watch preview**
 plays the private result. Cancel/Delete, Save/Share and Back to source review are
-available. Automatic transcription is still operator-only; no captions, effects,
+available. Optional [clean caption previews](CLEAN_CAPTION_PREVIEWS.md) add a fixed
+phrase overlay after a saved review. Automatic transcription is still operator-only; no other effects,
 semantic-quality claim, public release or French acceptance is introduced.
 
 ## Server and worker boundaries
@@ -45,7 +46,7 @@ semantic-quality claim, public release or French acceptance is introduced.
 
 ## Phone storage and playback
 
-One SecureStore item per source retains at most five option keys for the current
+One SecureStore item per source retains at most ten plain/captioned option keys for the current
 review revision; it contains hashes/UUIDs, not transcript/media. Storage operations
 are serialized and in-flight requests scoped to session/project. Interrupted
 requests reuse their keys after restart; a new revision replaces old keys. Local

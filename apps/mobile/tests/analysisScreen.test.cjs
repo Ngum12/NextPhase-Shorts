@@ -15,8 +15,8 @@ function harness(){
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
-  '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate)=>{
-    h.calls.push({preview:id,token,revision,candidate});if(h.previewError)throw h.previewError;
+  '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate,captionStyle)=>{
+    h.calls.push({preview:id,token,revision,candidate,captionStyle});if(h.previewError)throw h.previewError;
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
   '../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
@@ -104,4 +104,18 @@ test('duplicate confirmations share one UI request and old-session results canno
  h.token='new-session';h.pending=true;await h.flush();
  complete({id:'old-preview',status:'queued'});await Promise.all([first,second]);await h.flush();
  assert(!h.calls.some(c=>c.push));
+});
+
+test('caption choice is opt-in, disclosed and hidden on older servers',async()=>{
+ const h=harness();enablePreviews(h);await h.flush();
+ assert(!h.button('Clean captions'));
+ h.value.clean_captions_supported=true;
+ h.button('Refresh review').props.onPress();await h.flush();
+ assert(h.button('Plain preview · selected'));
+ h.button('Clean captions').props.onPress();await h.flush();
+ assert(h.text().includes('Timing is estimated'));
+ h.button('Render selected preview').props.onPress();
+ assert(h.alerts.at(-1)[1].includes('Timings are estimated'));
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.find(c=>c.preview).captionStyle,'clean-1');
 });

@@ -62,7 +62,24 @@ def network_filter(libc):
     if libc.prctl(22,2,ctypes.byref(program),0,0)!=0:raise RuntimeError('Cannot restrict decoder system calls')
 
 
-def apply(source,output=None):
+def caption_read_paths(source, paths):
+    """Exact small caption files in the private attempt, never a directory grant."""
+    if not isinstance(paths,(list,tuple)) or len(paths)>80:
+        raise RuntimeError('Invalid caption file list')
+    parent=Path(source).resolve(strict=True).parent
+    result=[]
+    for name in paths:
+        path=Path(name)
+        if (path.is_symlink() or path.resolve(strict=True).parent!=parent
+                or not path.name.startswith('caption-') or path.suffix!='.txt'
+                or not path.is_file() or path.stat().st_size>256):
+            raise RuntimeError('Invalid caption read file')
+        result.append(path.resolve(strict=True))
+    return result
+
+
+def apply(source,output=None,read_files=()):
+    caption_paths=caption_read_paths(source,read_files)
     if not supported():raise RuntimeError('Required decoder isolation is unsupported')
     libc=ctypes.CDLL(None,use_errno=True)
     if libc.prctl(38,1,0,0,0)!=0:raise RuntimeError('Cannot enforce no-new-privileges')
@@ -71,6 +88,7 @@ def apply(source,output=None):
     if descriptor<0:raise RuntimeError('Cannot create decoder filesystem rules')
     try:
         rules={Path(source).resolve(strict=True):4}
+        rules.update({path:4 for path in caption_paths})
         for name in ('/usr','/lib','/lib64','/etc/ld.so.cache','/etc/localtime','/etc/fonts'):
             path=Path(name)
             if path.exists():rules[path.resolve()]=READ if path.is_dir() else 4

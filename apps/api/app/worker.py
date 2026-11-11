@@ -181,6 +181,7 @@ def _process(job,supervisor):
                 observed['storage_write_bytes']=spec.source_bytes
             info=render_excerpt(source,output,start_ms=spec.source_start_ms,end_ms=spec.source_end_ms,
                 frames=spec.output_frames,requested_seconds=spec.requested_seconds,
+                captions=spec.captions,
                 max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes),
                 should_cancel=cancelled,timeout=min(300,settings.render_timeout_seconds))
         else:

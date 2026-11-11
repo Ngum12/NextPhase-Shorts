@@ -1,5 +1,12 @@
 # Security / privacy — gating checklist, not completed certification
 
+Optional clean captions derive only from source-bound saved review data. A closed
+style enum cannot supply arbitrary filters/text/timing/paths. UTF-8 text files
+remain outside FFmpeg grammar (`expansion=none`) and receive only bounded exact
+read grants in the private attempt; output write/network/credential restrictions
+remain. Caption job specs follow existing deletion/backup custody rules. See
+CLEAN_CAPTION_PREVIEWS.md for timing, cleanup and exported-copy limits.
+
 ## Experimental local analysis boundary — 2026-11-11
 
 The separate English project-review preparation adds authenticated owner-only

@@ -35,7 +35,7 @@ def main():
         from pathlib import Path
         spec=importlib.util.spec_from_file_location('render_sandbox',Path(__file__).with_name('render_sandbox.py'))
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-        module.apply(sandbox['source'],sandbox['output'])
+        module.apply(sandbox['source'],sandbox['output'],sandbox.get('read_files',()))
     os.execvp(command[0],command)
 
 
