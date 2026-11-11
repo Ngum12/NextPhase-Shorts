@@ -137,6 +137,8 @@ def test_email_acceptance_throttle_and_recovery_without_secret_output(host,monke
     assert m.notify({'ok':True})=='provider_accepted_not_inbox_verified'
     assert len(requests)==2
     payload=json.loads(requests[0].data)
+    assert requests[0].get_header('User-agent')=='NextPhase-VPS-Maintenance/1.0'
+    assert requests[0].get_header('Accept')=='application/json'
     assert 'fixture-only' not in json.dumps(payload)
     assert payload['to']==['owner@example.com']
     assert m.notify({'ok':True},topic='backup')=='unchanged_or_throttled'
@@ -163,3 +165,19 @@ def test_email_setup_uses_private_files_and_preserves_existing_key(host,monkeypa
     assert 'fixture-only-not-a-real-key' not in capsys.readouterr().out
     with pytest.raises(RuntimeError):m.email_setup('monitor@example.com','owner@example.com')
     assert key.read_text()=='fixture-only-not-a-real-key'
+
+
+def test_email_diagnostics_do_not_echo_provider_bodies():
+    import io
+    import urllib.error
+    error=urllib.error.HTTPError('https://api.resend.com/emails',403,'Forbidden',{},
+        io.BytesIO(b'Cloudflare error code: 1010 sensitive-response-fixture'))
+    details=m.email_error(error)
+    assert details=={'issue':'email_delivery_failed','http_status':403,
+                     'response_format':'non_json','edge_filter_marker':True}
+    assert 'sensitive-response-fixture' not in json.dumps(details)
+    error=urllib.error.HTTPError('https://api.resend.com/emails',401,'Unauthorized',{},
+        io.BytesIO(b'{"name":"invalid_api_key","message":"sensitive-response-fixture"}'))
+    details=m.email_error(error)
+    assert details['provider_error']=='invalid_api_key'
+    assert 'sensitive-response-fixture' not in json.dumps(details)
