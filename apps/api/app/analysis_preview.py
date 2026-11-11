@@ -109,6 +109,8 @@ def preview(*, source, proposal, candidate, output, acknowledge=False):
                 raise RuntimeError('Preview output failed validation')
             report = {'ok': True, 'candidate': candidate, 'source_sha256': plan.source_sha256,
                 'proposal_sha256': hashlib.sha256(data).hexdigest(),
+                'human_annotations_applied': plan.review_sha256 is not None,
+                'review_sha256': plan.review_sha256, 'transcript_sha256': plan.transcript_sha256,
                 'preview_sha256': file_digest(destination), 'output_frames': frames,
                 'duration_seconds': info['duration'], 'width': 1080, 'height': 1920, 'fps': 30,
                 'source_start_ms': selected.source_start_ms, 'source_end_ms': selected.source_end_ms,

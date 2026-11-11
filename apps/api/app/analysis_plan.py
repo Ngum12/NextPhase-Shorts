@@ -79,7 +79,7 @@ class Candidate(ClosedModel):
 
 class Proposal(ClosedModel):
     schema_version: Literal['1'] = '1'
-    algorithm: Literal['sentence-window-v1','sentence-window-v2'] = 'sentence-window-v2'
+    algorithm: Literal['sentence-window-v1','sentence-window-v2','sentence-window-v3-reviewed'] = 'sentence-window-v2'
     source_sha256: Digest
     source_duration_ms: Annotated[int, Field(strict=True, ge=1, le=600000)]
     language: Literal['en', 'fr']
@@ -89,12 +89,19 @@ class Proposal(ClosedModel):
     fps: Literal[30] = 30
     human_review_required: Literal[True] = True
     semantic_quality_verified: Literal[False] = False
+    transcript_sha256: Digest | None = None
+    review_sha256: Digest | None = None
     candidates: tuple[Candidate, ...] = Field(max_length=5)
     warnings: tuple[Literal['manual_transcript', 'estimated_timestamps', 'confidence_unavailable',
-                            'no_speech', 'no_complete_window', 'low_confidence_excluded'], ...]
+                            'no_speech', 'no_complete_window', 'low_confidence_excluded',
+                            'human_reviewed_boundaries', 'human_confirmed_words'], ...]
 
     @model_validator(mode='after')
     def valid(self):
+        if (self.algorithm == 'sentence-window-v3-reviewed') != (self.review_sha256 is not None):
+            raise ValueError('Reviewed proposals must disclose review identity')
+        if (self.review_sha256 is None) != (self.transcript_sha256 is None):
+            raise ValueError('Review and transcript identities must be paired')
         for candidate in self.candidates:
             if (candidate.source_end_ms > self.source_duration_ms or
                     candidate.source_end_ms-candidate.source_start_ms > self.requested_seconds*1000 or
@@ -103,12 +110,13 @@ class Proposal(ClosedModel):
         return self
 
 
-def sentence_ranges(transcript):
-    """Only punctuation-complete sentences; never infer text for a missing ending."""
+def sentence_ranges(transcript, sentence_end_words=()):
+    """Use punctuation or explicit human boundaries; never infer missing text."""
     first = 0
+    reviewed_ends = set(sentence_end_words)
     sentences = []
     for i, word in enumerate(transcript.words):
-        if re.search(r'''[.!?…]["'\u201d\u2019\u00bb)\]]*$''', word.text.strip()):
+        if i+1 in reviewed_ends or re.search(r'''[.!?…]["'\u201d\u2019\u00bb)\]]*$''', word.text.strip()):
             sentences.append((first, i))
             first = i+1
         elif i+1 < len(transcript.words) and transcript.words[i+1].start_ms-word.end_ms > 2000:
@@ -117,17 +125,33 @@ def sentence_ranges(transcript):
     return sentences
 
 
-def propose(transcript: Transcript, requested_seconds: int) -> Proposal:
+def propose(transcript: Transcript, requested_seconds: int, *, review=None) -> Proposal:
     if type(requested_seconds) is not int or not 5 <= requested_seconds <= 60:
         raise ValueError('Requested duration must be an integer from 5 to 60')
     warnings = ['manual_transcript' if transcript.provider == 'manual' else 'estimated_timestamps']
+    confirmed = set()
+    sentence_ends = ()
+    identities = {}
+    if review is not None:
+        from .analysis_annotations import fingerprint, validate_review
+        review = validate_review(transcript, review)
+        confirmed = set(review.confirmed_low_confidence_words)
+        sentence_ends = review.sentence_end_words
+        identities = {'algorithm': 'sentence-window-v3-reviewed',
+                      'transcript_sha256': review.transcript_sha256,
+                      'review_sha256': fingerprint(review)}
+        if sentence_ends:
+            warnings.append('human_reviewed_boundaries')
+        if confirmed:
+            warnings.append('human_confirmed_words')
     if any(w.confidence is None for w in transcript.words):
         warnings.append('confidence_unavailable')
-    sentences = sentence_ranges(transcript)
+    sentences = sentence_ranges(transcript, sentence_ends)
     ends = [transcript.words[end].end_ms for _, end in sentences]
     end_words = [end for _, end in sentences]
     words = transcript.words
-    low = [i for i,w in enumerate(words) if w.confidence is not None and w.confidence < .45]
+    low = [i for i,w in enumerate(words)
+           if w.confidence is not None and w.confidence < .45 and i+1 not in confirmed]
     gaps = [i for i in range(1,len(words)) if words[i].start_ms-words[i-1].end_ms>2000]
     if low:
         warnings.append('low_confidence_excluded')
@@ -172,7 +196,8 @@ def propose(transcript: Transcript, requested_seconds: int) -> Proposal:
     if not ranked:
         warnings.append('no_speech' if not transcript.words else 'no_complete_window')
     return Proposal(source_sha256=transcript.source_sha256,source_duration_ms=transcript.source_duration_ms,
-        language=transcript.language,requested_seconds=requested_seconds,candidates=tuple(ranked),warnings=tuple(warnings))
+        language=transcript.language,requested_seconds=requested_seconds,candidates=tuple(ranked),
+        warnings=tuple(warnings),**identities)
 
 
 def planning_edl(proposal: Proposal, index=0):
@@ -180,9 +205,14 @@ def planning_edl(proposal: Proposal, index=0):
     if type(index) is not int or not 0 <= index < len(proposal.candidates):
         raise ValueError('Choose an available candidate')
     candidate = proposal.candidates[index]
-    return {'schema_version':'analysis-1','source_sha256':proposal.source_sha256,
+    edl = {'schema_version':'analysis-1','source_sha256':proposal.source_sha256,
         'human_review_required':True,'render_supported':False,
         'output':{'width':1080,'height':1920,'fps':30,'duration_frames':candidate.output_frames},
         'scenes':[{'type':'talking_head','start_frame':0,'end_frame':candidate.output_frames,
                    'source_start_ms':candidate.source_start_ms,'source_end_ms':candidate.source_end_ms}],
         'rounding':'Output floors duration to whole frames; tail difference is less than one frame.'}
+    if proposal.review_sha256 is not None:
+        edl.update(review_sha256=proposal.review_sha256,
+                   transcript_sha256=proposal.transcript_sha256,
+                   human_annotations_applied=True)
+    return edl
