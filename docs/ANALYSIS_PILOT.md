@@ -103,6 +103,53 @@ five-second minimum/full-frame and source/requested-duration limits. A weak late
 sentence can be excluded while earlier clean complete sentences remain eligible.
 This is a timing/probability heuristic, not semantic-storytelling acceptance.
 
+### Add human sentence boundaries and confirm flagged words
+
+When recognized words are correct but punctuation is missing, first regenerate
+the review page from the existing transcript using the replan command above and
+a new output directory. This does not rerun ASR. On that page:
+
+1. Click the last word of each complete sentence. Click again to undo a mark.
+   Existing punctuation is still used; these marks add explicit boundaries.
+2. Compare flagged words with the original recording. Confirm individual words,
+   or explicitly confirm all only after checking every flagged word.
+3. Check the original-recording acknowledgement, then download
+   `transcript-review.json`. Transfer it privately to the operator host.
+
+Apply it to the exact saved transcript, with a fresh output directory:
+
+```bash
+.venv/bin/python scripts/analyze_short.py \
+  --replan-transcript /private/previous-analysis/transcript.json \
+  --review-annotations /private/transcript-review.json \
+  --output /private/human-reviewed-proposal --requested-seconds 30 \
+  --consent-to-local-analysis --diagnostic
+```
+
+The sidecar contains sorted one-based word numbers, source SHA-256, a canonical
+validated-transcript SHA-256 and an explicit acknowledgement. It accepts no text,
+timing, score or executable edits. Changed transcripts/sources, missing/out-of-range
+word references, duplicate/unsorted numbers, non-flagged confirmations, unknown
+fields and absent acknowledgement are refused. SHA-256 binds content; it is not
+a reviewer signature or authentication/authorization mechanism. This is a trusted
+operator workflow with private artifacts, not a public admission endpoint.
+
+`sentence-window-v3-reviewed` uses human sentence boundaries alongside original
+punctuation. Only explicitly confirmed low-score words become eligible; their
+original scores still contribute unchanged to candidate scoring. Unconfirmed
+low-score words, long gaps, source bounds and duration limits remain in force.
+Recognition words/timestamps/scores, provider/model identity and timing-quality
+labels stay unchanged in `transcript.json`. The original input files are preserved.
+New `review-annotations.json`, proposal/EDL identities and preview report fields
+record the separate human contribution. There is no global threshold reduction,
+automatic punctuation guess, semantic verification or new inference call.
+
+Review the new candidates, then use the existing preview command below and
+watch/listen to the actual cut. Timing remains estimated. Regenerating without
+`--review-annotations` deliberately does not apply a previous review implicitly.
+These annotation/import/UI changes have not had runtime/browser/regression tests
+run in this change; syntax checks do not establish end-to-end acceptance.
+
 ## Render a reviewed candidate for private viewing
 
 After reviewing the highlighted text, render one option from the saved proposal:
@@ -151,8 +198,12 @@ policy denies the Hugging Face model host. The pinned native engine built and it
 CLI flags were checked. The owner subsequently downloaded upstream-digest-verified
 multilingual tiny/base models on the VPS and ran generated English speech through
 the adapter. Tiny produced clear recognition errors; base improved the text but
-retained a brand-name variation and one below-threshold token. Real natural-speech
-English/French quality and actual performance acceptance remain **unverified**.
+retained a brand-name variation and one below-threshold token. The owner then ran
+one personal English recording (80 words) and reported that its recognized wording
+exactly matched their speech; it had no sentence-ending punctuation and nine
+below-threshold words, so no unreviewed candidate was produced. This is one owner
+observation, not an independently measured English/French quality benchmark or
+actual performance acceptance.
 Executable fixtures verify protocol, credential stripping and timeouts; they are
 not ASR evidence. No model files are committed or bundled.
 

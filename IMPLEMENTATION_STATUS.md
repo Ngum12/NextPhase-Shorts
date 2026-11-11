@@ -1,5 +1,29 @@
 # Implementation Status — 2026-11-10
 
+## Human transcript annotations for missing punctuation — 2026-11-11
+
+Owner's personal English recording produced 80 recognized words, no sentence
+endings and nine below-0.45 words. They reported the wording exactly matched the
+recording. Added an offline review-page editor for explicit sentence-end marks,
+individual/all-checked flagged-word confirmations and original-recording
+acknowledgement. A separate bounded, closed annotation schema binds one-based
+word numbers to source and canonical transcript hashes; CLI import is available
+only with saved-transcript replanning. Missing references, changed transcript,
+non-flagged confirmations, duplicate/unsorted numbers and absent acknowledgement
+are refused. Hashes establish content identity, not a reviewer signature.
+
+The reviewed planner uses explicit boundaries and admits only confirmed low-score
+words; original recognition text/timing/scores/provider identity stay intact.
+Unconfirmed words, long gaps and source/frame/duration limits retain their guards.
+Annotation files and proposal/EDL/preview hashes disclose the human contribution;
+the original ASR is not relabeled as manual or made artificially high-confidence.
+No new ASR/provider call, dependency, restricted asset, live API/mobile/worker
+activation or paid service was introduced. Actual cut/meaning review is required.
+
+Validation for this change is limited to syntax and diff checks. No new tests were
+added or run; browser interaction, annotation round-trip and regression acceptance
+remain unverified. Earlier test counts below apply to their respective commits.
+
 ## Reviewed candidate video preview pilot — 2026-11-11
 
 The owner ran sentence-window-v2 on the saved generated-English/base-model

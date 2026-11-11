@@ -15,6 +15,7 @@ sys.path.insert(0,str(ROOT/'apps/api'))
 def analyze(args):
     from app.analysis_plan import Transcript, propose, planning_edl
     from app.analysis_review import review_html
+    from app.analysis_annotations import TranscriptReview, validate_review
     from app.local_transcription import regular_file, file_digest, extract_audio, transcribe
     from app.media import probe_video
     if os.getenv('APP_ENV','development') not in ('development','test'):
@@ -22,6 +23,10 @@ def analyze(args):
     if not args.consent_to_local_analysis:
         raise RuntimeError('Explicit local-processing acknowledgement is required')
     replan=getattr(args,'replan_transcript',None)
+    annotations=getattr(args,'review_annotations',None)
+    review=None
+    if annotations and not replan:
+        raise RuntimeError('Review annotations require a saved transcript')
     source=None
     if replan:
         if args.transcript or args.engine or args.model or args.engine_sha256 or args.model_sha256:
@@ -30,6 +35,9 @@ def analyze(args):
         transcript=Transcript.model_validate_json(path.read_bytes())
         if args.language and transcript.language!=args.language:
             raise RuntimeError('Transcript language differs')
+        if annotations:
+            review_path=regular_file(annotations,maximum=256*1024)
+            review=validate_review(transcript,TranscriptReview.model_validate_json(review_path.read_bytes()))
     else:
         source=regular_file(args.source,maximum=314572800)
         metadata=probe_video(source)
@@ -63,11 +71,13 @@ def analyze(args):
                     model=args.model,model_sha256=args.model_sha256,language=args.language,
                     source_sha256=digest,source_duration_ms=duration,work=work,timeout=args.timeout)
                 asr_executed=True
-            proposal=propose(transcript,args.requested_seconds)
+            proposal=propose(transcript,args.requested_seconds,review=review)
             if source is not None and file_digest(source)!=digest:
                 raise RuntimeError('Source changed during analysis')
             artifacts={'transcript.json':transcript.model_dump(mode='json'),
                        'proposal.json':proposal.model_dump(mode='json')}
+            if review is not None:
+                artifacts['review-annotations.json']=review.model_dump(mode='json')
             if proposal.candidates:
                 artifacts['proposed-edl.json']=planning_edl(proposal)
             for name,data in artifacts.items():
@@ -76,10 +86,11 @@ def analyze(args):
                     json.dump(data,handle,ensure_ascii=False,indent=2)
             with (output/'review.html').open('x',encoding='utf-8') as handle:
                 os.chmod(output/'review.html',0o600)
-                handle.write(review_html(transcript,proposal))
+                handle.write(review_html(transcript,proposal,review=review))
             return {'ok':True,'language':transcript.language,'words':len(transcript.words),
                     'candidate_count':len(proposal.candidates),'asr_executed':asr_executed,
                     'replanned_existing_transcript':bool(replan),
+                    'human_annotations_applied':review is not None,
                     'planner_algorithm':proposal.algorithm,'planning_warnings':list(proposal.warnings),
                     'human_review_required':True,'render_enabled':False}
     except BaseException:
@@ -93,6 +104,7 @@ def main():
     inputs=parser.add_mutually_exclusive_group(required=True)
     inputs.add_argument('--source')
     inputs.add_argument('--replan-transcript',help='Replan a validated saved transcript; preserve its provenance and run no ASR')
+    parser.add_argument('--review-annotations',help='Human sentence boundaries and flagged-word confirmations exported from the review page')
     parser.add_argument('--output',required=True)
     parser.add_argument('--requested-seconds',type=int,choices=range(5,61),default=15)
     parser.add_argument('--consent-to-local-analysis',action='store_true')
@@ -127,6 +139,10 @@ def main():
                 'Local transcription failed':'native_transcription_failed',
                 'Artifact checksum mismatch':'artifact_checksum_mismatch',
                 'Imported transcript is not bound to this source':'source_identity_mismatch',
+                'Review is not bound to this transcript':'review_identity_mismatch',
+                'Review references missing words':'review_word_out_of_range',
+                'Review confirmation requires a flagged word':'review_word_not_flagged',
+                'Review annotations require a saved transcript':'review_requires_replan',
                 'ASR has not passed the required worker sandbox gate':'sandbox_acceptance_required',
             }
             if isinstance(error,ValidationError):
