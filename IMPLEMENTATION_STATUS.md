@@ -1,5 +1,25 @@
 # Implementation Status — 2026-11-10
 
+## Bounded hosted CI FFmpeg setup — 2026-11-11
+
+The three owner-supplied failed-check logs show Ubuntu package download stalls,
+including Azure mirror DNS failures and repeated delayed downloads during the
+FFmpeg setup step. They do not establish an application-test assertion failure.
+
+Pinned the backend runner to Ubuntu 24.04 and reuse existing FFmpeg/ffprobe only
+after verifying both tools and libx264/AAC encoders. The fallback uses isolated
+package lists and signed official Ubuntu HTTPS sources, skipping translation
+indexes and recommended packages. Downloads have connection timeouts and bounded
+retries; update/install have 90/240-second deadlines, the setup step has an
+eight-minute limit and each job has a 30-minute limit. Superseded runs of the same
+event/ref are canceled. Existing acceptance, migration and test steps remain.
+
+Validation: seven mocked setup tests passed, covering reuse, signed-source wiring,
+failure/timeout propagation, cleanup and post-install tool verification. Bash
+syntax, workflow structure and the real installed-tool reuse path passed locally.
+No real Ubuntu package installation or hosted GitHub rerun was performed here;
+hosted results remain pending. No VPS configuration or deployed app was changed.
+
 ## Selected English preview queue and native playback — 2026-11-11
 
 Owner completed the deployed 0021 phone flow: the matching 80-word English
