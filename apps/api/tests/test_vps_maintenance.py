@@ -8,6 +8,9 @@ from types import SimpleNamespace
 
 import pytest
 
+if os.name != 'posix':
+    pytest.skip('Linux VPS maintenance only', allow_module_level=True)
+
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT/'scripts'))
 spec = importlib.util.spec_from_file_location('vps_maintenance', ROOT/'scripts/vps_maintenance.py')
@@ -181,3 +184,106 @@ def test_email_diagnostics_do_not_echo_provider_bodies():
     details=m.email_error(error)
     assert details['provider_error']=='invalid_api_key'
     assert 'sensitive-response-fixture' not in json.dumps(details)
+
+
+def offsite_fixture(host,monkeypatch):
+    import hashlib
+    cfg=host/'rclone.conf';cfg.write_text('fixture');cfg.chmod(0o600)
+    folder=m.private_dir(host/'.data/scheduled-backups')
+    name='scheduled-20261111T053525Z-a3f053b5.npb'
+    path=folder/name;path.write_bytes(b'encrypted fixture')
+    m.save('backup-latest.json',{'ok':True,'file':name,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
+                               'authenticated_readback':True,'offsite_copy':False,'completed_at':m.time.time()})
+    settings={'remote':'nextphase-backups:NextPhase-Automated-Backups','config_file':str(cfg)}
+    return settings,path
+
+
+def test_offsite_upload_requires_full_readback_and_marks_matching_backup(host,monkeypatch):
+    settings,path=offsite_fixture(host,monkeypatch)
+    calls=[]
+    monkeypatch.setattr(m,'command',lambda args,**kw:calls.append(args) or '')
+    result=m.offsite_upload(settings)
+    assert result['download_verified'] and result['offsite_copy']
+    assert m.read('backup-latest.json')['offsite_copy']
+    assert calls[0][3]=='copyto' and '--immutable' in calls[0] and '--checksum' in calls[0]
+    assert calls[1][3]=='check' and '--download' in calls[1] and '--one-way' in calls[1]
+    assert all('sync' not in c and 'delete' not in c for c in calls)
+    assert '.kdbx' not in str(calls) and '.key' not in str(calls)
+
+
+def test_offsite_readback_failure_does_not_claim_offsite_protection(host,monkeypatch):
+    settings,path=offsite_fixture(host,monkeypatch)
+    def failed(args,**kw):
+        if 'check' in args:raise RuntimeError('remote differs')
+        return ''
+    monkeypatch.setattr(m,'command',failed)
+    with pytest.raises(RuntimeError):m.offsite_upload(settings)
+    assert m.read('backup-latest.json')['offsite_copy'] is False
+    assert not m.read('offsite-latest.json')
+
+
+def test_offsite_refuses_changed_local_ciphertext_before_upload(host,monkeypatch):
+    settings,path=offsite_fixture(host,monkeypatch)
+    path.write_bytes(b'changed')
+    calls=[];monkeypatch.setattr(m,'command',lambda *a,**k:calls.append(a))
+    with pytest.raises(RuntimeError):m.offsite_upload(settings)
+    assert not calls
+
+
+def test_offsite_does_not_mark_a_concurrent_new_backup_as_uploaded(host,monkeypatch):
+    settings,path=offsite_fixture(host,monkeypatch)
+    def upload(args,**kw):
+        if 'check' in args:
+            newer=m.read('backup-latest.json');newer['file']='newer.npb'
+            m.save('backup-latest.json',newer)
+        return ''
+    monkeypatch.setattr(m,'command',upload)
+    m.offsite_upload(settings)
+    assert m.read('backup-latest.json')['offsite_copy'] is False
+
+
+def test_offsite_setup_is_not_enabled_if_verification_fails(host,monkeypatch):
+    monkeypatch.setattr(m,'command',lambda *a,**k:'nextphase-backups:\n')
+    monkeypatch.setattr(m,'offsite_upload',lambda *a,**k:(_ for _ in ()).throw(RuntimeError('failed')))
+    with pytest.raises(RuntimeError):m.offsite_setup()
+    assert not m.read('offsite.json')
+
+
+def test_scheduled_upload_failure_preserves_local_backup_and_notifies(host,monkeypatch,capsys):
+    settings,path=offsite_fixture(host,monkeypatch)
+    m.save('offsite.json',{**settings,'enabled':True})
+    monkeypatch.setattr(m.sys,'argv',['vps_maintenance.py','backup'])
+    monkeypatch.setattr(m.signal,'signal',lambda *a:None)
+    events=[]
+    def local():
+        events.append('local_backup_and_writer_restart')
+        return m.read('backup-latest.json')
+    def failed_upload():
+        events.append('offsite_upload')
+        raise RuntimeError('private-provider-response')
+    def notify(result,**kwargs):
+        events.append('failure_email')
+        assert result['issues']==['offsite_copy_failed']
+        return 'provider_accepted_not_inbox_verified'
+    monkeypatch.setattr(m,'backup',local)
+    monkeypatch.setattr(m,'offsite_upload',failed_upload)
+    monkeypatch.setattr(m,'notify',notify)
+    assert m.main()==1
+    assert events==['local_backup_and_writer_restart','offsite_upload','failure_email']
+    assert m.read('backup-latest.json')['ok']
+    assert m.read('offsite-failure.json')['issue']=='offsite_copy_failed'
+    assert 'private-provider-response' not in capsys.readouterr().out
+
+
+def test_monitor_flags_stale_and_failed_offsite_copies(host,monkeypatch):
+    import io
+    offsite_fixture(host,monkeypatch)
+    m.save('offsite.json',{'enabled':True})
+    m.save('offsite-latest.json',{'verified_at':m.time.time()-31*3600})
+    m.save('offsite-failure.json',{'checked_at':m.time.time()})
+    monkeypatch.setattr(m,'certificate_days',lambda:90)
+    monkeypatch.setattr(m,'dc',lambda *a,**k:'')
+    monkeypatch.setattr(m.urllib.request,'build_opener',lambda *a:SimpleNamespace(
+        open=lambda *a,**k:io.BytesIO(b'{"ok":true,"service":"nextphase-shorts"}')))
+    result=m.monitoring()
+    assert set(result['issues'])=={'offsite_copy_missing_or_older_than_30_hours','last_offsite_copy_failed'}
