@@ -79,7 +79,7 @@ app.include_router(project_analysis_router)
 async def safe_auth_validation(request,error):
     if request.url.path.startswith('/api/v1/auth/'):
         return JSONResponse({'detail':'Invalid authentication request'},status_code=422,headers={'Cache-Control':'no-store'})
-    if request.url.path.startswith('/api/v1/jobs/') and request.url.path.endswith('/analysis/review'):
+    if request.url.path.startswith('/api/v1/jobs/') and request.url.path.endswith(('/analysis/review','/analysis/previews')):
         return JSONResponse({'detail':'Invalid review request'},status_code=422,headers={'Cache-Control':'no-store'})
     return await request_validation_exception_handler(request,error)
 

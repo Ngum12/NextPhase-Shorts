@@ -1,8 +1,9 @@
 # English project review — private opt-in preparation
 
 This milestone puts transcript review and clip suggestions in the mobile project
-flow. It does **not** run speech recognition, enqueue preview renders or replace
-the existing baseline worker. French remains experimental. The server pilot is
+flow. It does **not** run speech recognition. The subsequent
+[queued preview increment](QUEUED_CLIP_PREVIEWS.md) adds selected-excerpt jobs to the
+existing worker. French remains experimental. The server pilot is
 disabled by default and refuses staging/production configuration. Only 1–5
 explicitly allowlisted app owner UUIDs can use it in development/test mode.
 
@@ -20,8 +21,9 @@ The server replans from the original transcript and separate human annotations.
 It preserves words, timestamps, model scores and provenance. No ASR rerun or
 phone-side video/AI processing is involved. Suggestions remain human-review-only
 and use the project's original requested duration, with the existing 60-second
-cap. Preview generation/playback from this screen is not implemented yet; the
-operator preview CLI remains the existing path for inspecting actual cuts.
+cap. Servers with queued-preview support can render a selected suggestion into
+its own preview project for private playback. The operator preview CLI also remains
+available; see QUEUED_CLIP_PREVIEWS.md for source/deletion/storage boundaries.
 
 The screen handles loading, no prepared transcript, network/API errors, stale-edit
 conflicts and lost save responses. Explicit refresh/back controls warn about
@@ -105,8 +107,8 @@ development environments can instead use `scripts/import_project_analysis.py`
 with `--transcript PATH` under their own existing server configuration.
 
 Open the matching phone project, enter English review and refresh. Record actual
-phone acceptance separately. Automatic contained analysis jobs, leases/cancellation,
-admission/cost accounting and owned preview render jobs are still subsequent work.
+phone acceptance separately. Automatic contained analysis jobs remain subsequent
+work; selected preview jobs reuse the existing render queue as described above.
 
 ## Existing private VPS upgrade procedure
 

@@ -1,5 +1,15 @@
 # License provenance and integration gates
 
+## Native private-preview playback — 2026-11-11
+
+Added SDK-matched **expo-video 58.0.14** (range ~58.0.13), declared MIT. Sources:
+https://www.npmjs.com/package/expo-video/v/58.0.14 and
+https://github.com/expo/expo/tree/sdk-58/packages/expo-video . Exact packaged notice
+is retained at docs/licenses/sdk58/expo-video-58.0.14/LICENSE and recorded in the
+SDK notice index/dependency inventory. Retain notices when distributing. Native
+player dependencies retain their own terms; this is not full Media3/Apple/OS/
+codec/patent/legal clearance. No reference-kit content, model or provider added.
+
 ## English project review preparation — 2026-11-11
 
 Uses existing inventoried Python/Expo/React Native dependencies and independently

@@ -5,6 +5,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { api, ApiError, cancelJob, deleteJob, Job } from '../../src/api';
 import { exportVideo } from '../../src/videoExports';
 import {englishReviewVisible} from '../../src/analysis';
+import {ClipPlayer} from '../../src/ClipPlayer';
+import {forgetPreviewIntents} from '../../src/clipPreviews';
 import { useAuth } from '../../src/auth';
 import { colors as c } from '../../src/theme';
 import { Body, Button, Loading, Page, Title, s } from '../../src/ui';
@@ -46,6 +48,7 @@ export default function Project() {
         setDeleting(true);revision.current++;
         try {
           await deleteJob(id,token);revision.current++;
+          if(!job?.preview_parent_id)await forgetPreviewIntents(id).catch(()=>{});
           let cacheFailed=false;
           try{await FileSystem.deleteAsync((FileSystem.cacheDirectory||FileSystem.documentDirectory)+`nextphase-${id}.mp4`,{idempotent:true});}
           catch{cacheFailed=true;}
@@ -76,13 +79,15 @@ export default function Project() {
       </View>
       {['queued','processing'].includes(job.status)&&<Button title={cancelling?'Cancelling…':'Cancel render'} onPress={cancel} disabled={cancelling||deleting||downloading} secondary/>}
       <Button title="Refresh status" onPress={refresh} disabled={deleting} secondary />
-      {englishReviewVisible&&<Button title="Review English clips" onPress={()=>router.push({pathname:'/review/[id]',params:{id}})} disabled={deleting||downloading||cancelling} secondary/>}
+      {englishReviewVisible&&!job.preview_parent_id&&<Button title="Review English clips" onPress={()=>router.push({pathname:'/review/[id]',params:{id}})} disabled={deleting||downloading||cancelling} secondary/>}
+      {job.preview_parent_id&&<Button title="Back to source review" onPress={()=>router.push({pathname:'/review/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling} secondary/>}
       {job.status==='succeeded'&&<>
+        {job.preview_parent_id&&token&&<ClipPlayer key={`${job.id}:${token}`} id={job.id} token={token}/>}
         <Button title={downloading?'Please wait…':'Save video to phone'} onPress={()=>download('save')} disabled={downloading||deleting||cancelling}/>
         <Button title="Share video" onPress={()=>download('share')} disabled={downloading||deleting||cancelling} secondary/>
       </>}
       <Button title={deleting?'Deleting…':'Delete project'} onPress={remove} disabled={deleting||downloading||cancelling} secondary/>
-      <Body>Stage 1 preview: trimmed vertical MP4 only. Intelligent highlight selection and advanced styles will be built in later phases.</Body>
+      <Body>{job.preview_parent_id?'Reviewed excerpt preview: original voice, vertical letterbox. Captions and advanced styles are not applied.':'Stage 1 preview: trimmed vertical MP4 only. Intelligent highlight selection and advanced styles will be built in later phases.'}</Body>
     </>}
   </ScrollView></Page>;
 }

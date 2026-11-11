@@ -110,7 +110,7 @@ def test_operator_guards(inputs, tmp_path, monkeypatch, mode):
 
 def test_failed_render_removes_only_new_output(inputs, tmp_path, monkeypatch):
     def fail(*args, **kwargs): raise RuntimeError('fixture failure')
-    monkeypatch.setattr(module, 'run_render', fail)
+    monkeypatch.setattr(module, 'render_excerpt', fail)
     with pytest.raises(RuntimeError): call(inputs, tmp_path)
     assert all(path.exists() for path in inputs)
     assert not (tmp_path/'preview').exists()

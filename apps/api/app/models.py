@@ -76,6 +76,8 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     cleanup_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True)
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True,index=True)
+    preview_parent_id: Mapped[str | None] = mapped_column(ForeignKey('render_jobs.id'),nullable=True,index=True)
+    preview_spec_json: Mapped[str | None] = mapped_column(Text,nullable=True)
 
 
 class ProjectAnalysis(Base):

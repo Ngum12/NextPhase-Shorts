@@ -85,7 +85,8 @@ def claim_job():
                 'desired_seconds': job.desired_seconds, 'source_duration': job.source_duration_seconds,
                 'claim_token': token, 'media_backend': job.media_backend,
                 'object_store_id': job.object_store_id,
-                'max_render_bytes': job.max_render_bytes or settings.max_render_bytes}
+                'max_render_bytes': job.max_render_bytes or settings.max_render_bytes,
+                'preview_parent_id':job.preview_parent_id,'preview_spec_json':job.preview_spec_json}
 
 
 def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None,retryable=False):
@@ -148,12 +149,14 @@ def process(job):
 
 
 def _process(job,supervisor):
+    from .observability import stage
     token = job['claim_token']
     output = settings.storage_dir / job['user_id'] / job['id'] / token / 'output.mp4'
     began = time.monotonic()
     source = Path(job['source'])
     remote = job.get('media_backend', 'local') == 's3'
-    if remote:
+    excerpt = bool(job.get('preview_parent_id'))
+    if remote or excerpt:
         source = output.parent / 'input.media'
     try:
         if stop or supervisor.lost.is_set():
@@ -167,8 +170,22 @@ def _process(job,supervisor):
                 object_store.fetch(job['source'], object_store.source_key(job['user_id'], job['id'], extension),
                                    source, settings.max_upload_bytes)
                 observed['storage_read_bytes']=source.stat().st_size
-        duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
-        info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=lambda: stop or supervisor.lost.is_set() or not owns_claim(job))
+        cancelled=lambda: stop or supervisor.lost.is_set() or not owns_claim(job)
+        if excerpt:
+            if remote:raise MediaError('Unsupported preview source profile')
+            from .excerpt_jobs import snapshot_source
+            from .excerpt_render import render_excerpt
+            with stage('source_fetch') as observed:
+                spec=snapshot_source(job,source,should_cancel=cancelled)
+                observed['storage_read_bytes']=spec.source_bytes
+                observed['storage_write_bytes']=spec.source_bytes
+            info=render_excerpt(source,output,start_ms=spec.source_start_ms,end_ms=spec.source_end_ms,
+                frames=spec.output_frames,requested_seconds=spec.requested_seconds,
+                max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes),
+                should_cancel=cancelled,timeout=min(300,settings.render_timeout_seconds))
+        else:
+            duration = max(1, min(60, job['desired_seconds'], int(job['source_duration'] + 0.5)))
+            info = render_baseline(source, output, duration, max_output_bytes=job.get('max_render_bytes',settings.max_render_bytes), should_cancel=cancelled)
         output_bytes = output.stat().st_size
         output_reference = output.resolve()
         if remote:
@@ -212,8 +229,9 @@ def _process(job,supervisor):
                 db.execute(update(RenderJob).where(RenderJob.id==job['id'],
                     RenderJob.status=='processing',RenderJob.claim_token==token)
                     .values(lease_expires_at=utcnow()))
-        if remote:
+        if remote or excerpt:
             source.unlink(missing_ok=True)
+        if remote:
             output.unlink(missing_ok=True)
         # If publication lost its fence, only close this attempt's telemetry.
         # Recovery may already have marked it lost: never overwrite that history.

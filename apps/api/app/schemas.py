@@ -32,6 +32,7 @@ class JobResponse(BaseModel):
     attempt_count: int
     created_at: datetime
     finished_at: datetime | None
+    preview_parent_id: str | None = None
 
 class StyleInfo(BaseModel):
     id: str

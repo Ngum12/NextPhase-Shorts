@@ -6,6 +6,7 @@ import {ApiError} from '../../src/api';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
 import {Body,Button,Loading,Page,Title,s} from '../../src/ui';
 import {colors as c} from '../../src/theme';
+import {requestClipPreview} from '../../src/clipPreviews';
 
 export default function EnglishReview() {
   const {id:parameter}=useLocalSearchParams<{id:string}>();
@@ -16,6 +17,7 @@ export default function EnglishReview() {
   const [loading,setLoading]=useState(false),[error,setError]=useState(''),[conflict,setConflict]=useState(false);
   const [dirty,setDirty]=useState(false),[selected,setSelected]=useState(0);
   const generation=useRef(0),saving=useRef(false),loadPending=useRef(false);
+  const [rendering,setRendering]=useState(false);const requestingPreview=useRef(false);
   const scope=`${token||''}:${id}`,loadedScope=useRef('');
   const adopt=(value:EnglishAnalysis)=>{
     loadedScope.current=scope;
@@ -33,8 +35,9 @@ export default function EnglishReview() {
   };
   useEffect(()=>{
     setData(null);setEnds([]);setConfirmed([]);setAcknowledged(false);setDirty(false);setError('');
-    saving.current=false;loadPending.current=false;setBusy(false);setLoading(false);load();
-    return()=>{generation.current++;loadedScope.current='';};
+    saving.current=false;loadPending.current=false;requestingPreview.current=false;
+    setRendering(false);setBusy(false);setLoading(false);load();
+    return()=>{generation.current++;loadedScope.current='';requestingPreview.current=false;};
   },[id,token]);
   const refresh=()=>dirty?Alert.alert('Discard unsaved review?',
     'Refreshing loads the saved review and replaces your unsaved marks.',[
@@ -61,7 +64,24 @@ export default function EnglishReview() {
       if(e instanceof ApiError && [401,404].includes(e.status)){setData(null);setEnds([]);setConfirmed([]);setAcknowledged(false);setDirty(false);}}}
     finally{if(request===generation.current){saving.current=false;setBusy(false);}}
   };
-  const blocked=busy||loading;
+  const render=()=>{
+    if(!data||!token||dirty||conflict||requestingPreview.current)return;
+    const revision=data.revision,number=selected+1;
+    Alert.alert('Render this clip preview?',
+      'The server will render this selected excerpt. Watch the result to check the cut and meaning.',[
+        {text:'Keep reviewing',style:'cancel'},
+        {text:'Render preview',onPress:async()=>{
+          if(requestingPreview.current)return;
+          requestingPreview.current=true;setRendering(true);setError('');const request=++generation.current;
+          try{const job=await requestClipPreview(id,token,revision,number);
+            if(request===generation.current)router.push({pathname:'/project/[id]',params:{id:job.id}});
+          }catch(e:any){if(request===generation.current){setError(e.message||'Could not confirm preview. Retry the same clip.');
+            if(e instanceof ApiError&&e.status===409)setConflict(true);}}
+          finally{if(request===generation.current){requestingPreview.current=false;setRendering(false);}}
+        }},
+      ]);
+  };
+  const blocked=busy||loading||rendering;
   const flags=data?.transcript.words.map((word,i)=>({word,number:i+1}))
     .filter(({word})=>word.confidence!==null&&word.confidence<.45)||[];
   const chosen=data?.proposal.candidates[selected];
@@ -113,7 +133,9 @@ export default function EnglishReview() {
             {chosen&&<>
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
-              <Body>This is a clip suggestion, not a finished video. Preview rendering from this screen is not available yet.</Body>
+              <Body>This is a clip suggestion. Watch the rendered preview before using it.</Body>
+              {data.queued_preview_supported&&data.review&&<Button title={rendering?'Requesting preview…':'Render selected preview'}
+                onPress={render} disabled={blocked||conflict}/>}
             </>}
           </>}
         </View>
