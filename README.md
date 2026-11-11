@@ -164,6 +164,11 @@ For managed Docker builds behind a TLS-inspecting proxy, see
 
 ## More details
 
+- [Experimental operator transcript/planning pilot](docs/ANALYSIS_PILOT.md):
+  manual-fixture review and an optional local ASR adapter; no running-app activation
+  or verified speech-recognition quality is claimed.
+- [Current private-VPS acceptance and remaining gates](docs/PHASE_2_ACCEPTANCE_2026-11-11.md).
+
 - [Full Codex build contract](prompt.md)
 - [System architecture](docs/ARCHITECTURE.md)
 - [What costs money / API options](docs/COSTS_AND_KEYS.md)

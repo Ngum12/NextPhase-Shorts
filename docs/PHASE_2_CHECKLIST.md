@@ -1,5 +1,11 @@
 # Fixed remaining Phase 2 checklist
 
+**11 November actual-host update:** see the consolidated
+[evidence ledger](PHASE_2_ACCEPTANCE_2026-11-11.md) for the owner's verified VPS,
+phone HTTPS, encrypted restore/offsite backup, active schedules and alert tests.
+Historical statuses below retain their original scope; external release gates
+remain open. The requested isolated analysis preparation does not declare them closed.
+
 Agreed with the owner on 2026-11-08. These six packages consolidate the remaining
 `prompt.md` Phase 2 requirements. Work in order, one coherent review per package;
 automate repeated regressions and request focused device checks where needed.

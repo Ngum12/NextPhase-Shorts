@@ -1,0 +1,28 @@
+{
+  "scope": "Optional local operator pilot; no runtime service activation",
+  "components": [
+    {
+      "name": "whisper.cpp",
+      "version": "v1.7.6",
+      "commit": "a8d002cfd879315632a579e73f0148d06959de36",
+      "source": "https://github.com/ggml-org/whisper.cpp",
+      "license": "MIT",
+      "notice": "licenses/whisper-cpp-v1.7.6/LICENSE",
+      "role": "Optional locally built CPU CLI, not redistributed as a binary",
+      "tested": "Compilation and command-line flags; model inference not verified",
+      "model_weights_included": false,
+      "native_transitive_legal_security_clearance": "pending"
+    },
+    {
+      "name": "cmake Python distribution",
+      "version": "3.31.6",
+      "source": "https://pypi.org/project/cmake/3.31.6/",
+      "declared_metadata_license": "Apache 2.0",
+      "packaged_notices": ["LICENSE_Apache_20", "LICENSE_BSD_3"],
+      "role": "Local development build tool only",
+      "product_runtime_dependency": false
+    }
+  ],
+  "fixtures": "Original synthetic test patterns/tone and manual English/French annotations",
+  "asr_benchmark_corpus": "Not yet available; no actual accuracy benchmark claimed"
+}

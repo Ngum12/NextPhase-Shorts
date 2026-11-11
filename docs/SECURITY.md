@@ -1,5 +1,18 @@
 # Security / privacy — gating checklist, not completed certification
 
+## Experimental local analysis boundary — 2026-11-11
+
+The optional operator pilot has no API/mobile/worker entry point. Transcript text
+is untrusted data, validated/bounded and escaped into a private offline review
+page with a fixed-script CSP. Local file hashes bind source and reviewed native
+artifacts; they do not independently prove artifact origin or legal clearance.
+The ASR child receives a reduced environment and native process/resource limits,
+but no production filesystem/network/tenant sandbox is claimed. Required worker
+sandbox mode and staging/production execution are refused. Model inference and
+speech quality remain unverified while model-host access is blocked. Consent,
+private scratch/report storage, original-video review and deletion are operator
+requirements; analysis artifacts are outside automatic customer-media cleanup.
+
 The [private VPS trial](VPS_DEPLOYMENT.md) uses fresh development credentials,
 dedicated project/volumes, loopback-only access and required worker containment.
 Its reports cannot approve public release. SSH tunnel transport is not public

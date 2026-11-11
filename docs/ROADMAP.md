@@ -1,5 +1,10 @@
 # Engineering work queue
 
+Current review milestone: [experimental local transcript/planning pilot](ANALYSIS_PILOT.md).
+It has no production/API/mobile activation. Actual private-server evidence and
+remaining Phase 2 conditions are consolidated in the
+[11 November ledger](PHASE_2_ACCEPTANCE_2026-11-11.md).
+
 The master contract in `prompt.md` owns phase order. Do not enable later paid
 features or present planned styles as implemented.
 

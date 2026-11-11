@@ -1,5 +1,26 @@
 # License provenance and integration gates
 
+## Optional local analysis pilot — 2026-11-11
+
+The independently authored pilot can invoke upstream **Whisper.cpp v1.7.6**,
+commit `a8d002cfd879315632a579e73f0148d06959de36`, MIT. Source:
+https://github.com/ggml-org/whisper.cpp/tree/a8d002cfd879315632a579e73f0148d06959de36 .
+Its root MIT notice is preserved verbatim under `licenses/whisper-cpp-v1.7.6/`.
+The engine was compiled outside the checkout; no native executable, ggml source,
+model weights, upstream sample media, restricted reference kit or font is bundled.
+Retain applicable native/source notices if distributing a build; a root MIT
+notice is not a full system/transitive/model/patent/security/legal clearance.
+
+Optional local build tool **cmake Python distribution 3.31.6** declares Apache 2.0
+metadata and packages Apache-2.0/BSD-3 notices for its distribution/CMake content.
+Source: https://pypi.org/project/cmake/3.31.6/ . It was installed in the cloud
+development venv for compilation and is not added as an application runtime
+dependency. See `analysis-pilot-dependencies.json` for the scoped record.
+No model artifact was downloaded because outbound policy blocks its host; model
+origin/digest/license review and actual speech-quality tests remain pending.
+Fixture annotations and FFmpeg test patterns/tone are originally authored;
+they are not consented real-speech benchmark evidence or proof of ASR accuracy.
+
 ## Private VPS preparation — 2026-11-10
 
 No dependency, third-party image/version, reference-kit code, media, model or font

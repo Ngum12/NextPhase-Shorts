@@ -1,5 +1,46 @@
 # Implementation Status — 2026-11-10
 
+## Isolated transcript/planning pilot — 2026-11-11
+
+Owner requested continued development after reviewing the app roadmap and left
+the session. The latest private-VPS/phone/backup/alert evidence and remaining
+external Phase 2 gates are consolidated in PHASE_2_ACCEPTANCE_2026-11-11.md.
+Those gates are not marked closed; no live VPS, API, worker, schema or mobile
+feature was activated by this prototype.
+
+Implemented strict source-bound English/French word/transcript contracts,
+bounded explainable sentence-window proposals with <=60-second/frame/source
+checks, and an isolated local CLI producing private JSON/data-only EDL and an
+interactive review page. Manual input is labeled manual; review is mandatory,
+semantic quality is explicitly unverified and incomplete/low-confidence input
+can yield no proposal. Untrusted transcript text remains inert browser data.
+
+Optional local Whisper.cpp adapter extracts bounded mono 16-kHz WAV with the
+existing file-only FFmpeg profile; verifies operator-trusted engine/model SHA-256;
+uses CPU-only settings, credential reduction, parent-death/process/CPU/memory/file
+limits and timeout cleanup. It refuses staging/production and required sandbox
+worker mode. Native limits are not a replacement for tenant sandbox integration.
+No model download, provider request, paid inference or customer-data transfer is
+performed. The CPU engine built from pinned upstream v1.7.6 commit a8d002c and
+its CLI flags were checked. Model-host access returned policy 403, so **real ASR
+inference, speech accuracy, semantic quality and actual VPS analysis performance
+remain unverified**. Executable protocol fixtures are not ASR evidence.
+
+Synthetic-video/manual-annotation demos generated English/French proposals and
+private review artifacts. Chromium exercised both pages, candidate highlighting
+and selected-plan downloads: zero external requests and no JavaScript errors.
+Actual FFmpeg audio extraction, source identity, nonfinite/overlapping timestamps,
+duration/frame bounds, unsafe provider data, private output, overwrite refusal,
+credential stripping and timeout cleanup have regression coverage. See
+ANALYSIS_PILOT.md for reproducible commands, limits and next acceptance requirements.
+
+Validation on this branch: baseline 414 tests passed; final full backend suite
+**450 passed**, no skips, one existing Starlette warning (76.24 s). Baseline
+HTTP/separate-worker FFmpeg smoke passed with owner isolation, 1080x1920/30-fps
+4.9-second H.264/AAC/full decode and recovery/cleanup checks. Mobile TypeScript
+passed. Both manual analysis demos and real browser candidate selection/EDL
+downloads passed. No actual model inference or VPS analysis deployment is claimed.
+
 ## Automatic offsite backup preparation — 2026-11-11
 
 Owner verified actual systemd backup/monitor service success, active 04:00 Rwanda
