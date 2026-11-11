@@ -1,5 +1,31 @@
 # Implementation Status — 2026-11-10
 
+## Owner language pilot decision — 2026-11-11
+
+Owner approved continuing development with English while French remains
+experimental and unaccepted for user rollout. This is a development priority,
+not approval of production English ASR or of the remaining public-release gates.
+
+Observed on the owner's VPS: the personal English recording produced 80 words;
+the owner reported its wording matched the recording. Separate human annotations
+yielded five candidates without rerunning ASR. Candidate 1 rendered 895 frames,
+29.833333 seconds, 1080×1920 at 30 fps; the owner confirmed their original voice
+and audio/mouth synchronization in playback. This is one owner-reviewed example,
+not a representative accuracy, accent, cut-boundary or semantic-quality benchmark.
+
+The generated French/eSpeak sample produced 38 words and no eligible candidate.
+Comparison with its known reference showed substantial recognition substitutions
+and lost meaning. The robotic source may contribute; this sample cannot establish
+natural French quality. Its words must not be marked correct to bypass the failed
+result. French remains available only as an explicitly experimental operator
+pilot; natural consented speech and fluent review are required before acceptance.
+
+Next English work should preserve explicit review and preview, gather more natural
+recordings, and address analysis-worker ownership/containment/admission/cancellation
+before live mobile integration. No runtime setting, live service, threshold,
+language capability or API/mobile feature was changed by this documentation update.
+No tests were added or run for this documentation-only change.
+
 ## Human transcript annotations for missing punctuation — 2026-11-11
 
 Owner's personal English recording produced 80 recognized words, no sentence

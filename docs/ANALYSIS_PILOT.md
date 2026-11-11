@@ -5,6 +5,27 @@ This is isolated preparation for the owner's requested next app milestone. It is
 Phase 2/public-release gates. The running worker still performs baseline renders.
 No AI, caption/style engine, customer billing or external speech API is activated.
 
+## Language acceptance and development priority
+
+The owner approved prioritizing English development on 2026-11-11. English has
+one owner-reviewed personal recording with reported correct wording and a rendered
+29.833333-second vertical excerpt whose original voice/audio-mouth synchronization
+the owner confirmed. Human sentence-boundary/flagged-word review was needed.
+This does not establish broad speech accuracy or readiness for automatic editing.
+
+**French remains experimental, with no user-rollout acceptance.** The generated
+French/eSpeak fixture returned 38 recognized words, substantial substitutions and
+lost meaning compared with its known script, and zero eligible candidates. Do not
+confirm those incorrect words or relax the confidence rule to obtain a result.
+The synthetic voice may contribute; natural French accuracy is unmeasured.
+Use consented natural speech and a fluent reviewer before accepting French.
+
+The CLI retains `--language fr` for explicitly experimental operator exercises.
+This decision does not change localization or enable any live language feature.
+Continue English with human review/preview and broader consented examples; live
+integration still needs analysis-worker containment, admission, ownership,
+cancellation and artifact lifecycle handling plus the applicable Phase 2 gates.
+
 ## What can be exercised now
 
 - Strict English/French transcript contracts with source SHA-256, bounded word
