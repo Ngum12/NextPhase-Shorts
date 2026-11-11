@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>NextPhase Backups — privacy notice</title>
+  <style>
+    :root { color-scheme: dark; font: 18px/1.65 system-ui, sans-serif; background: #101d28; color: #ecf4f7; }
+    body { max-width: 740px; margin: 0 auto; padding: 40px 24px; }
+    h1 { font-size: clamp(2rem, 7vw, 2.8rem); line-height: 1.2; }
+    h2 { font-size: 1.25rem; margin-top: 32px; }
+    a { color: #85e0cf; text-underline-offset: .2em; }
+    .date { color: #bdced7; }
+  </style>
+</head>
+<body>
+  <nav aria-label="Backup information"><a href="/backup-info">NextPhase Backups</a></nav>
+  <main>
+    <h1>Backup privacy notice</h1>
+    <p class="date">Updated 11 November 2026</p>
+    <p>This notice covers the administrator's NextPhase Backups Google Drive connection. It is separate from any privacy terms for users of the NextPhase Shorts application.</p>
+    <h2>Purpose and data used</h2>
+    <p>The utility copies encrypted server-recovery bundles to the administrator's Google Drive and reads them back to check integrity. A bundle can contain the private trial's database records and locally stored video files. Encryption happens before upload; the decryption key is kept separately.</p>
+    <h2>Google permissions</h2>
+    <p>We request <code>https://www.googleapis.com/auth/drive.file</code>. This allows reading, creating, editing and deleting only the specific Drive files created or explicitly opened with this application. The configured maintenance workflow uploads encrypted bundles and reads them back. It does not provide general access to the administrator's other Drive files.</p>
+    <h2>Credentials and access</h2>
+    <p>OAuth credentials and refresh tokens are stored in a private rclone configuration on the administrator's server. They are not included in these pages or sent to the mobile app. Access is controlled by the administrator's server and Google account security.</p>
+    <h2>Storage and sharing</h2>
+    <p>Google Drive receives the encrypted bundles and associated filenames, sizes and service metadata. Local server copies and administrator-downloaded recovery copies can also exist. The utility does not sell this data or use it for advertising or AI model training. Google processes service data under its own applicable terms.</p>
+    <h2>Retention and removal</h2>
+    <p>There is no automatic expiry for these backup files. The administrator controls their retention and deletion in Drive and on recovery devices. Removing a live project does not immediately remove it from earlier encrypted backups.</p>
+    <p>The administrator can revoke the utility's access in their Google Account's third-party connections settings. Revocation stops authorized future access; it does not delete existing backup copies. Copies must be deleted separately where stored.</p>
+    <h2>This information site</h2>
+    <p>These two static pages have no analytics, advertising, cookies, scripts or forms. Serving the pages requires ordinary network request handling by the hosting provider. Application access remains separately restricted and authenticated.</p>
+    <h2>Contact</h2>
+    <p>For questions about this backup utility, contact <a href="mailto:dieudonnen450@gmail.com">dieudonnen450@gmail.com</a>.</p>
+  </main>
+</body>
+</html>

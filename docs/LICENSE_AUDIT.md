@@ -1,5 +1,12 @@
 # License provenance and integration gates
 
+## Personal backup OAuth information pages — 2026-11-11
+
+Independently authored static HTML/CSS uses system fonts and the existing Caddy
+image. No new dependency, external font, image, script, provider library or
+reference-kit asset is included. Existing third-party notices remain applicable.
+These scoped backup notices do not establish service-wide legal/privacy approval.
+
 ## Clean preview caption font — 2026-11-11
 
 Server images now explicitly install Debian `fonts-dejavu-core`, upstream

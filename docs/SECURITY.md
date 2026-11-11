@@ -1,5 +1,12 @@
 # Security / privacy — gating checklist, not completed certification
 
+The optional trial front door now serves exactly two public GET/HEAD static
+backup OAuth information pages before its IP restriction. They read only a
+dedicated read-only HTML mount, never proxy to the API and contain no script,
+form, credentials, backup files or analytics. Other paths/methods retain the
+direct-peer allowlist. See BACKUP_GOOGLE_OAUTH.md for publication and Google/rclone
+steps still required; this is not public API or service-policy approval.
+
 Optional clean captions derive only from source-bound saved review data. A closed
 style enum cannot supply arbitrary filters/text/timing/paths. UTF-8 text files
 remain outside FFmpeg grammar (`expansion=none`) and receive only bounded exact

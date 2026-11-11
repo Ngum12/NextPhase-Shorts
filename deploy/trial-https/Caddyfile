@@ -31,6 +31,20 @@ http://{$TRIAL_DOMAIN}:8080 {
 		Cache-Control no-store
 	}
 	route {
+		# Public, inert OAuth information only. No upstream/API access here.
+		@backup_information {
+			method GET HEAD
+			path /backup-info /backup-privacy
+		}
+		handle @backup_information {
+			root * /srv/backup-info
+			@backup_privacy path /backup-privacy
+			rewrite @backup_privacy /privacy.html
+			@backup_home path /backup-info
+			rewrite @backup_home /index.html
+			header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+			file_server
+		}
 		# Direct socket peer only: forwarded headers never grant access.
 		@denied not remote_ip {$TRIAL_CLIENT_IP}
 		respond @denied 403

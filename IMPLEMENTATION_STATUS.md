@@ -1,5 +1,32 @@
 # Implementation Status — 2026-11-10
 
+## Personal backup OAuth information pages — 2026-11-11
+
+Owner confirmed the deployed clean-caption phone flow worked and captions matched
+speech/readability. Automatic Drive uploads remain blocked by the shared rclone
+project's Google per-minute quota. The owner created a dedicated Google project,
+Desktop OAuth client and non-sensitive drive.file scope. A console tooltip now
+explicitly requires homepage/privacy URLs for external production status; earlier
+advice to leave these blank was incorrect for that console.
+
+Prepared independently authored homepage/privacy HTML covering this personal
+backup connection, its actual encrypted-bundle workflow, scoped permissions,
+private token storage, manual retention and revocation/export limits. They include
+the support address the owner selected on Google's consent screen. Only two exact
+GET/HEAD paths are public, served from a dedicated read-only mount with CSP and no
+forms/scripts/analytics/assets. Other paths/methods retain the direct-peer API
+allowlist. No API/database/native/mobile dependency, billing or credentials added.
+
+Validation: real local Caddy adaptation/HTTP smoke passed for both permitted and
+denied peers, public GET/HEAD, denied methods, private routes, forged headers and
+encoded/plain traversal attempts. Both inert-page structure checks passed.
+Deployment, public HTTPS reachability, Google publishing acceptance and actual
+dedicated-client OAuth/upload/readback remain pending. These pages are not the
+NextPhase Shorts service's general privacy/legal signoff. The new Drive client
+may not see files created with the old client under drive.file; preserve old
+copies and use a separately verified folder when connecting it. See
+BACKUP_GOOGLE_OAUTH.md for exact deployment and Google fields.
+
 ## Optional clean phrase captions — 2026-11-11
 
 Owner reported the deployed selected-preview flow working on the phone after
