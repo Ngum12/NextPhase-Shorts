@@ -76,6 +76,16 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
         raise AnalysisUnavailable('Unexpected ASR language or translation mode')
     if language == 'fr' and data.get('model',{}).get('multilingual') is not True:
         raise AnalysisUnavailable('French requires a multilingual model')
+    model=data.get('model',{})
+    multilingual=model.get('multilingual')
+    vocab=model.get('vocab')
+    if type(multilingual) is not bool or type(vocab) is not int or not 50257<=vocab<=60000:
+        raise AnalysisUnavailable('Invalid ASR vocabulary metadata')
+    # Pinned whisper.cpp constructs segment text only from IDs below token_eot:
+    # 50256 for English-only vocabularies, 50257 for multilingual vocabularies.
+    # Its full JSON also includes control tokens such as [_TT_100], which do
+    # not have the trailing underscore matched by the old spelling heuristic.
+    end_of_text=50257 if multilingual else 50256
     segments = data.get('transcription')
     if not isinstance(segments,list) or len(segments)>5000:
         raise AnalysisUnavailable('Invalid ASR segment inventory')
@@ -94,7 +104,10 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             text=token.get('text')
             if not isinstance(text,str):
                 raise AnalysisUnavailable('Invalid ASR token text')
-            if re.fullmatch(r'\[_[^\]]*_\]|<\|[^>]*\|>',text.strip()):
+            identity=token.get('id')
+            if type(identity) is not int or not 0<=identity<vocab:
+                raise AnalysisUnavailable('Invalid ASR token identity')
+            if identity>=end_of_text:
                 continue
             text_pieces.append(text)
             if not text.strip():

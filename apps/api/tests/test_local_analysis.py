@@ -53,10 +53,10 @@ def test_artifact_identity_refuses_mismatch_and_links(tmp_path):
 @pytest.mark.skipif(not sys.platform.startswith('linux'),reason='Linux operator ASR pilot only')
 def test_fake_engine_protocol_and_credential_stripping(tmp_path,monkeypatch):
     engine=tmp_path/'fake-engine'
-    data={'params':{'translate':False},'result':{'language':'en'},'model':{'multilingual':True},
+    data={'params':{'translate':False},'result':{'language':'en'},'model':{'multilingual':True,'vocab':51865},
           'transcription':[{'text':' Hello.', 'tokens':[
-              {'text':' Hello','offsets':{'from':0,'to':1000},'p':.9},
-              {'text':'.','offsets':{'from':1000,'to':1000},'p':.95}]}]}
+              {'text':' Hello','id':2425,'offsets':{'from':0,'to':1000},'p':.9},
+              {'text':'.','id':13,'offsets':{'from':1000,'to':1000},'p':.95}]}]}
     engine.write_text(f'#!{sys.executable}\nimport sys,os,json\nfrom pathlib import Path\n'
         'assert all(k not in os.environ for k in ("JWT_SECRET","DATABASE_URL","HTTP_PROXY","ASR_TEST_SECRET"))\n'
         f'Path(sys.argv[sys.argv.index("-of")+1]+".json").write_text({json.dumps(json.dumps(data))})\n')
@@ -125,6 +125,8 @@ def test_operator_cli_creates_private_review_for_actual_source(video,tmp_path,la
     assert (output/'proposal.json').read_bytes()==original
     value['source_sha256']='0'*64;source.write_text(json.dumps(value))
     args[args.index('--output')+1]=str(tmp_path/'refused')
-    refused=subprocess.run(args,cwd=ROOT,capture_output=True,text=True,timeout=30)
+    refused=subprocess.run(args+['--diagnostic'],cwd=ROOT,capture_output=True,text=True,timeout=30)
     assert refused.returncode!=0 and not (tmp_path/'refused').exists()
+    assert json.loads(refused.stdout)['reason_code']=='source_identity_mismatch'
+    assert text not in refused.stdout
     assert video.exists() and source.exists()

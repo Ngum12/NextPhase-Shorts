@@ -74,6 +74,8 @@ are refused, input files remain intact, and a failed new output is removed.
 Errors print fixed codes rather than transcript text, provider diagnostics or
 customer paths. Reports contain transcript text: apply consent/retention/deletion
 to them explicitly. They are not covered by the live app's media cleanup.
+For a failed run, `--diagnostic` adds only error class, fixed reason codes and
+validation-type names; it never prints raw model output or transcript values.
 
 ## Optional native ASR — not yet accepted for rollout
 

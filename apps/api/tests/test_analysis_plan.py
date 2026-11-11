@@ -130,13 +130,13 @@ def test_transcript_prompt_injection_and_html_remain_inert_data():
 
 
 def whisper_data(language='fr'):
-    return {'params':{'translate':False},'result':{'language':language},'model':{'multilingual':True},
+    return {'params':{'translate':False},'result':{'language':language},'model':{'multilingual':True,'vocab':51865},
         'transcription':[{'text':' Bonjour monde.', 'tokens':[
             {'text':'[_BEG_]','id':50364,'p':1},
-            {'text':' Bon','offsets':{'from':0,'to':200},'p':.9},
-            {'text':'jour','offsets':{'from':200,'to':500},'p':.8},
-            {'text':' monde','offsets':{'from':600,'to':1000},'p':.95},
-            {'text':'.','offsets':{'from':1000,'to':1000},'p':.9},
+            {'text':' Bon','id':1000,'offsets':{'from':0,'to':200},'p':.9},
+            {'text':'jour','id':1001,'offsets':{'from':200,'to':500},'p':.8},
+            {'text':' monde','id':1002,'offsets':{'from':600,'to':1000},'p':.95},
+            {'text':'.','id':13,'offsets':{'from':1000,'to':1000},'p':.9},
         ]}]}
 
 
@@ -151,6 +151,37 @@ def test_whisper_bpe_fragments_merge_without_fabricating_word_timing():
     assert transcript.words[0].start_ms==0 and transcript.words[0].end_ms==500
     assert transcript.words[0].confidence==.8
     assert transcript.timestamp_quality=='model_token_estimate'
+
+
+@pytest.mark.parametrize('marker',['[_TT_100]','[_LANG_fr]','[_extra_token_51000]'])
+def test_native_reserved_token_ids_are_excluded_from_spoken_text(marker):
+    data=whisper_data()
+    data['transcription'][0]['tokens'].append(
+        {'text':marker,'id':51000,'offsets':{'from':1000,'to':1010},'p':.9})
+    result=parse(data)
+    assert [word.text for word in result.words]==['Bonjour','monde.']
+
+
+def test_literal_marker_text_with_ordinary_id_is_not_silently_discarded():
+    data=whisper_data()
+    data['transcription'][0]['tokens'][1]['text']=' [_BEG_]'
+    data['transcription'][0]['text']=' [_BEG_]jour monde.'
+    assert parse(data).words[0].text=='[_BEG_]jour'
+
+
+def test_english_only_vocabulary_uses_its_own_end_of_text_boundary():
+    data=whisper_data(language='en')
+    data['model']={'multilingual':False,'vocab':51864}
+    data['transcription'][0]['tokens'].append({'text':'[_EOT_]','id':50256,'p':1})
+    result=parse_whisper(data,source_sha256='a'*64,source_duration_ms=2000,
+        language='en',model_sha256='b'*64,engine_sha256='c'*64)
+    assert [word.text for word in result.words]==['Bonjour','monde.']
+
+
+@pytest.mark.parametrize('identity',[None,True,-1,51865])
+def test_bad_native_token_identity_is_refused(identity):
+    data=whisper_data();data['transcription'][0]['tokens'][1]['id']=identity
+    with pytest.raises(AnalysisUnavailable):parse(data)
 
 
 @pytest.mark.parametrize('mutation',['translation','language','timestamps','mismatch','monolingual','probability'])
