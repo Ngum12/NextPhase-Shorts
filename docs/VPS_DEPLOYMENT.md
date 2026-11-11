@@ -143,6 +143,10 @@ and certificate verification must never be bypassed.
 
 ## 5. Migration, fencing and rollback — separate from the disposable trial
 
+For nightly local backups and five-minute monitoring, see
+[scheduled VPS maintenance](VPS_MAINTENANCE.md). Offsite synchronization and
+independent host-down alerts remain separate from those local timers.
+
 For optional trusted domain HTTPS restricted to the administrator's personal
 public IP, follow [the separate trial front door](TRIAL_HTTPS.md). It retains the
 private trial and is not a public release or customer migration.

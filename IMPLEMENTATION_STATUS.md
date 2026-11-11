@@ -1,5 +1,30 @@
 # Implementation Status — 2026-11-10
 
+## VPS maintenance preparation — 2026-11-11
+
+Owner reported trusted domain HTTPS readiness, unauthenticated jobs 401/docs 404,
+and successful phone upload/render/Save/playback on the private VPS. An encrypted
+120-MB backup authenticated/read back, restored into a new PostgreSQL test DB
+(0020/23 tables), and matched SHA-256 after Windows transfer; test DB removed.
+Owner reports an updated encrypted recovery vault/offsite copy. These are
+owner-supplied actual-host results, not automatically recurring protection.
+
+Added explicit maintenance commands and generated systemd timers: requested
+04:00 Rwanda nightly local backup/readback and five-minute disk/readiness/worker/
+certificate/freshness monitoring. Separate optional Resend failure email uses a
+hidden key prompt and private files, with one-hour per-topic throttling and
+explicit provider-acceptance scope. Automatic account mail remains off. No
+timer installation, actual new scheduled backup or outgoing email is claimed by
+the code change. Actual VPS execution/inbox/activation remain to be verified.
+No automated offsite copy, retention deletion or independent host-down monitor
+is implemented. Existing journal-rotation limitation remains unchanged.
+Local validation: 405 backend tests passed (one existing Starlette warning);
+The final focused run passed 12 maintenance tests covering writer recovery, busy queues, low disk, copied
+backup hashes, notification throttling/recovery and timer generation. Systemd
+calendar parsing and user-scope static unit verification passed; no units were
+installed or started in the cloud environment. Generated VPS units still require
+root-scope validation and actual execution on the selected host.
+
 ## Restricted domain HTTPS preparation
 
 Owner supplied actual Contabo VPS evidence: Ubuntu 24.04, 4 CPUs, 8 GB RAM,
