@@ -77,6 +77,9 @@ def hold(journal,value):
 
 
 def tombstone_job(db,job,now,after):
+    from .models import ProjectAnalysis
+    from sqlalchemy import delete
+    db.execute(delete(ProjectAnalysis).where(ProjectAnalysis.job_id==job.id))
     job.status='deleted';job.deleted_at=now;job.finished_at=now;job.cleanup_after=after
     job.claim_token=None;job.lease_expires_at=None;job.claim_deadline_at=None
     job.title='Deleted project';job.source_path='';job.output_path=None

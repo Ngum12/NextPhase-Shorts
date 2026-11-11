@@ -78,6 +78,17 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True,index=True)
 
 
+class ProjectAnalysis(Base):
+    __tablename__ = 'project_analyses'
+    job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'), primary_key=True)
+    transcript_json: Mapped[str] = mapped_column(Text)
+    review_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    proposal_json: Mapped[str] = mapped_column(Text)
+    revision: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class QueueSignal(Base):
     __tablename__='queue_signals'
     job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'),primary_key=True)

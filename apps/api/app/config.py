@@ -9,6 +9,15 @@ load_dotenv()
 class Settings:
     def __init__(self):
         self.env = os.getenv("APP_ENV", "development")
+        self.english_review_enabled=os.getenv('ENGLISH_REVIEW_ENABLED','false').lower()=='true'
+        self.english_review_user_ids=tuple(filter(None,(p.strip() for p in os.getenv('ENGLISH_REVIEW_USER_IDS','').split(','))))
+        if self.english_review_enabled:
+            import uuid
+            try:
+                valid=(self.env in ('development','test') and 1<=len(self.english_review_user_ids)<=5
+                       and all(str(uuid.UUID(p))==p for p in self.english_review_user_ids))
+            except ValueError:valid=False
+            if not valid:raise RuntimeError('English review pilot needs development/test mode and 1–5 canonical owner IDs')
         self.database_url = read_secret("DATABASE_URL", "sqlite:///./.data/nextphase.db")
         self.budget_state_file=os.getenv('BUDGET_STATE_FILE','')
         self.restore_journal_dir=os.getenv('RESTORE_JOURNAL_DIR','')

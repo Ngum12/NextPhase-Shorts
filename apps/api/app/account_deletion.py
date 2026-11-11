@@ -17,6 +17,7 @@ from .auth_action_tokens import invalidate_actions
 from .config import get_settings
 from .db import SessionLocal,engine,session_dep
 from .models import User,AuthSession,AccountDeletion,RenderJob,RenderAttempt,UploadSession,UploadPart,DirectUploadGrant,utcnow
+from .models import ProjectAnalysis
 from .queue import lock_owner
 from .refresh import revoke_families
 from . import object_store as store
@@ -73,6 +74,8 @@ def delete_account(payload:DeleteRequest,request:Request,response:Response,
     # Keep an unknown marker; do not claim old remote media was erased by guessing.
     namespaces={value or 'unknown' for value in namespaces}
     record('account_delete',uid,namespace=sorted(namespaces))
+    db.execute(delete(ProjectAnalysis).where(ProjectAnalysis.job_id.in_(
+        select(RenderJob.id).where(RenderJob.user_id==uid))))
     row=AccountDeletion(user_id=uid,receipt_hash=receipt_hash(payload.receipt_key),
         receipt_expires_at=now+timedelta(days=7),requested_at=now,cleanup_after=after,
         namespaces=json.dumps(sorted(namespaces)))
