@@ -1,5 +1,45 @@
 # Implementation Status — 2026-11-10
 
+## Disposable capacity CI database readiness — 2026-11-11
+
+SQLite-matrix capacity CI failed before migrations with a closed published
+PostgreSQL connection. Its local-socket `pg_isready` could accept the official
+image's temporary init server before final TCP startup. Replaced that probe with
+a bounded authenticated `SELECT 1` through the same host/published port/database
+used by migrations, retrying transient connection/query errors. No migration,
+burst, soak or restore assertions are disabled. On failure the disposable helper
+retains only selected PostgreSQL state fields before cleanup; CI uploads that
+small diagnostic, excluding full inspect/env/raw error text and DB contents.
+
+Validation: 53 focused startup/planner/local-analysis tests passed. A real local
+PostgreSQL capacity drill passed its 100-request burst (64 accepted, 36 expected
+capacity refusals), 30-second synthetic soak (six render/download cycles), and
+fresh-database restore with media hashes, owner isolation, deletion fencing and
+a new render after restore. This short drill is not production load acceptance;
+GitHub CI still needs to rerun on the pushed commit.
+
+## Clean sentence-window search repair — 2026-11-11
+
+Owner's verified base model ran on the VPS generated-English fixture and returned
+35 words; its text improved over tiny, with one below-0.45 word (`stays`) and a
+brand-name variation. Zero proposals prompted inspection: v1 tried individual
+sentences or the furthest endpoint, missing shorter clean multi-sentence windows
+when the longest one contained uncertain speech. v2 limits endpoints before the
+next weak word/long gap, checks every start and uses prefix statistics for bounded
+scoring. The threshold, whole-sentence, timing/frame/source and review guards stay
+enforced. Regressions cover the weak-final-sentence case and a narrowly placed
+clean region missed by the old sampling scheme.
+
+Added saved-transcript replanning that preserves native provenance and words,
+uses new private outputs and explicitly reports no new ASR execution. This lets
+the owner retry the planner against the existing base transcript. Actual new
+VPS proposals still require that retry; no recognition-quality, production
+editing, rollout or paid-inference acceptance is claimed.
+Validation: 48 focused transcript/local-analysis tests passed (one existing
+Starlette warning). A saved French manual fixture was replanned through the CLI
+with v2, four proposals and no ASR execution. Actual VPS base-transcript results
+remain pending the owner's replan command.
+
 ## Native token inventory parser repair — 2026-11-11
 
 Owner built the pinned CPU engine on the VPS and the official multilingual tiny

@@ -4,7 +4,50 @@ Never accepts an existing API/DB/media target. All service resources are owned h
 import argparse,asyncio,hashlib,json,os,secrets,shutil,socket,subprocess,sys,tempfile,time,uuid
 from pathlib import Path
 import httpx
+import psycopg
 ROOT=Path(__file__).resolve().parents[1]
+
+
+def wait_for_postgres(port, timeout=60):
+    """Wait for authenticated SQL over the same published TCP route as migrations.
+
+The official image's temporary init server accepts Unix-socket probes before
+shutting down. Such a probe does not establish readiness of the final server.
+"""
+    deadline=time.monotonic()+timeout
+    while True:
+        try:
+            with psycopg.connect(host='127.0.0.1',port=int(port),dbname='source_test',
+                    user='postgres',password='synthetic-local-test',connect_timeout=2,
+                    options='-c statement_timeout=2000',autocommit=True) as connection:
+                if connection.execute('SELECT 1').fetchone()!=(1,):
+                    raise RuntimeError('Unexpected PostgreSQL readiness result')
+            return
+        except psycopg.OperationalError:
+            remaining=deadline-time.monotonic()
+            if remaining<=0:
+                raise RuntimeError('Disposable PostgreSQL failed TCP/SQL readiness') from None
+            time.sleep(min(.2,remaining))
+
+
+def postgres_diagnostic(docker,name,env,evidence):
+    """Retain bounded state metadata, never full inspect/env or credentials."""
+    try:
+        result=subprocess.run(docker+['inspect','--format',
+            '{{json .State}}',name],env=env,capture_output=True,text=True,timeout=5)
+        state=json.loads(result.stdout) if result.returncode==0 else {}
+        payload={'status':state.get('Status'),'running':state.get('Running'),
+                 'exit_code':state.get('ExitCode'),'oom_killed':state.get('OOMKilled'),
+                 'started_at':state.get('StartedAt'),'finished_at':state.get('FinishedAt')}
+    except (OSError,ValueError,subprocess.SubprocessError):
+        payload={'diagnostic':'unavailable'}
+    path=evidence/'postgres-state.json'
+    try:
+        with path.open('x') as out:
+            os.chmod(path,0o600)
+            json.dump(payload,out,indent=2)
+    except OSError:
+        pass  # Diagnostics must not replace the original failure/cleanup path.
 
 
 def stop(process):
@@ -29,11 +72,7 @@ def main():
         run('run','-d','--name',name,'-p','127.0.0.1::5432','-e','POSTGRES_PASSWORD=synthetic-local-test',
             '-e','POSTGRES_DB=source_test','postgres:16-alpine',stdout=subprocess.DEVNULL)
         port=run('port',name,'5432/tcp',capture_output=True,text=True).stdout.strip().rsplit(':',1)[1]
-        for _ in range(100):
-            ready=subprocess.run(docker+['exec',name,'pg_isready','-U','postgres'],env=docker_env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-            if ready.returncode==0:break
-            time.sleep(.2)
-        else:raise RuntimeError('Disposable PostgreSQL failed readiness')
+        wait_for_postgres(port)
         with tempfile.TemporaryDirectory(prefix='nextphase-capacity-') as temporary:
             media=Path(temporary)/'media'
             env={**os.environ,**{k+'_FILE':'' for k in ('JWT_SECRET','DATABASE_URL','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','QUEUE_PASSWORD','RESEND_API_KEY','AUTH_MAIL_ENCRYPTION_KEYS','RESTORE_JOURNAL_KEY')}}
@@ -152,6 +191,9 @@ def main():
                     'scope':'consistent stopped-writer local PostgreSQL/media snapshot; encryption, offsite disaster recovery and post-snapshot deletion journal remain operator gates'}
                 (evidence/'report.json').write_text(json.dumps(report,indent=2)+'\n')
                 print('Restore:',json.dumps(report['restore']),flush=True)
+    except BaseException:
+        postgres_diagnostic(docker,name,docker_env,evidence)
+        raise
     finally:
         for p in reversed(processes):stop(p)
         for log in logs:log.close()

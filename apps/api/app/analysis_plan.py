@@ -3,8 +3,7 @@
 No provider calls, semantic-quality claim, rendering or persistent customer state.
 Transcript text is data. Planning preserves source order and never executes text.
 """
-from bisect import bisect_right
-import math
+from bisect import bisect_left, bisect_right
 import re
 from typing import Annotated, Literal
 
@@ -80,7 +79,7 @@ class Candidate(ClosedModel):
 
 class Proposal(ClosedModel):
     schema_version: Literal['1'] = '1'
-    algorithm: Literal['sentence-window-v1'] = 'sentence-window-v1'
+    algorithm: Literal['sentence-window-v1','sentence-window-v2'] = 'sentence-window-v2'
     source_sha256: Digest
     source_duration_ms: Annotated[int, Field(strict=True, ge=1, le=600000)]
     language: Literal['en', 'fr']
@@ -126,36 +125,47 @@ def propose(transcript: Transcript, requested_seconds: int) -> Proposal:
         warnings.append('confidence_unavailable')
     sentences = sentence_ranges(transcript)
     ends = [transcript.words[end].end_ms for _, end in sentences]
-    # Sample starts across the whole source, with a fixed work bound.
-    step = max(1, math.ceil(len(sentences)/128))
-    anchors = sorted(set(list(range(0,len(sentences),step))[:127]) | ({len(sentences)-1} if sentences else set()))
+    end_words = [end for _, end in sentences]
+    words = transcript.words
+    low = [i for i,w in enumerate(words) if w.confidence is not None and w.confidence < .45]
+    gaps = [i for i in range(1,len(words)) if words[i].start_ms-words[i-1].end_ms>2000]
+    if low:
+        warnings.append('low_confidence_excluded')
+    # Prefix statistics make every sentence start affordable: <=5,000 words,
+    # <=10,000 candidate evaluations, each using logarithmic endpoint lookup
+    # and constant-time scoring. No source region is skipped by start sampling.
+    known_counts=[0];probabilities=[0.0];speech_ms=[0]
+    for word in words:
+        known_counts.append(known_counts[-1]+int(word.confidence is not None))
+        probabilities.append(probabilities[-1]+(word.confidence or 0.0))
+        speech_ms.append(speech_ms[-1]+word.end_ms-word.start_ms)
     candidates = {}
-    for index in anchors:
-        first = sentences[index][0]
-        start = transcript.words[first].start_ms
-        furthest = bisect_right(ends, start+requested_seconds*1000)-1
+    for index,(first,_) in enumerate(sentences):
+        start = words[first].start_ms
+        limit=len(words)
+        next_low=bisect_left(low,first)
+        if next_low<len(low):
+            limit=min(limit,low[next_low])
+        next_gap=bisect_right(gaps,first)
+        if next_gap<len(gaps):
+            limit=min(limit,gaps[next_gap])
+        furthest = min(bisect_right(ends,start+requested_seconds*1000)-1,
+                       bisect_left(end_words,limit)-1)
         for end_index in {index, furthest}:
-            if end_index < index:
+            if end_index < index or end_index > furthest:
                 continue
             last = sentences[end_index][1]
-            words = transcript.words[first:last+1]
-            duration = words[-1].end_ms-start
+            duration = words[last].end_ms-start
             frames = duration*30//1000
             if not 150 <= frames <= requested_seconds*30 or duration > requested_seconds*1000:
                 continue
-            # Do not combine across an unfinished sentence, or hide long silence.
-            if any(b.start_ms-a.end_ms > 2000 for a,b in zip(words,words[1:])):
-                continue
-            known = [word.confidence for word in words if word.confidence is not None]
-            confidence = sum(known)/len(known) if len(known)==len(words) else None
-            if any(value < .45 for value in known):
-                if 'low_confidence_excluded' not in warnings:
-                    warnings.append('low_confidence_excluded')
-                continue
-            density = min(1, sum(w.end_ms-w.start_ms for w in words)/duration)
+            count=last-first+1
+            confidence=(probabilities[last+1]-probabilities[first])/count \
+                if known_counts[last+1]-known_counts[first]==count else None
+            density = min(1,(speech_ms[last+1]-speech_ms[first])/duration)
             score = .5*(confidence if confidence is not None else .5)+.25*density+.25*duration/(requested_seconds*1000)
             candidates[first,last] = Candidate(first_word=first,last_word=last,
-                source_start_ms=start,source_end_ms=words[-1].end_ms,output_frames=frames,
+                source_start_ms=start,source_end_ms=words[last].end_ms,output_frames=frames,
                 confidence=round(confidence,4) if confidence is not None else None,
                 speech_density=round(density,4),score=round(score,4))
     ranked = sorted(candidates.values(),key=lambda c:(-c.score,c.source_start_ms,c.source_end_ms))[:5]
