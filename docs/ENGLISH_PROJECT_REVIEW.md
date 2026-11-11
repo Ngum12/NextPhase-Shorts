@@ -60,11 +60,13 @@ hashes bind data; they do not authenticate a reviewer or replace app ownership.
 
 ## Operator preparation after verification
 
-**Not yet runtime-accepted.** This change had Python syntax checks, mobile
-TypeScript compilation and an Android bundle build, not migration, API ownership,
-deletion/restore, network or phone interaction tests. Do those before enabling
-the pilot or deploying this migration onto the VPS. A green preexisting suite
-alone does not cover the new review lifecycle.
+Automated lifecycle checks now exercise SQLite and disposable PostgreSQL,
+including upgrade from 0020 with existing data, source-bound import, private API
+reads/writes, retry/conflict handling, concurrent edits/deletion and restore
+tombstones. A real synthetic-video upload/FFprobe/import/review round-trip and
+the bounded operator stdin CLI are covered. Mobile contract and mocked component
+interaction checks cover review/save, stale responses, session changes and
+malformed timing data. These do not replace actual phone/VPS acceptance.
 
 Follow the existing stop-writers/verified-backup/explicit-migration upgrade process
 and deploy matching API/worker tools. Startup deliberately refuses a stale schema.
@@ -105,3 +107,142 @@ with `--transcript PATH` under their own existing server configuration.
 Open the matching phone project, enter English review and refresh. Record actual
 phone acceptance separately. Automatic contained analysis jobs, leases/cancellation,
 admission/cost accounting and owned preview render jobs are still subsequent work.
+
+## Existing private VPS upgrade procedure
+
+Merge the review verification/client-hardening change first. Stop new uploads
+while updating. Use the existing private `dc` selector, not a different Compose
+project or a new database volume. No keys/passwords need to be shared or rotated.
+
+### 1. Obtain a fresh verified offsite backup before rebuilding images
+
+```bash
+cd ~/NextPhase-Shorts
+git pull --ff-only origin main
+sudo systemctl start nextphase-backup.service
+.venv/bin/python scripts/vps_maintenance.py status
+```
+
+Continue only after the latest backup reports `ok:true`,
+`authenticated_readback:true`, `offsite_copy:true` and `paused:false`. If it fails,
+leave the existing containers running and resolve that failure before rebuilding.
+The old backup image matches the pre-upgrade database; rebuilding first can replace
+that image with one that requires the new schema.
+
+### 2. Build matching images, then pause writers for migration
+
+Recreate the function in each new SSH session:
+
+```bash
+cd ~/NextPhase-Shorts
+dc() {
+  env -u VPS_DATABASE_URL -u VPS_DB_PASSWORD -u COMPOSE_PROFILES \
+    -u COMPOSE_FILE -u COMPOSE_PROJECT_NAME -u COMPOSE_ENV_FILES \
+    -u DOCKER_HOST -u DOCKER_CONTEXT -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKER_CERT_PATH \
+    docker --host=unix:///var/run/docker.sock compose \
+    --project-name nextphase-vps-trial --env-file .data/vps-trial/compose.env \
+    -f compose.yaml -f compose.restore-journal.yaml \
+    -f compose.private-staging.yaml -f compose.vps-trial.yaml "$@"
+}
+```
+
+Run this entire block in that same VPS shell. It preserves the observed writer
+selection (including mail only if it was already running) and timer activation.
+Build happens while the old app runs; the application pauses for migration and
+container recreation. Failure restores existing timers so alerts are not silently
+left disabled; it does not attempt a blind database rollback or restart old images.
+
+```bash
+(
+set -euo pipefail
+sudo -v
+review_backup_timer="$(systemctl is-active nextphase-backup.timer || true)"
+review_monitor_timer="$(systemctl is-active nextphase-monitor.timer || true)"
+review_finish() {
+  review_exit=$?
+  if [ "$review_backup_timer" = active ]; then sudo systemctl start nextphase-backup.timer || true; fi
+  if [ "$review_monitor_timer" = active ]; then sudo systemctl start nextphase-monitor.timer || true; fi
+  return "$review_exit"
+}
+trap review_finish EXIT
+sudo systemctl stop nextphase-backup.timer
+if systemctl is-active --quiet nextphase-backup.service; then
+  printf '%s\n' 'Wait for the running backup service before rebuilding.' >&2
+  exit 1
+fi
+.venv/bin/python - <<'PY'
+import json, time
+from pathlib import Path
+state=json.loads(Path('.data/maintenance/backup-latest.json').read_text())
+assert state.get('ok') and state.get('authenticated_readback') and state.get('offsite_copy')
+assert 0 <= time.time()-state['completed_at'] < 900
+print('Fresh authenticated offsite backup confirmed.')
+PY
+review_writer_text="$(.venv/bin/python -c 'import sys; sys.path.insert(0,"scripts"); from vps_maintenance import running_writers; print("\n".join(running_writers()))')"
+mapfile -t review_writers <<< "$review_writer_text"
+review_build_services=(api worker queue-supervisor operator-agent backup-tool migrate)
+if [[ "$review_writer_text" == *mail-worker* ]]; then review_build_services+=(mail-worker); fi
+dc build "${review_build_services[@]}"
+sudo -v
+sudo systemctl stop nextphase-monitor.timer nextphase-monitor.service
+dc exec -T api python -c 'from sqlalchemy import select,func; from app.db import SessionLocal; from app.models import RenderJob; db=SessionLocal(); assert db.scalar(select(func.count()).select_from(RenderJob).where(RenderJob.status.in_(["queued","processing"])))==0, "Wait for queued/processing jobs before updating"; db.close()'
+dc stop "${review_writers[@]}"
+dc run --rm --no-deps migrate
+dc up -d --no-deps --wait --wait-timeout 120 "${review_writers[@]}"
+dc exec -T api python -c 'from app.db import engine; from app.migrate import require_current_schema; require_current_schema(engine); print("Database schema is current.")'
+dc ps
+)
+```
+
+If any step fails, stop and report the failing step. Do not remove volumes,
+reinitialize keys, downgrade blindly or resume mismatched images. A backup made
+before this migration still requires its matching restore/migration procedure.
+
+### 3. Enable one known app owner after the updated stack is healthy
+
+Use the existing sign-in email only to look up the UUID in the private database:
+
+```bash
+review_owner_id="$(dc exec -T api python -c '
+import sys, uuid
+from sqlalchemy import select
+from app.db import SessionLocal
+from app.models import User
+with SessionLocal() as db:
+    owner=db.scalar(select(User.id).where(User.email==sys.argv[1].strip().lower(),User.deleted_at.is_(None)))
+if not owner or str(uuid.UUID(owner))!=owner:
+    raise SystemExit("No active app account found")
+print(owner)
+' 'YOUR_APP_SIGN_IN_EMAIL')"
+export NEXTPHASE_REVIEW_OWNER_ID="$review_owner_id"
+.venv/bin/python - <<'PY'
+import os, tempfile, uuid
+from pathlib import Path
+owner=os.environ['NEXTPHASE_REVIEW_OWNER_ID']
+assert str(uuid.UUID(owner))==owner
+path=Path('.data/vps-trial/server.env').absolute()
+assert not any(p.is_symlink() for p in (path,*path.parents))
+assert path.is_file() and path.stat().st_uid==os.getuid() and not path.stat().st_mode & 0o077
+keys={'ENGLISH_REVIEW_ENABLED','ENGLISH_REVIEW_USER_IDS'}
+lines=[line for line in path.read_text().splitlines() if line.split('=',1)[0].strip() not in keys]
+descriptor,temporary=tempfile.mkstemp(prefix='.server-review-',dir=path.parent)
+try:
+    with os.fdopen(descriptor,'w') as output:
+        os.fchmod(output.fileno(),0o600)
+        output.write('\n'.join(lines)+f'\nENGLISH_REVIEW_ENABLED=true\nENGLISH_REVIEW_USER_IDS={owner}\n')
+        output.flush();os.fsync(output.fileno())
+    os.replace(temporary,path)
+finally:
+    Path(temporary).unlink(missing_ok=True)
+print('One private English review owner configured; credentials were not printed.')
+PY
+unset NEXTPHASE_REVIEW_OWNER_ID
+dc up -d --no-deps --wait --wait-timeout 120 api
+```
+
+Do not paste `server.env`, database credentials, bearer tokens or recovery keys
+into chat. Add `EXPO_PUBLIC_ENGLISH_REVIEW=true` beside the existing API URL in
+the laptop's ignored mobile `.env.local`, then restart Metro with a cleared cache.
+Use the existing permitted personal network. Upload the same recording through
+the app, identify its project and apply the bounded import command above. Actual
+phone save/reload/conflict behavior is the final private-pilot acceptance step.

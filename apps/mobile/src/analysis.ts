@@ -13,26 +13,32 @@ export type ClipCandidate = {
 };
 export type EnglishAnalysis = {
   job_id:string; revision:string; transcript_sha256:string; render_enabled:false;
-  transcript:{language:'en'; source_sha256:string; words:ReviewWord[]};
+  transcript:{language:'en'; source_sha256:string; source_duration_ms:number; words:ReviewWord[]};
   review:TranscriptReview|null;
-  proposal:{candidates:ClipCandidate[]; warnings:string[]};
+  proposal:{requested_seconds:number; candidates:ClipCandidate[]; warnings:string[]};
 };
 
 function validated(value:any):EnglishAnalysis {
   const digest=(v:unknown)=>typeof v==='string' && /^[0-9a-f]{64}$/.test(v);
   const words=value?.transcript?.words, candidates=value?.proposal?.candidates;
+  const duration=value?.transcript?.source_duration_ms,cap=value?.proposal?.requested_seconds;
   if (!digest(value?.revision) || !digest(value?.transcript_sha256) ||
       !digest(value?.transcript?.source_sha256) || value?.transcript?.language!=='en' ||
+      !Number.isInteger(duration) || duration<1 || duration>600000 ||
+      !Number.isInteger(cap) || cap<5 || cap>60 ||
       value?.render_enabled!==false || !Array.isArray(words) || !words.length || words.length>1000 ||
-      words.some((w:any)=>typeof w?.text!=='string' || !w.text.length || w.text.length>160 ||
+      words.some((w:any,i:number)=>typeof w?.text!=='string' || !w.text.length || w.text.length>160 ||
         !Number.isInteger(w.start_ms) || !Number.isInteger(w.end_ms) || w.end_ms<=w.start_ms ||
+        w.start_ms<0 || w.end_ms>duration || (i>0 && w.start_ms<words[i-1].end_ms) ||
         !(w.confidence===null || (typeof w.confidence==='number' && w.confidence>=0 && w.confidence<=1))) ||
       !Array.isArray(candidates) || candidates.length>5 || candidates.some((c:any)=>
         !Number.isInteger(c?.first_word) || !Number.isInteger(c.last_word) ||
         c.first_word<0 || c.last_word<c.first_word || c.last_word>=words.length ||
-        !Number.isInteger(c.output_frames) || c.output_frames<150 || c.output_frames>1800 ||
+        !Number.isInteger(c.output_frames) || c.output_frames<150 || c.output_frames>cap*30 ||
         !Number.isInteger(c.source_start_ms) || !Number.isInteger(c.source_end_ms) ||
-        c.source_start_ms<0 || c.source_end_ms<=c.source_start_ms)) {
+        c.source_start_ms<0 || c.source_end_ms<=c.source_start_ms || c.source_end_ms>duration ||
+        c.source_end_ms-c.source_start_ms>cap*1000 ||
+        c.output_frames!==Math.floor((c.source_end_ms-c.source_start_ms)*30/1000))) {
     throw new Error('The review could not be loaded. Refresh and try again.');
   }
   if(value.review!==null) {
@@ -43,7 +49,9 @@ function validated(value:any):EnglishAnalysis {
         review.acknowledged_original_recording!==true ||
         [review.sentence_end_words,review.confirmed_low_confidence_words].some(list=>
           !Array.isArray(list) || list.length>words.length || list.some((n:any,i:number)=>
-            !Number.isInteger(n) || n<1 || n>words.length || (i>0 && n<=list[i-1])))) {
+            !Number.isInteger(n) || n<1 || n>words.length || (i>0 && n<=list[i-1]))) ||
+        review.confirmed_low_confidence_words.some((n:number)=>
+          words[n-1].confidence===null || words[n-1].confidence>=.45)) {
       throw new Error('The saved review could not be loaded. Refresh and try again.');
     }
   }

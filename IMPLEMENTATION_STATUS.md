@@ -1,5 +1,33 @@
 # Implementation Status — 2026-11-10
 
+## English project-review verification and client hardening — 2026-11-11
+
+Owner explicitly requested migration/API/lifecycle verification before updating
+the VPS. Added 38 targeted backend regressions covering accepted-upload/source
+binding, owner/allowlist/auth checks, English/size/metadata limits, unchanged native
+provenance, invalid/oversize annotations, rate limits, stale edits and lost-response
+retries, identical reimport preservation, project/account deletion, concurrent
+edit/delete races, restore tombstones, real synthetic-media FFprobe/upload/import/
+review, bounded stdin CLI and 0020→0021 data preservation. Test startup explicitly
+disables the pilot so local operator settings cannot activate it accidentally.
+
+Five client-response guard regressions initially failed: negative/out-of-source
+word times, inconsistent frame duration, exceeding requested duration, and saved
+confirmation of a non-flagged word. Tightened the mobile response validator without
+changing server confidence thresholds or recognition output. Added 18 client
+contract tests and six mocked hook/native screen interaction tests (24 total),
+including explicit review/save gating, rapid marks, conflict handling, no ready
+transcript, session changes and late responses from an old project. These run in
+the standard mobile suite and CI; they are not native-device acceptance.
+
+Evidence: all 520 backend tests passed on SQLite and a new disposable PostgreSQL
+16 container; all 94 mobile tests and TypeScript compilation passed. The PostgreSQL
+fixture was removed afterward. Android export and VPS guide command syntax checks
+passed. No VPS command, live migration/feature activation, paid action, model
+download or provider call was performed. The verified-backup/build/stop-writers/
+migrate/restart and one-owner activation instructions are in ENGLISH_PROJECT_REVIEW.md.
+Actual phone and VPS acceptance remain the next operator checks.
+
 ## English review inside projects — gated preparation — 2026-11-11
 
 Added a mobile English review screen connected to authenticated project analysis
