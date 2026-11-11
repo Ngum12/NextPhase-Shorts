@@ -1,5 +1,26 @@
 # Implementation Status — 2026-11-10
 
+## Automatic offsite backup preparation — 2026-11-11
+
+Owner verified actual systemd backup/monitor service success, active 04:00 Rwanda
+backup/five-minute timers and real alert test inbox delivery. Google Drive OAuth
+remote was configured privately; the owner-supplied actual rclone upload of a
+120-MiB encrypted scheduled bundle passed download checking with one matching
+file and zero differences. No OAuth token was requested or committed.
+
+Added opt-in `offsite-setup` that activates only after upload/readback, plus
+automatic copies after a successful local backup/writer restart and a standalone
+retry command. Only verified named ciphertext is eligible; local SHA-256 is
+checked, remote writes are immutable/checksummed, and download checking must pass
+before offsite status becomes true. Monitor/email report failed/stale copies.
+No Drive synchronization/deletion or raw key/vault export is introduced. Existing
+timers need no reinstall. Actual new integrated setup/job still requires VPS
+validation. Independent immutable/current-journal custody, retention and external
+host-down monitoring remain separate limitations.
+Local validation: full backend suite 412 passed (one existing Starlette warning);
+final focused maintenance run 20 passed, including offsite transfer/readback
+failure, changed ciphertext, concurrent backup status and stale-copy alerts.
+
 ## VPS maintenance preparation — 2026-11-11
 
 Actual-host scheduled-backup command subsequently passed authenticated readback

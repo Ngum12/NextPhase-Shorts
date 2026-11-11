@@ -2,7 +2,7 @@
 
 Nightly backups pause writers, authenticate a readback and publish a user-readable
 encrypted copy. Monitoring sends only coarse status to an explicitly configured
-recipient. Offsite synchronization is a separate operator responsibility.
+recipient. Offsite copies require explicit setup and a successful remote readback.
 """
 import argparse
 from datetime import datetime, timezone
@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import pwd
+import re
 import signal
 import shutil
 import socket
@@ -233,6 +234,64 @@ def resume():
     return {'ok': True, 'writers_resumed_if_needed': True}
 
 
+def offsite_upload(settings=None):
+    """Copy one verified encrypted bundle only; never sync/delete a Drive folder."""
+    settings = settings or read('offsite.json')
+    remote = settings.get('remote', '')
+    if not re.fullmatch(r'[A-Za-z0-9_-]+:[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*', remote):
+        raise RuntimeError('Invalid dedicated backup remote')
+    config = Path(settings['config_file'])
+    if (not config.is_absolute() or any(p.is_symlink() for p in (config, *config.parents))
+            or config.stat().st_uid != os.getuid() or config.stat().st_mode & 0o077
+            or not config.is_file()):
+        raise RuntimeError('Private administrator-owned rclone configuration required')
+    with (state_dir()/'offsite.lock').open('a') as lock:
+        os.chmod(state_dir()/'offsite.lock', 0o600)
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        latest = read('backup-latest.json')
+        name = latest.get('file', '')
+        if not latest.get('authenticated_readback') or not re.fullmatch(
+                r'scheduled-\d{8}T\d{6}Z-[0-9a-f]{8}\.npb', name):
+            raise RuntimeError('No verified scheduled backup selected')
+        source = ROOT/'.data/scheduled-backups'/name
+        if source.is_symlink() or not source.is_file():
+            raise RuntimeError('Encrypted backup missing')
+        with source.open('rb') as handle:
+            digest = hashlib.file_digest(handle, 'sha256').hexdigest()
+        if digest != latest.get('sha256'):
+            raise RuntimeError('Local backup hash changed; upload refused')
+        base = ['rclone', '--config', str(config)]
+        command(base+['copyto', str(source), remote+'/'+name, '--immutable', '--checksum',
+                      '--retries', '3', '--low-level-retries', '3', '--contimeout', '20s',
+                      '--timeout', '60s', '--log-level', 'ERROR'], timeout=1800)
+        command(base+['check', str(source.parent), remote, '--include', name,
+                      '--one-way', '--download', '--contimeout', '20s', '--timeout', '60s',
+                      '--log-level', 'ERROR'], timeout=1800)
+        # Do not mark a newer concurrent backup as uploaded based on an older file.
+        current = read('backup-latest.json')
+        if current.get('file') == name and current.get('sha256') == digest:
+            save('backup-latest.json', {**current, 'offsite_copy': True})
+        result = {'ok': True, 'verified_at': time.time(), 'file': name,
+                  'sha256': digest, 'offsite_copy': True, 'download_verified': True}
+        save('offsite-latest.json', result)
+        return result
+
+
+def offsite_setup():
+    if read('offsite.json'):
+        raise RuntimeError('Existing offsite settings preserved; use offsite to retry')
+    config = Path.home()/'.config/rclone/rclone.conf'
+    remotes = command(['rclone', '--config', str(config), 'listremotes']).split()
+    if 'nextphase-backups:' not in remotes:
+        raise RuntimeError('Expected configured backup remote not found')
+    settings = {'remote': 'nextphase-backups:NextPhase-Automated-Backups',
+                'config_file': str(config)}
+    result = offsite_upload(settings)
+    # Activate only after actual ciphertext upload and full remote readback pass.
+    save('offsite.json', {**settings, 'enabled': True, 'enabled_at': time.time()})
+    return {**result, 'automatic_uploads_enabled': True}
+
+
 def monitoring():
     issues = []
     free = shutil.disk_usage(ROOT).free
@@ -250,6 +309,14 @@ def monitoring():
         issues.append('backup_missing_or_older_than_30_hours')
     if read('backup-failure.json').get('checked_at', 0) > latest.get('completed_at', 0):
         issues.append('last_backup_attempt_failed')
+    if read('offsite.json').get('enabled'):
+        cloud = read('offsite-latest.json')
+        if time.time()-cloud.get('verified_at', 0) > 30*3600:
+            issues.append('offsite_copy_missing_or_older_than_30_hours')
+        if read('offsite-failure.json').get('checked_at', 0) > cloud.get('verified_at', 0):
+            issues.append('last_offsite_copy_failed')
+        if not latest.get('offsite_copy') and time.time()-latest.get('completed_at', 0) > 2*3600:
+            issues.append('latest_backup_not_offsite_after_two_hours')
     with (state_dir() / 'backup.lock').open('a') as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
@@ -397,7 +464,7 @@ def email_setup(sender, recipient):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('backup', 'monitor', 'units', 'status', 'email-test', 'email-setup', 'resume'))
+    parser.add_argument('action', choices=('backup', 'monitor', 'units', 'status', 'email-test', 'email-setup', 'resume', 'offsite-setup', 'offsite'))
     parser.add_argument('--sender', help='Verified Resend sender address; no API keys in arguments')
     parser.add_argument('--recipient', help='Explicit operator failure-alert recipient')
     args = parser.parse_args()
@@ -407,7 +474,9 @@ def main():
         raise RuntimeError('Maintenance interrupted')
     signal.signal(signal.SIGTERM, interrupt)
     try:
-        if args.action == 'email-setup':
+        if args.action == 'offsite-setup':
+            result = offsite_setup()
+        elif args.action == 'email-setup':
             result = email_setup(args.sender, args.recipient)
         elif args.action == 'resume':
             result = resume()
@@ -417,15 +486,31 @@ def main():
             result = {'backup': read('backup-latest.json'), 'monitor': read('monitor-latest.json'),
                       'backup_failure': read('backup-failure.json'),
                       'email_failure': read('email-failure.json'),
+                      'offsite': read('offsite-latest.json'),
+                      'offsite_enabled': read('offsite.json').get('enabled', False),
+                      'offsite_failure': read('offsite-failure.json'),
                       'paused_writers': read('paused-writers.json')}
         elif args.action == 'email-test':
             result = {'ok': True, 'email': notify({'ok': True}, test=True)}
         else:
             try:
-                result = backup() if args.action == 'backup' else monitoring()
+                if args.action == 'backup':
+                    result = backup()
+                elif args.action == 'offsite':
+                    result = offsite_upload()
+                else:
+                    result = monitoring()
             except Exception:
                 result = {'ok': False, 'issues': [args.action+'_failed'], 'checked_at': time.time()}
                 save(args.action+'-failure.json', result)
+            if args.action == 'backup' and result.get('ok') and read('offsite.json').get('enabled'):
+                try:
+                    upload = offsite_upload()
+                    result['offsite_copy'] = upload['offsite_copy']
+                    result['download_verified'] = upload['download_verified']
+                except Exception:
+                    result.update(ok=False, issues=['offsite_copy_failed'])
+                    save('offsite-failure.json', {'checked_at': time.time(), 'issue': 'offsite_copy_failed'})
             try:
                 result['email'] = notify(result, topic=args.action)
             except Exception as error:

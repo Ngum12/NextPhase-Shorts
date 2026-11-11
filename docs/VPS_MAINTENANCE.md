@@ -29,7 +29,8 @@ itself; no interactive `dc`/`ht` function is needed after reconnecting.
   unchanged failures are limited to one message/hour/topic. No account email,
   authentication policy, AI, billing or customer-content sending is enabled.
 
-Backups stay on the VPS until copied offsite. **A timer is not an offsite backup.**
+Backups stay on the VPS until copied offsite or the optional verified rclone
+integration below is enabled. **A local timer alone is not an offsite backup.**
 The saved vault key can decrypt these bundles; the security journal key is not
 included. A bundle's journal is a snapshot, not automatically current authority
 for later deletions/revocations. Keep independently current journal/checkpoints
@@ -53,10 +54,66 @@ sudo apt-get install -y acl
 ```
 
 Require `ok:true`, `authenticated_readback:true`, a SHA-256 and resumed services.
-`offsite_copy:false` is explicit. Output files are under `.data/scheduled-backups/`.
+Until offsite setup, `offsite_copy:false` is explicit. Output files are under `.data/scheduled-backups/`.
 The script grants the detected container UID access only to its required bind
 mount directories/new inputs using ACLs; it does not use world permissions or
 assume the administrator and container share a UID.
+
+## Optional automatic Google Drive copies
+
+Install Ubuntu's packaged rclone and configure a **personal, private** Drive remote
+named `nextphase-backups`, as the same administrator who runs maintenance. Use
+`drive.file` scope (files created/opened by rclone), a separate folder, and
+mode-0600 `~/.config/rclone/rclone.conf`. Never print/upload its OAuth tokens or
+commit that file. Keep KeePassXC/vault master-password custody independent of
+rclone; do not grant the server access to an existing recovery vault. The user
+must complete provider OAuth in their browser; no login token belongs in chat.
+
+After a manual copy/readback has worked, run:
+
+```bash
+.venv/bin/python scripts/vps_maintenance.py offsite-setup
+```
+
+This reads the actual configured remote, copies the latest authenticated scheduled
+`.npb` into `nextphase-backups:NextPhase-Automated-Backups` with `--immutable` and
+checksum comparison, then performs `rclone check --download` for that exact file.
+Only a passing readback enables automatic uploads. It stores only non-secret
+settings in `.data/maintenance/offsite.json`; rclone handles its own token file.
+Require `automatic_uploads_enabled:true`, `offsite_copy:true`, and
+`download_verified:true` before claiming automatic protection.
+
+The existing backup timer then uploads after each successful local backup and
+after writer restart. Existing units need no reinstall. Only `.npb` files named
+by the authenticated-backup status can be selected; local hashes are rechecked.
+It never syncs/deletes a Drive folder or uploads `.key`, `.tar`, `.kdbx`, env files,
+or plaintext inputs. Files on the VPS and Drive remain retained. Drive space,
+provider quotas and transfer times still need capacity/retention planning.
+Transferred/readback bytes consume network traffic and provider limits.
+
+To test the complete scheduled path now (finish renders first):
+
+```bash
+sudo systemctl start nextphase-backup.service
+.venv/bin/python scripts/vps_maintenance.py status
+```
+
+Upload/readback failures preserve the verified local backup, fail the job and
+send coarse email through the existing alert path. Five-minute monitoring flags
+failed/stale offsite copies and a latest backup still not offsite after two hours.
+The existing 45-minute service limit and per-command transfer timeouts still
+apply; large backups may need reviewed capacity/timeout changes.
+Retry the latest local backup without pausing the app or making another dump:
+
+```bash
+.venv/bin/python scripts/vps_maintenance.py offsite
+```
+
+A Drive copy is not immutable/offline storage: the VPS OAuth grant can modify
+files created by rclone, and an account/VPS compromise can threaten those copies.
+Keep the independently stored manual backup/vault and protected journal custody.
+The bundle's journal is current only at backup time; this feature does not
+automatically preserve later security changes offsite or provide key rotation.
 
 ## Secure, separate failure email
 
