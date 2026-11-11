@@ -21,19 +21,31 @@ def analyze(args):
         raise RuntimeError('Experimental analysis is not enabled in staging/production')
     if not args.consent_to_local_analysis:
         raise RuntimeError('Explicit local-processing acknowledgement is required')
-    source=regular_file(args.source,maximum=314572800)
-    metadata=probe_video(source)
-    if metadata['duration']>600:
-        raise RuntimeError('Source exceeds 10-minute analysis limit')
-    duration=math.ceil(metadata['duration']*1000)
-    digest=file_digest(source)
+    replan=getattr(args,'replan_transcript',None)
+    source=None
+    if replan:
+        if args.transcript or args.engine or args.model or args.engine_sha256 or args.model_sha256:
+            raise RuntimeError('Replanning does not accept ASR or manual-import options')
+        path=regular_file(replan,maximum=8*1024**2)
+        transcript=Transcript.model_validate_json(path.read_bytes())
+        if args.language and transcript.language!=args.language:
+            raise RuntimeError('Transcript language differs')
+    else:
+        source=regular_file(args.source,maximum=314572800)
+        metadata=probe_video(source)
+        if metadata['duration']>600:
+            raise RuntimeError('Source exceeds 10-minute analysis limit')
+        duration=math.ceil(metadata['duration']*1000)
+        digest=file_digest(source)
     output=Path(args.output).absolute()
     if any(p.is_symlink() or getattr(p,'is_junction',lambda:False)() for p in (output,*output.parents)):
         raise RuntimeError('Use a new private output directory')
     output.mkdir(mode=0o700)
     try:
         with tempfile.TemporaryDirectory(prefix='analysis-',dir=output) as work:
-            if args.transcript:
+            if replan:
+                asr_executed=False
+            elif args.transcript:
                 path=regular_file(args.transcript,maximum=2*1024**2)
                 transcript=Transcript.model_validate_json(path.read_bytes())
                 if transcript.provider!='manual':
@@ -52,7 +64,7 @@ def analyze(args):
                     source_sha256=digest,source_duration_ms=duration,work=work,timeout=args.timeout)
                 asr_executed=True
             proposal=propose(transcript,args.requested_seconds)
-            if file_digest(source)!=digest:
+            if source is not None and file_digest(source)!=digest:
                 raise RuntimeError('Source changed during analysis')
             artifacts={'transcript.json':transcript.model_dump(mode='json'),
                        'proposal.json':proposal.model_dump(mode='json')}
@@ -67,6 +79,8 @@ def analyze(args):
                 handle.write(review_html(transcript,proposal))
             return {'ok':True,'language':transcript.language,'words':len(transcript.words),
                     'candidate_count':len(proposal.candidates),'asr_executed':asr_executed,
+                    'replanned_existing_transcript':bool(replan),
+                    'planner_algorithm':proposal.algorithm,'planning_warnings':list(proposal.warnings),
                     'human_review_required':True,'render_enabled':False}
     except BaseException:
         # Output was exclusively created by this invocation. Preserve all inputs.
@@ -76,7 +90,9 @@ def analyze(args):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source',required=True)
+    inputs=parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument('--source')
+    inputs.add_argument('--replan-transcript',help='Replan a validated saved transcript; preserve its provenance and run no ASR')
     parser.add_argument('--output',required=True)
     parser.add_argument('--requested-seconds',type=int,choices=range(5,61),default=15)
     parser.add_argument('--consent-to-local-analysis',action='store_true')

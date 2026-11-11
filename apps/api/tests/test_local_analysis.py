@@ -130,3 +130,25 @@ def test_operator_cli_creates_private_review_for_actual_source(video,tmp_path,la
     assert json.loads(refused.stdout)['reason_code']=='source_identity_mismatch'
     assert text not in refused.stdout
     assert video.exists() and source.exists()
+
+
+def test_replan_reuses_native_transcript_without_rerunning_asr_or_relabeling_it(tmp_path):
+    from app.analysis_plan import Transcript
+    original=Transcript(source_sha256='a'*64,source_duration_ms=12000,language='en',
+        provider='whisper_cpp',timestamp_quality='model_token_estimate',model_sha256='b'*64,
+        engine_sha256='c'*64,words=tuple({'text':'end.' if i%4==3 else 'word',
+            'start_ms':i*750,'end_ms':i*750+700,'confidence':.415192 if i==14 else .95}
+            for i in range(16)))
+    path=tmp_path/'transcript.json';path.write_text(original.model_dump_json())
+    before=path.read_bytes()
+    output=tmp_path/'replanned'
+    response=subprocess.run([sys.executable,str(ROOT/'scripts/analyze_short.py'),
+        '--replan-transcript',str(path),'--output',str(output),'--requested-seconds','15',
+        '--consent-to-local-analysis'],cwd=ROOT,capture_output=True,text=True,timeout=15)
+    assert response.returncode==0,response.stdout+response.stderr
+    result=json.loads(response.stdout)
+    assert result['replanned_existing_transcript'] and not result['asr_executed']
+    assert result['candidate_count']>0 and result['planner_algorithm']=='sentence-window-v2'
+    assert result['planning_warnings']==['estimated_timestamps','low_confidence_excluded']
+    assert Transcript.model_validate_json((output/'transcript.json').read_bytes())==original
+    assert path.read_bytes()==before

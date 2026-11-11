@@ -81,6 +81,32 @@ def test_uncalibrated_or_missing_probability_is_disclosed():
     assert 'confidence_unavailable' in result.warnings
 
 
+def test_clean_early_sentences_survive_low_probability_in_final_sentence():
+    words=tuple(Word(text='end.' if i%4==3 else 'word',start_ms=i*750,end_ms=i*750+700,
+                     confidence=.415192 if i==14 else .95) for i in range(16))
+    transcript=Transcript(source_sha256='a'*64,source_duration_ms=12000,language='en',
+        provider='manual',timestamp_quality='operator_supplied',words=words)
+    result=propose(transcript,15)
+    assert result.candidates
+    assert result.algorithm=='sentence-window-v2'
+    assert result.candidates[0].first_word==0 and result.candidates[0].last_word==11
+    assert all(c.last_word<12 for c in result.candidates)
+    assert all(all(w.confidence>=.45 for w in words[c.first_word:c.last_word+1]) for c in result.candidates)
+    assert 'low_confidence_excluded' in result.warnings
+    assert result.human_review_required and not result.semantic_quality_verified
+
+
+def test_a_short_clean_region_is_not_lost_between_sampled_starts():
+    words=tuple(Word(text='end.' if i%2 else 'word',start_ms=i*100,end_ms=i*100+100,
+        confidence=.95 if 65<=i//2<=89 else .2) for i in range(400))
+    transcript=Transcript(source_sha256='a'*64,source_duration_ms=40000,language='en',
+        provider='manual',timestamp_quality='operator_supplied',words=words)
+    result=propose(transcript,15)
+    assert len(result.candidates)==1
+    assert result.candidates[0].first_word==130 and result.candidates[0].last_word==179
+    assert result.candidates[0].output_frames==150
+
+
 def test_later_sentences_are_considered_and_long_silence_is_not_hidden():
     early=manual(confidence=.5).words
     later=tuple(w.model_copy(update={'start_ms':w.start_ms+20000,'end_ms':w.end_ms+20000,'confidence':.99}) for w in early)

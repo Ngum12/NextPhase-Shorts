@@ -77,13 +77,42 @@ to them explicitly. They are not covered by the live app's media cleanup.
 For a failed run, `--diagnostic` adds only error class, fixed reason codes and
 validation-type names; it never prints raw model output or transcript values.
 
+### Replan a saved transcript
+
+To try the planner again without decoding video or rerunning speech recognition:
+
+```bash
+.venv/bin/python scripts/analyze_short.py \
+  --replan-transcript /private/previous-analysis/transcript.json \
+  --output /private/new-proposal --requested-seconds 15 --consent-to-local-analysis
+```
+
+This validates a bounded (8-MiB maximum) saved transcript, preserves its source
+identity, language, words, confidence/timestamps and manual/model provenance, and
+creates new private artifacts. It reports `replanned_existing_transcript:true`
+and `asr_executed:false`. It does not reread/revalidate the original media; human
+review and source-identity checking before future rendering remain required.
+Existing files are refused and inputs are preserved. No model/manual-import
+options can be combined with this mode.
+
+Planner `sentence-window-v2` checks every sentence start, chooses complete
+endpoints before the next low-confidence word or long gap, and uses prefix
+statistics to bound scoring work. It retains the 0.45 probability exclusion,
+five-second minimum/full-frame and source/requested-duration limits. A weak late
+sentence can be excluded while earlier clean complete sentences remain eligible.
+This is a timing/probability heuristic, not semantic-storytelling acceptance.
+
 ## Optional native ASR — not yet accepted for rollout
 
-Actual weights could **not** be fetched here: the managed environment's outbound
+Actual weights could **not** be fetched in the cloud workspace: its outbound
 policy denies the Hugging Face model host. The pinned native engine built and its
-CLI flags were checked; native speech inference and English/French quality are
-**unverified**. Executable fixtures verify protocol, credential stripping and
-timeouts; they are not ASR evidence. No model files are committed or bundled.
+CLI flags were checked. The owner subsequently downloaded upstream-digest-verified
+multilingual tiny/base models on the VPS and ran generated English speech through
+the adapter. Tiny produced clear recognition errors; base improved the text but
+retained a brand-name variation and one below-threshold token. Real natural-speech
+English/French quality and actual performance acceptance remain **unverified**.
+Executable fixtures verify protocol, credential stripping and timeouts; they are
+not ASR evidence. No model files are committed or bundled.
 
 The optional engine tested for compilation is upstream Whisper.cpp **v1.7.6**,
 commit **a8d002cfd879315632a579e73f0148d06959de36** (MIT). Build in an ignored private
