@@ -1,5 +1,23 @@
 # Implementation Status — 2026-11-10
 
+## Disposable capacity CI database readiness — 2026-11-11
+
+SQLite-matrix capacity CI failed before migrations with a closed published
+PostgreSQL connection. Its local-socket `pg_isready` could accept the official
+image's temporary init server before final TCP startup. Replaced that probe with
+a bounded authenticated `SELECT 1` through the same host/published port/database
+used by migrations, retrying transient connection/query errors. No migration,
+burst, soak or restore assertions are disabled. On failure the disposable helper
+retains only selected PostgreSQL state fields before cleanup; CI uploads that
+small diagnostic, excluding full inspect/env/raw error text and DB contents.
+
+Validation: 53 focused startup/planner/local-analysis tests passed. A real local
+PostgreSQL capacity drill passed its 100-request burst (64 accepted, 36 expected
+capacity refusals), 30-second synthetic soak (six render/download cycles), and
+fresh-database restore with media hashes, owner isolation, deletion fencing and
+a new render after restore. This short drill is not production load acceptance;
+GitHub CI still needs to rerun on the pushed commit.
+
 ## Clean sentence-window search repair — 2026-11-11
 
 Owner's verified base model ran on the VPS generated-English fixture and returned
