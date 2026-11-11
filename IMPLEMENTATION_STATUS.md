@@ -1,5 +1,23 @@
 # Implementation Status — 2026-11-10
 
+## Native token inventory parser repair — 2026-11-11
+
+Owner built the pinned CPU engine on the VPS and the official multilingual tiny
+model passed its upstream SHA-1. The generated English speech test reached the
+native parser, which rejected segment/token text agreement. Source inspection
+of pinned whisper.cpp confirms that full JSON includes reserved timestamp tokens
+such as `[_TT_100]`; the earlier text-spelling heuristic failed to remove those.
+Parser filtering now matches upstream segment construction using vocabulary IDs
+below EOT (50256 English-only / 50257 multilingual). It validates vocabulary/token
+IDs, preserves ordinary text even if it resembles a control marker, and retains
+spoken-text agreement, timestamp, confidence and duration checks. Added regressions
+for native timestamp/language/extra markers and invalid IDs. Safe optional CLI
+diagnostics report fixed classifications without transcript/native-log contents.
+Real VPS inference/accuracy acceptance still requires the owner retry.
+Validation: 45 focused transcript/analysis tests passed (one existing Starlette
+warning), including the reserved timestamp-token mismatch reproduction and
+English-only/multilingual EOT boundaries.
+
 ## Isolated transcript/planning pilot — 2026-11-11
 
 Owner requested continued development after reviewing the app roadmap and left

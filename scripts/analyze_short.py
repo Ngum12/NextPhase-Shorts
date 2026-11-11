@@ -87,14 +87,37 @@ def main():
     parser.add_argument('--model',help='Trusted local GGML model; no automatic download')
     parser.add_argument('--model-sha256')
     parser.add_argument('--timeout',type=int,default=900)
+    parser.add_argument('--diagnostic',action='store_true',help='Show fixed error classifications; never transcript text or native logs')
     args=parser.parse_args()
     os.umask(0o077)
     try:
         print(json.dumps(analyze(args)))
         return 0
-    except Exception:
-        print(json.dumps({'ok':False,'issue':'analysis_refused_or_failed',
-                          'inputs_preserved':True,'private_text_printed':False}))
+    except Exception as error:
+        result={'ok':False,'issue':'analysis_refused_or_failed',
+                'inputs_preserved':True,'private_text_printed':False}
+        if args.diagnostic:
+            from pydantic import ValidationError
+            result['error_type']=type(error).__name__
+            # Only known fixed messages are mapped; arbitrary exception text is
+            # never echoed because validation/native exceptions can contain data.
+            reasons={
+                'ASR text and token inventory disagree':'token_inventory_mismatch',
+                'Invalid ASR vocabulary metadata':'invalid_vocabulary_metadata',
+                'Invalid ASR token identity':'invalid_token_identity',
+                'Missing or invalid ASR timestamps':'invalid_token_timestamps',
+                'ASR token order changed':'token_order_changed',
+                'A token spans multiple words; timing is ambiguous':'ambiguous_word_timing',
+                'Local transcription failed':'native_transcription_failed',
+                'Artifact checksum mismatch':'artifact_checksum_mismatch',
+                'Imported transcript is not bound to this source':'source_identity_mismatch',
+                'ASR has not passed the required worker sandbox gate':'sandbox_acceptance_required',
+            }
+            if isinstance(error,ValidationError):
+                result['validation_types']=sorted({item['type'] for item in error.errors(include_input=False,include_url=False)})
+            else:
+                result['reason_code']='output_exists' if isinstance(error,FileExistsError) else reasons.get(str(error),'unclassified')
+        print(json.dumps(result))
         return 1
 
 
