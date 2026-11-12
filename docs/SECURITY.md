@@ -1,5 +1,15 @@
 # Security / privacy — gating checklist, not completed certification
 
+Reviewed clip diversity operates only over already bounded source windows and
+never changes their text/timing. New v4 review revisions additionally bind the
+canonical proposal, fencing changed option order against stale preview/polish
+intents. Legacy rows are not recomputed on read. Context excerpts come from the
+already owner-scoped transcript and remain bounded, inert native text in memory;
+no provider request, remote instruction or new phone storage is introduced.
+Selection reasons and opening-word reminders are heuristics, not semantic
+approval. See CLIP_SELECTION.md for compatibility and acceptance boundaries.
+
+
 Manual polish exposes only owner/revision-bound prepared caption cues and closed
 appearance/voice enums. Corrected cues need explicit recording comparison and
 bounded count/text/timing validation; they do not overwrite transcript provenance.

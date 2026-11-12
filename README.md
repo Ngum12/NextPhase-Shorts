@@ -324,3 +324,8 @@ describes opt-in uploads, queued server transcription, transcript review and
 suggestions, plus the single existing-model VPS activation command. English
 recordings up to three minutes only; actual protected inference/phone acceptance
 remains an operator check. The prototype UI is unchanged in scope.
+
+Reviewed clip selection: [CLIP_SELECTION.md](docs/CLIP_SELECTION.md) covers
+diverse source-range alternatives, nearby transcript context and immutable
+plan-bound review revisions. It is a transparent local selection improvement,
+not semantic AI or a final interface redesign.

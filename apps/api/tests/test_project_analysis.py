@@ -121,7 +121,7 @@ def test_review_uses_boundaries_without_rewriting_words_or_scores(client,prepare
     response=client.put(prepared['url']+'/review',headers=prepared['owner'],json=body)
     assert response.status_code==200,response.text
     data=response.json()
-    assert data['proposal']['algorithm']=='sentence-window-v3-reviewed'
+    assert data['proposal']['algorithm']=='sentence-window-v4-diverse-reviewed'
     assert data['proposal']['candidates'] and data['review']==body['review']
     assert data['transcript']==prepared['transcript'].model_dump(mode='json')
     assert all(c['output_frames']<=450 for c in data['proposal']['candidates'])
@@ -322,3 +322,37 @@ def test_operator_stdin_cli_import_is_bounded_and_prints_no_transcript(prepared,
     assert 'word0' not in response.stdout+response.stderr
     with SessionLocal() as db:
         assert (db.get(ProjectAnalysis,prepared['jid']) is not None) is (not invalid)
+
+
+def test_legacy_review_upgrades_only_on_save_and_old_preview_replays_are_preserved(client,prepared):
+    from app.analysis_annotations import TranscriptReview
+    from app.analysis_plan import propose
+    from app.project_analysis import revision_for,document
+    from test_excerpt_jobs import request
+    imported(prepared);body=saved_payload(client,prepared)
+    review=TranscriptReview.model_validate(body['review'])
+    plan=propose(prepared['transcript'],15,review=review).model_copy(update={'algorithm':'sentence-window-v3-reviewed'})
+    old_revision=revision_for(prepared['transcript'],review)
+    with SessionLocal.begin() as db:
+        row=db.get(ProjectAnalysis,prepared['jid']);row.review_json=review.model_dump_json()
+        row.proposal_json=plan.model_dump_json();row.revision=old_revision
+    legacy=client.get(prepared['url'],headers=prepared['owner']).json()
+    assert legacy['revision']==old_revision and legacy['proposal']['algorithm']=='sentence-window-v3-reviewed'
+    key=str(__import__('uuid').uuid4());old_preview=request(client,prepared,legacy,key=key)
+    assert old_preview.status_code==202,old_preview.text
+    saved=client.put(prepared['url']+'/review',headers=prepared['owner'],json=dict(revision=old_revision,review=body['review']))
+    assert saved.status_code==200,saved.text
+    updated=saved.json();assert updated['revision']!=old_revision
+    assert updated['proposal']['algorithm']=='sentence-window-v4-diverse-reviewed'
+    assert request(client,prepared,legacy).status_code==409
+    replay=request(client,prepared,legacy,key=key)
+    assert replay.status_code==202 and replay.json()['id']==old_preview.json()['id']
+    # A lost response to the upgrade save recovers exactly this persisted plan.
+    retried=client.put(prepared['url']+'/review',headers=prepared['owner'],json=dict(revision=old_revision,review=body['review']))
+    assert retried.status_code==200 and retried.json()['revision']==updated['revision']
+    with SessionLocal.begin() as db:
+        row=db.get(ProjectAnalysis,prepared['jid'])
+        changed=__import__('json').loads(row.proposal_json);changed['candidates'].reverse()
+        row.proposal_json=__import__('json').dumps(changed)
+        with pytest.raises(RuntimeError,match='identity'):document(row)
+        db.rollback()

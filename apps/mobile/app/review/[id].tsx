@@ -3,6 +3,7 @@ import {Alert,Pressable,ScrollView,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {useAuth} from '../../src/auth';
 import {ApiError} from '../../src/api';
+import {clipContext} from '../../src/clipSelection';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
 import {Body,Button,Loading,Page,Title,s} from '../../src/ui';
 import {colors as c} from '../../src/theme';
@@ -92,6 +93,7 @@ export default function EnglishReview() {
   const flags=data?.transcript.words.map((word,i)=>({word,number:i+1}))
     .filter(({word})=>word.confidence!==null&&word.confidence<.45)||[];
   const chosen=data?.proposal.candidates[selected];
+  const context=data?clipContext(data,selected):null;
   return <Page><ScrollView contentContainerStyle={{paddingTop:20,paddingBottom:40,gap:18}}>
     <Title>Review English clips</Title>
     {!englishReviewVisible?<Body>The English review pilot is not enabled in this app.</Body>:<>
@@ -135,13 +137,24 @@ export default function EnglishReview() {
         <View style={s.card}><Text style={s.cardTitle}>Clip suggestions</Text>
           {dirty?<Body>Save your changes to update suggestions.</Body>:<>
             {!data.proposal.candidates.length&&<Body>No complete clip fits yet. Check your sentence endings and flagged words above.</Body>}
-            {data.proposal.candidates.map((candidate,i)=><Button key={i}
+            {data.proposal.algorithm==='sentence-window-v4-diverse-reviewed'&&<Body>Options compare word confidence, estimated speech coverage and duration, then reduce near-duplicate ranges. These rules do not judge meaning or predict popularity. Fewer than five options is normal.</Body>}
+            {data.proposal.candidates.map((candidate,i)=><View key={i} style={{gap:5}}><Button key={i}
               title={`Option ${i+1} · ${(candidate.output_frames/30).toFixed(1)} seconds${selected===i?' · selected':''}`}
-              secondary={selected!==i} onPress={()=>setSelected(i)} disabled={blocked}/>)}
+              secondary={selected!==i} onPress={()=>setSelected(i)} disabled={blocked}/>
+              <Body>{clipContext(data,i)?.opening}</Body>
+            </View>)}
             {chosen&&<>
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
-              <Body>This is a clip suggestion. Watch the rendered preview before using it.</Body>
+              {context&&<>
+                <Text style={s.cardTitle}>Check the surrounding context</Text>
+                <Body>{context.before?'Before this clip: '+context.before:'This clip begins at the first transcribed word.'}</Body>
+                <Body>{context.after?'After this clip: '+context.after:'This clip reaches the last transcribed word.'}</Body>
+                {context.contextOpening&&<Body>This opening may refer to an earlier point. Check that the clip makes sense on its own.</Body>}
+                {!!context.confirmedWords&&<Body>This option includes {context.confirmedWords} word(s) you confirmed. Recheck them in playback.</Body>}
+                {!!context.overlapOptions.length&&<Body>Shares some footage with option(s) {context.overlapOptions.join(', ')}.</Body>}
+                <Body>These excerpts show nearby transcript words, not a summary. Watch the rendered preview to check the cut and meaning.</Body>
+              </>}
               {data.polished_preview_supported&&data.review&&<Button title="Polish selected clip" disabled={blocked||conflict}
                 onPress={()=>router.push({pathname:'/polish/[id]',params:{id,candidate:String(selected+1),revision:data.revision}})}/>}
               {data.portrait_framing_supported&&<View style={{gap:10}}>
