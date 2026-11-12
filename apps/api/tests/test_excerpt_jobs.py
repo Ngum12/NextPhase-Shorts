@@ -29,10 +29,10 @@ def review(client,item):
     return response.json()
 
 
-def request(client,item,data,*,key=None,number=1,ack=True,caption_style='none'):
+def request(client,item,data,*,key=None,number=1,ack=True,caption_style='none',framing='fit'):
     return client.post(item['url']+'/previews',headers=item['owner'],json=dict(
         revision=data['revision'],candidate_number=number,idempotency_key=key or str(uuid.uuid4()),
-        acknowledged_preview=ack,caption_style=caption_style))
+        acknowledged_preview=ack,caption_style=caption_style,framing=framing))
 
 
 def test_admission_is_source_bound_immutable_budgeted_and_replayable(client,prepared):

@@ -79,6 +79,21 @@ test('plain and captioned versions retain distinct durable keys after restart',a
  assert.equal(bodies[1].caption_style,'clean-1');
  await assert.rejects(f.actions.requestClipPreview(parent,'token',revision,1,'drawtext=bad'));
 });
+
+test('framing variants keep legacy fit keys and remain bounded across all options',async()=>{
+ const f=fixture();
+ for(let option=1;option<=5;option++)for(const style of ['none','clean-1'])for(const framing of ['fit','fill-center']){
+  await f.actions.requestClipPreview(parent,'token',revision,option,style,framing);
+ }
+ const bodies=f.calls.map(call=>JSON.parse(call.init.body));
+ assert.equal(new Set(bodies.map(body=>body.idempotency_key)).size,20);
+ assert.equal(bodies[0].framing,undefined);assert.equal(bodies[1].framing,'fill-center');
+ const stored=[...f.storage.values()][0];assert(stored.length<=2048);
+ await f.reload().requestClipPreview(parent,'token',revision,1,'none','fill-center');
+ assert.equal(JSON.parse(f.calls.at(-1).init.body).idempotency_key,bodies[1].idempotency_key);
+ await assert.rejects(f.actions.requestClipPreview(parent,'token',revision,1,'none','arbitrary'));
+ await f.actions.forgetPreviewIntents(parent);assert.equal(f.storage.size,0);
+});
 test('failed, empty and oversized preview downloads remove their private file',async()=>{
  for(const condition of ['network','empty','large','denied']){
   const f=fixture();if(condition==='network')f.state.downloadFailure=true;

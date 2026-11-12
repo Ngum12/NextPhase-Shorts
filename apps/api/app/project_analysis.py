@@ -15,6 +15,7 @@ from .config import get_settings
 from .db import session_dep
 from .models import ProjectAnalysis, RenderJob, UploadSession, User, utcnow
 from .queue import lock_owner
+from .preview_framing import Framing
 
 router = APIRouter(prefix='/api/v1/jobs', tags=['English review pilot'])
 MAX_TRANSCRIPT_BYTES = 262144
@@ -99,7 +100,8 @@ def document(row):
         'transcript': transcript.model_dump(mode='json'),
         'review': review.model_dump(mode='json') if review else None,
         'proposal': proposal.model_dump(mode='json'), 'render_enabled': False,
-        'queued_preview_supported': True, 'clean_captions_supported': True}
+        'queued_preview_supported': True, 'clean_captions_supported': True,
+        'portrait_framing_supported': True}
 
 
 class PreviewRequest(ClosedModel):
@@ -108,6 +110,7 @@ class PreviewRequest(ClosedModel):
     idempotency_key: UUID4
     acknowledged_preview: bool = Field(strict=True)
     caption_style: Literal['none','clean-1']='none'
+    framing: Framing='fit'
 
 
 @router.post('/{job_id}/analysis/previews',status_code=202)
@@ -127,6 +130,7 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     key='excerpt_'+str(payload.idempotency_key)
     identity=f'{parent.id}:{payload.revision}:{payload.candidate_number}'
     if payload.caption_style != 'none':identity += ':'+payload.caption_style
+    if payload.framing != 'fit':identity += ':framing-'+payload.framing
     request_hash=hashlib.sha256(identity.encode()).hexdigest()
     previous=db.scalar(select(RenderJob).where(RenderJob.user_id==user.id,RenderJob.idempotency_key==key))
     if previous:
@@ -158,13 +162,14 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
         output_frames=candidate.output_frames,requested_seconds=parent.desired_seconds,
         review_sha256=plan.review_sha256,transcript_sha256=plan.transcript_sha256,
         review_revision=row.revision,candidate_number=payload.candidate_number,
-        caption_style=payload.caption_style,captions=captions)
+        caption_style=payload.caption_style,captions=captions,framing=payload.framing)
     settings=get_settings()
     if not 0<accepted.total_bytes<=min(settings.max_upload_bytes,314572800):
         raise HTTPException(409,'Source exceeds the preview profile',headers=PRIVATE)
     preview_cap=min(settings.max_render_bytes,64*1024**2)
     label='captions' if captions else 'preview'
-    child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:85]+f' · {label} {payload.candidate_number}',
+    suffix=f' · {label} {payload.candidate_number}'+(' · crop' if payload.framing!='fit' else '')
+    child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:100-len(suffix)]+suffix,
         style=parent.style,desired_seconds=parent.desired_seconds,source_duration_seconds=parent.source_duration_seconds,
         source_path='',media_backend='local',status='queued',rights_version=parent.rights_version,
         rights_confirmed_at=parent.rights_confirmed_at,max_render_bytes=preview_cap,

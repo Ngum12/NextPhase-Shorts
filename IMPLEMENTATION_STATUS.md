@@ -1,5 +1,47 @@
 # Implementation Status — 2026-11-10
 
+## Optional centered portrait preview framing — 2026-11-12
+
+Operational owner acceptance before this increment: Google OAuth reached external
+production status; the administrator's dedicated rclone client uploaded and
+download-verified scheduled-20261112T020006Z-250712e5.npb. The persisted maintenance
+destination was switched only after verification, preserving the previous remote
+and copies. Owner's subsequent monitor reported no issues and both timers were
+scheduled. This verifies that manual upload/readback and configuration, not a
+subsequent unattended run or a production recovery/security certification.
+
+Added opt-in **Fill portrait (center)** alongside default **Fit full video** in
+saved English review. It composes with plain/clean-caption previews and opens a
+separate child project, preserving originals and existing fit results. The UI
+discloses loss of outer details and that the crop does not follow faces. No face
+detection, framing-position editor, tracking, zoom animation or aesthetic-quality
+claim is introduced; actual personal-footage suitability needs owner review.
+
+Closed enum framing is snapshotted in the existing source/review-bound spec and
+request identity. Fixed source-coordinate crop precedes scaling, including SAR
+handling and integer crop rounding; output remains 1080x1920/30 fps with existing
+duration/frame/byte limits. Native guards, credential reduction, cancellation,
+leases, owner/global admission and source/child deletion fences are retained.
+Fit hashes, payloads and durable keys stay compatible. At most twenty short
+intent keys per reviewed source cover the two framing/caption choices and five
+options; older-server capability fallback omits framing and uses fit. Schema
+remains 0022; matching API/worker images are still required. No new dependency,
+model, external asset, paid provider or public route was added.
+
+Validation: full backend suites passed with SQLite and disposable PostgreSQL
+(556 tests each). Actual synthetic render checks cover image edges, full-frame
+fit vs center content, audio cut offset, exact frames, tall/very wide/anamorphic
+sources, caption placement, queued private downloads and immutable retries.
+Mobile suite passed (109 tests), TypeScript passed and Android Metro/Hermes export
+passed. Reproducible smoke_portrait_framing.py created an inspected side-by-side
+PNG and captioned six-second fit/fill videos, each 180 frames; measured local
+render/probe paths took 1.773/1.349 seconds respectively for that simple synthetic
+geometry/tone. This is not a real-footage performance or speech-quality benchmark.
+Evidence is outside Git under /workspace/artifacts/portrait-framing/demo/.
+No protected-VPS deployment or actual phone framing acceptance was performed here;
+the cloud host's unsupported Landlock status remains unchanged. See
+PORTRAIT_FRAMING.md for deployment and owner checks.
+
 ## Personal backup OAuth information pages — 2026-11-11
 
 Owner confirmed the deployed clean-caption phone flow worked and captions matched

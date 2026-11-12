@@ -1,5 +1,12 @@
 # License provenance and integration gates
 
+## Optional portrait preview framing — 2026-11-12
+
+Independently authored fixed crop/scale expressions, controls and synthetic
+geometry/tone reuse existing FFmpeg/Expo dependencies and the reviewed DejaVu
+font. No new package, model, external asset, reference-kit content or paid service
+was added. Existing image/native/codec/patent and legal/privacy gates remain.
+
 ## Personal backup OAuth information pages — 2026-11-11
 
 Independently authored static HTML/CSS uses system fonts and the existing Caddy

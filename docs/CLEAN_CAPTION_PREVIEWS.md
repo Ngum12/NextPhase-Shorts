@@ -3,7 +3,8 @@
 The existing saved-review flow can now render a separate **Clean captions**
 version. Plain remains the default. A fixed server renderer overlays short white
 phrases on a dark box in the lower portrait safe area. It preserves original
-voice, word order, source framing and the existing exact-frame/duration limits.
+voice, word order, selected framing and the existing exact-frame/duration limits.
+Fit is the default; optional centered fill is described in PORTRAIT_FRAMING.md.
 This does not add automatic ASR, speaker tracking, music or other style presets.
 
 ## Owner flow

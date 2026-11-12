@@ -15,8 +15,8 @@ function harness(){
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
-  '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate,captionStyle)=>{
-    h.calls.push({preview:id,token,revision,candidate,captionStyle});if(h.previewError)throw h.previewError;
+  '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate,captionStyle,framing)=>{
+    h.calls.push({preview:id,token,revision,candidate,captionStyle,framing});if(h.previewError)throw h.previewError;
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
   '../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
@@ -118,4 +118,26 @@ test('caption choice is opt-in, disclosed and hidden on older servers',async()=>
  assert(h.alerts.at(-1)[1].includes('Timings are estimated'));
  await h.alerts.at(-1)[2][1].onPress();await h.flush();
  assert.equal(h.calls.find(c=>c.preview).captionStyle,'clean-1');
+});
+
+test('portrait framing is optional, warns about cropping and composes with captions',async()=>{
+ const h=harness();enablePreviews(h);await h.flush();
+ assert(!h.button('Fill portrait (center)'));
+ h.value.portrait_framing_supported=true;h.value.clean_captions_supported=true;
+ h.button('Refresh review').props.onPress();await h.flush();
+ assert(h.button('Fit full video · selected'));
+ h.button('Fill portrait (center)').props.onPress();await h.flush();
+ h.button('Clean captions').props.onPress();await h.flush();
+ assert(h.text().includes('It does not follow faces'));
+ h.button('Render selected preview').props.onPress();
+ assert(h.alerts.at(-1)[1].includes('Center cropping removes outer edges'));
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ const request=h.calls.find(c=>c.preview);
+ assert.equal(request.framing,'fill-center');assert.equal(request.captionStyle,'clean-1');
+ h.value.portrait_framing_supported=false;
+ h.button('Refresh review').props.onPress();await h.flush();
+ assert(!h.button('Fill portrait (center)'));
+ h.button('Render selected preview').props.onPress();
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.filter(c=>c.preview).at(-1).framing,'fit');
 });

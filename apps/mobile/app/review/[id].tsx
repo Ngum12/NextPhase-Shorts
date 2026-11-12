@@ -6,7 +6,7 @@ import {ApiError} from '../../src/api';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
 import {Body,Button,Loading,Page,Title,s} from '../../src/ui';
 import {colors as c} from '../../src/theme';
-import {requestClipPreview} from '../../src/clipPreviews';
+import {PreviewFraming,requestClipPreview} from '../../src/clipPreviews';
 
 export default function EnglishReview() {
   const {id:parameter}=useLocalSearchParams<{id:string}>();
@@ -19,6 +19,7 @@ export default function EnglishReview() {
   const generation=useRef(0),saving=useRef(false),loadPending=useRef(false);
   const [rendering,setRendering]=useState(false);const requestingPreview=useRef(false);
   const [captionStyle,setCaptionStyle]=useState<'none'|'clean-1'>('none');
+  const [framing,setFraming]=useState<PreviewFraming>('fit');
   const scope=`${token||''}:${id}`,loadedScope=useRef('');
   const adopt=(value:EnglishAnalysis)=>{
     loadedScope.current=scope;
@@ -39,6 +40,7 @@ export default function EnglishReview() {
     saving.current=false;loadPending.current=false;requestingPreview.current=false;
     setRendering(false);setBusy(false);setLoading(false);load();
     setCaptionStyle('none');
+    setFraming('fit');
     return()=>{generation.current++;loadedScope.current='';requestingPreview.current=false;};
   },[id,token]);
   const refresh=()=>dirty?Alert.alert('Discard unsaved review?',
@@ -69,13 +71,16 @@ export default function EnglishReview() {
   const render=()=>{
     if(!data||!token||dirty||conflict||requestingPreview.current)return;
     const revision=data.revision,number=selected+1,style=data.clean_captions_supported?captionStyle:'none';
+    const frame=data.portrait_framing_supported?framing:'fit';
+    let description=style==='clean-1'?'The server will add phrase captions from your reviewed words. Timings are estimated: check the captions against the audio before sharing.':'The server will render this selected excerpt. Watch the result to check the cut and meaning.';
+    if(frame==='fill-center')description+=' Center cropping removes outer edges. Check that your face, hands and important details stay visible.';
     Alert.alert('Render this clip preview?',
-      style==='clean-1'?'The server will add phrase captions from your reviewed words. Timings are estimated: check the captions against the audio before sharing.':'The server will render this selected excerpt. Watch the result to check the cut and meaning.',[
+      description,[
         {text:'Keep reviewing',style:'cancel'},
         {text:'Render preview',onPress:async()=>{
           if(requestingPreview.current)return;
           requestingPreview.current=true;setRendering(true);setError('');const request=++generation.current;
-          try{const job=await requestClipPreview(id,token,revision,number,style);
+          try{const job=await requestClipPreview(id,token,revision,number,style,frame);
             if(request===generation.current)router.push({pathname:'/project/[id]',params:{id:job.id}});
           }catch(e:any){if(request===generation.current){setError(e.message||'Could not confirm preview. Retry the same clip.');
             if(e instanceof ApiError&&e.status===409)setConflict(true);}}
@@ -136,6 +141,14 @@ export default function EnglishReview() {
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
               <Body>This is a clip suggestion. Watch the rendered preview before using it.</Body>
+              {data.portrait_framing_supported&&<View style={{gap:10}}>
+                <Text style={s.cardTitle}>Framing</Text>
+                <Button title={framing==='fit'?'Fit full video · selected':'Fit full video'} secondary
+                  disabled={blocked} onPress={()=>setFraming('fit')}/>
+                <Button title={framing==='fill-center'?'Fill portrait (center) · selected':'Fill portrait (center)'} secondary
+                  disabled={blocked} onPress={()=>setFraming('fill-center')}/>
+                <Body>{framing==='fit'?'Keeps the full picture, with bars where needed.':'Crops around the center to fill the screen. It does not follow faces. Watch the preview to check what is cut off.'}</Body>
+              </View>}
               {data.clean_captions_supported&&<View style={{gap:10}}>
                 <Button title={captionStyle==='none'?'Plain preview · selected':'Plain preview'} secondary
                   disabled={blocked} onPress={()=>setCaptionStyle('none')}/>

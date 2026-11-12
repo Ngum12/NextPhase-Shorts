@@ -1,5 +1,12 @@
 # Security / privacy — gating checklist, not completed certification
 
+Reviewed preview framing accepts only fit or fixed centered fill. It does not
+accept coordinates, filters, paths or commands. The choice is snapshotted in the
+same source/review-bound spec and idempotency identity; every variant retains
+existing admission, decoder limits/guards, QA and deletion fences. Crop-before-
+scale bounds intermediate canvas size. See PORTRAIT_FRAMING.md for edge-content
+loss, manual review, compatibility and protected-host acceptance requirements.
+
 The optional trial front door now serves exactly two public GET/HEAD static
 backup OAuth information pages before its IP restriction. They read only a
 dedicated read-only HTML mount, never proxy to the API and contain no script,

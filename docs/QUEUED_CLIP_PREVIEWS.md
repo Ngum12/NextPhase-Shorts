@@ -46,7 +46,7 @@ semantic-quality claim, public release or French acceptance is introduced.
 
 ## Phone storage and playback
 
-One SecureStore item per source retains at most ten plain/captioned option keys for the current
+One SecureStore item per source retains at most twenty plain/captioned fit/fill option keys for the current
 review revision; it contains hashes/UUIDs, not transcript/media. Storage operations
 are serialized and in-flight requests scoped to session/project. Interrupted
 requests reuse their keys after restart; a new revision replaces old keys. Local

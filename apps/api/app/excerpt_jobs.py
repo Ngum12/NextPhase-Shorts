@@ -14,6 +14,7 @@ from .db import SessionLocal
 from .media import MediaCancelled, MediaError, probe_video
 from .models import RenderJob
 from .caption_plan import CaptionCue, validate_cues
+from .preview_framing import Framing
 
 
 class ExcerptSpec(ClosedModel):
@@ -32,6 +33,7 @@ class ExcerptSpec(ClosedModel):
     candidate_number: Annotated[int,Field(strict=True,ge=1,le=5)]
     caption_style: Literal['none','clean-1']='none'
     captions: tuple[CaptionCue,...] = Field(default=(), max_length=80)
+    framing: Framing='fit'
 
     @model_validator(mode='after')
     def valid(self):

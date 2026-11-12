@@ -20,6 +20,10 @@ The private English review pilot can render selected reviewed excerpts and optio
 human-reviewed transcript; estimated timing still needs video review. It is not
 automatic transcription/captioning for new uploads or a public release.
 
+Reviewed previews also offer optional [centered portrait framing](docs/PORTRAIT_FRAMING.md).
+Fit remains the default; fill crops outer details and requires watching the result.
+This is fixed center cropping, not automatic speaker tracking.
+
 ## Step 1 — Run local or Docker backend
 
 ### Recommended: Docker Desktop
