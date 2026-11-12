@@ -11,6 +11,7 @@ from .media import (MediaCancelled, MediaError, OutputLimitExceeded, decoder_inv
 from .media_policy import CODEC_THREADS, input_args
 from .observability import stage
 from .caption_plan import validate_cues
+from .preview_framing import framing_filter
 
 CAPTION_FONT=Path('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf')
 
@@ -60,7 +61,11 @@ def output_frames(path):
 
 
 def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_seconds,
-                   max_output_bytes, should_cancel=lambda:False, timeout=300, captions=()):
+                   max_output_bytes, should_cancel=lambda:False, timeout=300, captions=(), framing='fit'):
+    try:
+        video_filter=framing_filter(framing)
+    except ValueError:
+        raise MediaError('Unsupported preview framing') from None
     captions=validate_cues(captions,frames)
     if (any(type(n) is not int for n in (start_ms,end_ms,frames,requested_seconds))
             or not 0<=start_ms<end_ms<=600000 or not 5<=requested_seconds<=60
@@ -80,8 +85,7 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
         '-filter_threads',str(CODEC_THREADS),*input_args(),'-i',str(source),
         '-ss',f'{start_ms/1000:.3f}','-t',f'{seconds:.6f}',
         '-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-map_chapters','-1',
-        '-vf','scale=1080:1920:force_original_aspect_ratio=decrease:flags=lanczos,'
-              'pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,fps=30,setsar=1,format=yuv420p',
+        '-vf',video_filter,
         '-c:v','libx264','-threads',str(CODEC_THREADS),'-preset','veryfast','-crf','24',
         '-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ar','48000','-ac','2',
         '-movflags','+faststart','-max_muxing_queue_size','1024',str(temporary)]

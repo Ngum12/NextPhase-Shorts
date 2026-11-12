@@ -15,6 +15,7 @@ export type EnglishAnalysis = {
   job_id:string; revision:string; transcript_sha256:string; render_enabled:false;
   queued_preview_supported?:boolean;
   clean_captions_supported?:boolean;
+  portrait_framing_supported?:boolean;
   transcript:{language:'en'; source_sha256:string; source_duration_ms:number; words:ReviewWord[]};
   review:TranscriptReview|null;
   proposal:{requested_seconds:number; candidates:ClipCandidate[]; warnings:string[]};
@@ -31,6 +32,7 @@ function validated(value:any):EnglishAnalysis {
       value?.render_enabled!==false || !Array.isArray(words) || !words.length || words.length>1000 ||
       (value.queued_preview_supported!==undefined && typeof value.queued_preview_supported!=='boolean') ||
       (value.clean_captions_supported!==undefined && typeof value.clean_captions_supported!=='boolean') ||
+      (value.portrait_framing_supported!==undefined && typeof value.portrait_framing_supported!=='boolean') ||
       words.some((w:any,i:number)=>typeof w?.text!=='string' || !w.text.length || w.text.length>160 ||
         !Number.isInteger(w.start_ms) || !Number.isInteger(w.end_ms) || w.end_ms<=w.start_ms ||
         w.start_ms<0 || w.end_ms>duration || (i>0 && w.start_ms<words[i-1].end_ms) ||

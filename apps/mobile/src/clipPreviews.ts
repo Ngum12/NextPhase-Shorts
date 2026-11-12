@@ -9,6 +9,7 @@ const digest=/^[0-9a-f]{64}$/;
 const pending=new Map<string,Promise<Job>>();
 const storageTasks=new Map<string,Promise<unknown>>();
 type Intents={revision:string;keys:Record<string,string>};
+export type PreviewFraming='fit'|'fill-center';
 async function serial<T>(parent:string,action:()=>Promise<T>):Promise<T> {
   const task=(storageTasks.get(parent)||Promise.resolve()).catch(()=>{}).then(action);
   storageTasks.set(parent,task);
@@ -19,16 +20,16 @@ async function readIntents(name:string):Promise<Intents|null> {
   if(!raw||raw.length>2048)return null;
   try{const value=JSON.parse(raw);
     if(!digest.test(value.revision)||!value.keys||typeof value.keys!=='object'||Array.isArray(value.keys)||
-        Object.keys(value.keys).length>10||Object.entries(value.keys).some(([k,v])=>!(/^[1-5](?:-clean-1)?$/).test(k)||typeof v!=='string'||!uuid.test(v)))return null;
+        Object.keys(value.keys).length>20||Object.entries(value.keys).some(([k,v])=>!(/^[1-5](?:-clean-1)?(?:-fill-center)?$/).test(k)||typeof v!=='string'||!uuid.test(v)))return null;
     return value as Intents;
   }catch{return null;}
 }
 
-export async function requestClipPreview(parent:string,token:string,revision:string,candidate:number,captionStyle:'none'|'clean-1'='none'):Promise<Job> {
-  if(!uuid.test(parent)||!digest.test(revision)||!Number.isInteger(candidate)||candidate<1||candidate>5||!['none','clean-1'].includes(captionStyle))
+export async function requestClipPreview(parent:string,token:string,revision:string,candidate:number,captionStyle:'none'|'clean-1'='none',framing:PreviewFraming='fit'):Promise<Job> {
+  if(!uuid.test(parent)||!digest.test(revision)||!Number.isInteger(candidate)||candidate<1||candidate>5||!['none','clean-1'].includes(captionStyle)||!['fit','fill-center'].includes(framing))
     throw new Error('Refresh the review before choosing a clip.');
-  const scope=`${token}:${parent}:${revision}:${candidate}:${captionStyle}`;
-  const option=captionStyle==='none'?String(candidate):`${candidate}-clean-1`;
+  const scope=`${token}:${parent}:${revision}:${candidate}:${captionStyle}:${framing}`;
+  const option=(captionStyle==='none'?String(candidate):`${candidate}-clean-1`)+(framing==='fit'?'':'-fill-center');
   const existing=pending.get(scope);if(existing)return existing;
   const task=(async()=>{
     // One durable key per reviewed option survives lost responses/app restarts.
@@ -42,7 +43,8 @@ export async function requestClipPreview(parent:string,token:string,revision:str
     const response=await authenticatedFetch(token,`${BASE}/api/v1/jobs/${parent}/analysis/previews`,{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision,
         candidate_number:candidate,idempotency_key:key,acknowledged_preview:true,
-        ...(captionStyle==='clean-1'?{caption_style:captionStyle}:{})}),
+        ...(captionStyle==='clean-1'?{caption_style:captionStyle}:{}),
+        ...(framing!=='fit'?{framing}:{})}),
     });
     if(response.status===410){await serial(parent,async()=>{
       const intent=await readIntents(name);
