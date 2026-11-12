@@ -116,10 +116,15 @@ def test_upload_consent_is_durable_and_admission_recovers_after_capacity(client,
     assert state['task']['status']=='queued' and state['requested']
 
 
-def test_worker_pipeline_copies_hashes_decodes_and_cleans_attempt(client,monkeypatch,tmp_path):
+@pytest.mark.parametrize('visual_available',[True,False])
+def test_worker_pipeline_copies_hashes_decodes_and_cleans_attempt(client,monkeypatch,tmp_path,visual_available):
     # Real accepted MP4 + real FFmpeg + executable protocol fixture. No actual ASR.
     from test_excerpt_jobs import actual as actual_fixture
     from app.worker import claim_job,process
+    if not visual_available:
+        from app.scene_analysis import SceneUnavailable
+        def unavailable(*args,**kwargs):raise SceneUnavailable()
+        monkeypatch.setattr('app.scene_analysis.analyze',unavailable)
     from app.contained_asr import transcribe
     from app.local_transcription import file_digest
     import sys,json
@@ -147,6 +152,8 @@ def test_worker_pipeline_copies_hashes_decodes_and_cleans_attempt(client,monkeyp
     assert document['transcript']['timestamp_quality']=='model_token_estimate_adjusted'
     assert document['audio_timing']['source_sha256']==item['transcript'].source_sha256
     assert document['audio_timing']['method']=='pcm_window_energy'
+    assert document['scene_analysis']['status']==('available' if visual_available else 'unavailable')
+    assert document['scene_analysis']['source_sha256']==item['transcript'].source_sha256
     assert document['transcript']['words'][0]['text']=='Hello.'
     assert 'adjusted_word_timestamps' in document['proposal']['warnings']
     with SessionLocal() as db:

@@ -12,10 +12,13 @@ import sys
 def main():
     import resource
     expected_parent=int(sys.argv[1]);cpu_seconds=int(sys.argv[2]);command=sys.argv[3:]
-    sandbox=None;file_limit=None
+    sandbox=None;file_limit=None;address_limit=None
     if command and command[0]=='--file-limit':
         file_limit=int(command[1]);command=command[2:]
         if not 0<=file_limit<=536870912:raise RuntimeError('Invalid decoder file bound')
+    if command and command[0]=='--address-limit':
+        address_limit=int(command[1]);command=command[2:]
+        if not 134217728<=address_limit<=2147483648:raise RuntimeError('Invalid decoder address bound')
     if command and command[0]=='--sandbox':
         import json
         sandbox=json.loads(command[1]);command=command[2:]
@@ -27,6 +30,7 @@ def main():
     # Covers parent death before prctl; after prctl the kernel enforces it.
     if os.getppid()!=expected_parent:raise SystemExit(1)
     if file_limit is not None:resource.setrlimit(resource.RLIMIT_FSIZE,(file_limit,file_limit))
+    if address_limit is not None:resource.setrlimit(resource.RLIMIT_AS,(address_limit,address_limit))
     resource.setrlimit(resource.RLIMIT_CORE,(0,0))
     resource.setrlimit(resource.RLIMIT_NOFILE,(128,128))
     resource.setrlimit(resource.RLIMIT_CPU,(cpu_seconds,cpu_seconds))

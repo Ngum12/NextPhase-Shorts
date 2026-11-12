@@ -13,12 +13,12 @@
 
 ## Not yet built (don't mistake labels for finished features)
 
-**No real AI highlight extraction, automatic captions, effects, animated carousels, different editing styles, privacy-compliant commercial hosting, payments, Mobile Money billing, subscription quotas, production hardened auth, production cloud deployment yet.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
+**Autonomous semantic highlight/story direction, advanced effects, animated carousels, distinct editing style engines, commercial hosting, payments, Mobile Money billing, subscription quotas and production security/release acceptance remain planned.** Six style names are visible but render the same plain baseline. This is deliberately transparent.
 
 The private English review pilot can render selected reviewed excerpts and optional
-[clean phrase captions](docs/CLEAN_CAPTION_PREVIEWS.md). This requires a prepared,
-human-reviewed transcript; estimated timing still needs video review. It is not
-automatic transcription/captioning for new uploads or a public release.
+[clean phrase captions](docs/CLEAN_CAPTION_PREVIEWS.md). New opt-in uploads can use the [automatic English analysis pilot](docs/AUTOMATIC_ENGLISH_ANALYSIS.md).
+Human transcript and timing review is still required before selected rendering;
+this remains an owner-restricted prototype, not a public release.
 
 Reviewed previews also offer optional [centered portrait framing](docs/PORTRAIT_FRAMING.md).
 Fit remains the default; fill crops outer details and requires watching the result.
@@ -26,8 +26,8 @@ This is fixed center cropping, not automatic speaker tracking.
 
 The [polished-video workspace](docs/POLISHED_VIDEO.md) combines reviewed-caption
 text/timing corrections, fixed appearance choices, optional voice leveling and a
-local preset into one render flow. It still needs a prepared English review and
-human recording comparison; no automatic transcription or face tracking is added.
+local preset into one render flow. It needs a saved English review and human recording comparison. Automatic
+transcription is a separate opt-in pilot; face tracking remains planned.
 
 ## Step 1 — Run local or Docker backend
 
@@ -334,3 +334,8 @@ Audio timing: [AUDIO_TIMING_GUIDE.md](docs/AUDIO_TIMING_GUIDE.md) describes dela
 audio alignment and optional low-volume passage guidance for new automatic
 English analyses. Existing reviewed projects remain unchanged; quiet-energy
 estimates are informational and require playback review.
+
+Visual changes: [SCENE_CHANGE_GUIDE.md](docs/SCENE_CHANGE_GUIDE.md) describes optional
+server-side sampled visual-transition guidance for new private English analyses.
+It helps review boundaries without changing source ranges, word timing or voice;
+it is not semantic scene understanding or automatic cutting.

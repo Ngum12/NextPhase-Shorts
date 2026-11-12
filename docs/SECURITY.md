@@ -1,5 +1,15 @@
 # Security / privacy — gating checklist, not completed certification
 
+The optional visual-change decoder uses exact private input/output grants, a
+1-GiB address bound, 60-second wall deadline and 3-MiB kernel file bound. Required
+containment is never disabled for fallback. Temporary sampled pixels are cleaned
+with attempt scratch and never sent to phones/logs; crash remnants retain the
+existing cleanup/encrypted-backup custody. <=32-KiB source-bound numeric metadata
+is owner/claim/deletion/restore fenced and revalidated on read. Unavailable guides
+do not claim zero changes. Old rows/reviews are preserved. See SCENE_CHANGE_GUIDE.md
+for temporal uncertainty, optional failure and remaining host acceptance.
+
+
 The audio timing guide scans only the bounded normalized analysis PCM on the
 server. Optional numeric metadata is source-checksum/duration-bound, <=32 KiB,
 <=360 ordered quiet intervals and at most three minutes of PCM. It is published
