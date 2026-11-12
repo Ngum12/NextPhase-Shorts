@@ -13,13 +13,15 @@ function harness(){
     h.effects.push(()=>{old?.cleanup?.();h.slots[i]={deps,cleanup:effect()};});}}
  };react.default=react;
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
+ const detailExports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/clipSelection.ts'),'utf8'),
+  {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:detailExports});
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
   '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate,captionStyle,framing)=>{
     h.calls.push({preview:id,token,revision,candidate,captionStyle,framing});if(h.previewError)throw h.previewError;
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
-  '../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
+  '../../src/clipSelection':detailExports,'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
    getEnglishAnalysis:async(id,token)=>{h.calls.push({get:id,token});if(h.getError)throw h.getError;return h.delayedGet?h.delayedGet:structuredClone(h.value);},
@@ -156,4 +158,25 @@ test('adjusted model timing is disclosed before transcript review',async()=>{
  const h=harness();h.value.proposal.warnings=['estimated_timestamps','adjusted_word_timestamps'];
  await h.flush();assert(h.text().includes('Some estimated word times were adjusted slightly'));
  assert.equal(h.button('Save review and find clips').props.disabled,true);
+});
+
+
+test('selected option shows nearby source context and transparent selection limits',async()=>{
+ const h=harness();h.value.transcript.words=Array.from({length:30},(_,i)=>({text:i===8?'However,':'word'+i,start_ms:i*1000,end_ms:(i+1)*1000,confidence:.9}));
+ h.value.proposal.algorithm='sentence-window-v4-diverse-reviewed';h.value.proposal.candidates=[
+  {first_word:8,last_word:15,source_start_ms:8000,source_end_ms:16000,output_frames:240},
+  {first_word:12,last_word:19,source_start_ms:12000,source_end_ms:20000,output_frames:240}];
+ await h.flush();assert(h.text().includes('Before this clip: word0 word1'));
+ assert(h.text().includes('After this clip: word16 word17'));
+ assert(h.text().includes('This opening may refer to an earlier point'));
+ assert(h.text().replace(/\s+/g,' ').includes('Shares some footage with option(s) 2'));
+ assert(h.text().includes('These rules do not judge meaning or predict popularity'));
+ assert(!h.calls.some(c=>c.preview));
+});
+
+test('legacy suggestions do not claim the new diversity rules',async()=>{
+ const h=harness();h.value.proposal.algorithm='sentence-window-v3-reviewed';
+ h.value.proposal.candidates=[{first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360}];
+ await h.flush();assert(!h.text().includes('reduce near-duplicate ranges'));
+ assert(h.text().includes('first transcribed word')&&h.text().includes('last transcribed word'));
 });

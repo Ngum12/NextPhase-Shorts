@@ -19,7 +19,7 @@ export type EnglishAnalysis = {
   polished_preview_supported?:boolean;
   transcript:{language:'en'; source_sha256:string; source_duration_ms:number; words:ReviewWord[]};
   review:TranscriptReview|null;
-  proposal:{requested_seconds:number; candidates:ClipCandidate[]; warnings:string[]};
+  proposal:{algorithm?:string; requested_seconds:number; candidates:ClipCandidate[]; warnings:string[]};
 };
 
 function validated(value:any):EnglishAnalysis {

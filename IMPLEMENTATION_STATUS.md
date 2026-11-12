@@ -1,5 +1,40 @@
 # Implementation Status — 2026-11-10
 
+## Clearer clip-selection package — 2026-11-12
+
+Owner confirmed the deployed English upload → transcription → transcript review
+→ suggestions → polish/render workflow works on the physical phone, including
+the zero-duration word timing fix. This is owner acceptance of that private
+workflow, not a broader recognition-quality, semantic or production benchmark.
+
+Continued the functional roadmap with one grouped selection package: reviewed
+options reduce near-duplicate source ranges, opening excerpts make alternatives
+easier to compare, and selected clips show nearby transcript context, shared
+footage, confirmed-word counts and a conservative context-opening reminder. No
+full UI redesign or external language model was added. Technical confidence,
+estimated speech coverage, duration and temporal overlap are disclosed rules;
+meaning/popularity are not scored or approved. Original words, voice and source
+intervals remain unchanged, and rendering still requires reviewed annotations.
+
+The v4 reviewed planner selects at most five valid existing sentence windows with
+bounded deterministic overlap penalties/suppression. New review revisions bind
+the exact plan so option reordering cannot reuse an old preview/polish intent.
+Legacy reviews stay readable and unchanged on GET; explicit resave upgrades their
+selection. Lost-save replies and old rendered-preview key replays are preserved,
+while stale new requests and altered plan identities remain refused. No database
+migration, model download or new credentials are needed. See CLIP_SELECTION.md
+for the single VPS/mobile update and existing-source review workflow.
+
+Validation: 607 backend tests passed on each SQLite and PostgreSQL; 134 mobile
+tests, TypeScript and Android export passed. Coverage includes deterministic
+diversity, strict reviewed windows, legacy revisions, plan-change/stale fencing,
+lost-save/old-preview replay, bounded inert context and truthful new/legacy copy.
+A real synthetic seven-second MP4 rendered option 2 from source seconds 1–6 to a
+verified five-second vertical output through the worker. New live-VPS/physical-
+phone selection acceptance remains post-merge; no customer footage, external
+provider calls, paid activation or live service changes occurred here.
+
+
 ## Zero-duration ASR word validation fix — 2026-11-12
 
 Owner's deployed analysis completed source-copy and audio-extraction stages but

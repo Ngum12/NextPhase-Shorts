@@ -45,8 +45,10 @@ def owned_project(db, owner, job_id):
     return job
 
 
-def revision_for(transcript, review):
+def revision_for(transcript, review, proposal=None):
     content = fingerprint(transcript) + ':' + (fingerprint(review) if review else 'unreviewed')
+    if proposal is not None and proposal.algorithm=='sentence-window-v4-diverse-reviewed':
+        content += ':plan:'+fingerprint(proposal)
     return hashlib.sha256(content.encode()).hexdigest()
 
 
@@ -96,7 +98,7 @@ def document(row):
             or proposal.source_sha256 != transcript.source_sha256
             or proposal.review_sha256 != (fingerprint(review) if review else None)
             or proposal.transcript_sha256 != (fingerprint(transcript) if review else None)
-            or row.revision != revision_for(transcript, review)):
+            or row.revision != revision_for(transcript, review, proposal)):
         raise RuntimeError('Stored analysis identity differs')
     return {'job_id': row.job_id, 'revision': row.revision,
         'transcript_sha256': fingerprint(transcript),
@@ -257,15 +259,15 @@ def save_review(job_id: str, payload: SaveReview, response: Response,
         review = validate_review(transcript, payload.review)
     except ValueError:
         raise HTTPException(422, 'Review does not match this transcript', headers=PRIVATE) from None
-    revision = revision_for(transcript, review)
     if payload.revision != row.revision:
         # A lost success response may be retried; a different newer edit is fenced.
-        if row.revision == revision:
+        if row.review_json and fingerprint(TranscriptReview.model_validate_json(row.review_json))==fingerprint(review):
             result = document(row)
             db.commit()
             return result
         raise HTTPException(409, 'This review changed. Refresh before saving again.', headers=PRIVATE)
     plan = propose(transcript, job.desired_seconds, review=review)
+    revision=revision_for(transcript,review,plan)
     row.review_json = review.model_dump_json()
     row.proposal_json = plan.model_dump_json()
     row.revision = revision
