@@ -3,6 +3,7 @@ import {Alert,Pressable,ScrollView,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {useAuth} from '../../src/auth';
 import {ApiError} from '../../src/api';
+import {sceneContext} from '../../src/sceneAnalysis';
 import {quietMilliseconds} from '../../src/audioTiming';
 import {clipContext} from '../../src/clipSelection';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
@@ -95,6 +96,7 @@ export default function EnglishReview() {
     .filter(({word})=>word.confidence!==null&&word.confidence<.45)||[];
   const chosen=data?.proposal.candidates[selected];
   const context=data?clipContext(data,selected):null;
+  const visual=data&&chosen?sceneContext(data.scene_analysis,chosen.source_start_ms,chosen.source_end_ms):null;
   return <Page><ScrollView contentContainerStyle={{paddingTop:20,paddingBottom:40,gap:18}}>
     <Title>Review English clips</Title>
     {!englishReviewVisible?<Body>The English review pilot is not enabled in this app.</Body>:<>
@@ -109,6 +111,15 @@ export default function EnglishReview() {
           {data.audio_timing.quiet_intervals.slice(0,5).map((interval,i)=><Body key={i}>Quiet: {(interval.start_ms/1000).toFixed(1)}–{(interval.end_ms/1000).toFixed(1)} seconds.</Body>)}
           {data.audio_timing.quiet_intervals.length>5&&<Body>Showing the first five quiet passages.</Body>}
           <Body>These are low-volume estimates. Background noise or music can hide pauses; check the recording in playback.</Body>
+        </View>}
+        {data.scene_analysis&&<View style={s.card}><Text style={s.cardTitle}>Visual change guide</Text>
+          {data.scene_analysis.status==='available'?<>
+            <Body>Sampled through {(data.scene_analysis.analyzed_duration_ms/1000).toFixed(1)} seconds of the video.</Body>
+            <Body>{data.scene_analysis.changes.length?`${data.scene_analysis.changes.length} possible visual change(s) found.`:'No large visual changes were detected in these samples.'}</Body>
+            {data.scene_analysis.changes.slice(0,5).map((event,i)=><Body key={i}>Possible change around {(event.at_ms/1000).toFixed(1)} seconds.</Body>)}
+            {data.scene_analysis.changes.length>5&&<Body>Showing the first five possible changes.</Body>}
+            <Body>These are sampled estimates. Flashes, movement and lighting can trigger them; check playback before changing a cut.</Body>
+          </>:<Body>Visual guidance could not be prepared for this analysis. You can still review the transcript and render clips.</Body>}
         </View>}
         <View style={s.card}><Text style={s.cardTitle}>1. Mark sentence endings</Text>
           <Body>Tap the last word of each complete sentence. A marked word shows ■. Tap again to undo.</Body>
@@ -153,6 +164,12 @@ export default function EnglishReview() {
             </View>)}
             {chosen&&<>
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
+              {visual&&<>
+                <Body>Possible visual changes inside this option: {visual.inside}.</Body>
+                {visual.nearStart!==null&&<Body>A possible visual change is near the start, around {(visual.nearStart/1000).toFixed(1)} seconds in the recording.</Body>}
+                {visual.nearEnd!==null&&<Body>A possible visual change is near the end, around {(visual.nearEnd/1000).toFixed(1)} seconds in the recording.</Body>}
+                {visual.partial&&<Body>The visual guide covers only part of this option. Check the remaining part in playback.</Body>}
+              </>}
               {data.audio_timing&&chosen.source_end_ms>data.audio_timing.audio_duration_ms&&<Body>Audio timing covers only part of this option. Check the remaining part in playback.</Body>}
               {data.audio_timing&&<Body>Detected quiet audio inside this option: {(quietMilliseconds(data.audio_timing,chosen.source_start_ms,chosen.source_end_ms)/1000).toFixed(1)} seconds.</Body>}
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>

@@ -1,5 +1,44 @@
 # Implementation Status — 2026-11-10
 
+## Sampled visual-change guide — 2026-11-13
+
+Owner reported the deployed audio timing guide works on the phone. Continued
+Phase 3 with a source-bound, optional visual-change guide for new automatic
+analyses, keeping the original media/voice, reviewed word times and selected cuts.
+
+The server creates a temporary 64×36 RGB proxy at 2 fps under required decoder
+isolation. Adjacent-frame channel differences and fixed one-second grouping flag
+possible visual changes; this is coarse sampling, not scene semantics, face
+tracking or automatic editing. New review displays sampled coverage, at most five
+timestamps and changes near the selected option's start/end. Motion/flashes and
+missed subtle changes are disclosed. Handled visual failures report unavailable
+rather than zero-change evidence and can preserve valid transcript review.
+
+Added a separate 1-GiB virtual-address bound for the optional decoder, alongside
+60-second wall, 3-MiB kernel file, CPU and existing filesystem/network limits.
+Defaults for other decoders remain unchanged. No new model, key, provider, native
+dependency or phone-heavy processing is needed. Temporary RGB frames stay in the
+private attempt and are cleaned; crash remnants keep existing cleanup/backup
+custody. Fixed stage telemetry contains no pixels or transcript payloads.
+
+Migration 0025_scene_analysis adds nullable <=32-KiB numeric source-bound metadata
+to the existing analysis row. Source/owner/claim/deletion/restore protections and
+private headers remain; old reviews, plan identities and rendered clips are not
+rewritten. Only new automatic analyses gain the guide. See SCENE_CHANGE_GUIDE.md
+for the single update and one phone check.
+
+Validation: 645 backend tests passed on each SQLite and PostgreSQL; 161 mobile
+tests, TypeScript and Android export passed. Coverage includes real hard-cut
+decoding, bounded/ordered metadata, kernel memory/file limits, cancellation versus
+optional fallback, source/owner/deletion custody, legacy migration and real
+FFmpeg/executable-fixture publication with available/unavailable guidance. An
+original six-second black→white MP4 yielded twelve samples and a change at second
+3 without changing its hash or retaining the proxy. Evidence is at
+/workspace/artifacts/scene-analysis/. Real protected-VPS/scene-quality and physical-
+phone acceptance remain post-merge; no customer recordings or paid activation
+were used here.
+
+
 ## Audio timing and quiet-passage guide — 2026-11-12
 
 Owner confirmed the deployed clip-selection/context package works on the phone.

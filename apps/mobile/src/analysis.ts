@@ -1,3 +1,4 @@
+import {validSceneAnalysis,type SceneAnalysis} from './sceneAnalysis';
 import {validAudioTiming,type AudioTiming} from './audioTiming';
 import {api, authenticatedFetch, BASE, extract} from './api';
 
@@ -19,6 +20,7 @@ export type EnglishAnalysis = {
   portrait_framing_supported?:boolean;
   polished_preview_supported?:boolean;
   audio_timing?:AudioTiming|null;
+  scene_analysis?:SceneAnalysis|null;
   transcript:{language:'en'; source_sha256:string; source_duration_ms:number; words:ReviewWord[]};
   review:TranscriptReview|null;
   proposal:{algorithm?:string; requested_seconds:number; candidates:ClipCandidate[]; warnings:string[]};
@@ -53,6 +55,8 @@ function validated(value:any):EnglishAnalysis {
   }
   if(value.audio_timing!=null&&!validAudioTiming(value.audio_timing,value.transcript.source_sha256,duration))
     throw new Error('Audio timing could not be verified. Refresh and try again.');
+  if(value.scene_analysis!=null&&!validSceneAnalysis(value.scene_analysis,value.transcript.source_sha256,duration))
+    throw new Error('Visual change guidance could not be verified. Refresh and try again.');
   if(value.review!==null) {
     const review=value.review;
     if(review?.schema_version!=='transcript-review-1' ||

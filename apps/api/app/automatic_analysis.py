@@ -178,7 +178,7 @@ def cancel(job_id:str,response:Response,user:User=Depends(current_user),db:Sessi
     db.flush();result=state(db,parent);response.headers.update(PRIVATE);db.commit();return result
 
 
-def publish(job,transcript,wall_seconds,*,audio_timing=None):
+def publish(job,transcript,wall_seconds,*,audio_timing=None,scene_analysis=None):
     from .project_analysis import import_transcript
     with SessionLocal.begin() as db:
         lock_owner(db,job['user_id'],allow_deleted=True)
@@ -188,7 +188,7 @@ def publish(job,transcript,wall_seconds,*,audio_timing=None):
         if not child:return False
         parent=owned_project(db,job['user_id'],job['preview_parent_id'])
         require_enabled(job['user_id'])
-        if db.get(ProjectAnalysis,parent.id) is None:import_transcript(db,owner=parent.user_id,job_id=parent.id,transcript=transcript,audio_timing=audio_timing)
+        if db.get(ProjectAnalysis,parent.id) is None:import_transcript(db,owner=parent.user_id,job_id=parent.id,transcript=transcript,audio_timing=audio_timing,scene_analysis=scene_analysis)
         child.status='succeeded';child.output_path=None;child.output_duration_seconds=None;child.finished_at=now
         child.lease_expires_at=None;child.claim_deadline_at=None;child.next_attempt_at=None
         db.execute(update(RenderAttempt).where(RenderAttempt.id==job['claim_token'],RenderAttempt.status=='running')

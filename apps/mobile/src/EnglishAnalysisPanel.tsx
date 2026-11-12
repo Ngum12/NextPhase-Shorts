@@ -39,11 +39,11 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       <Body>Your transcript is ready. Check the words and sentence endings before choosing clips.</Body>
       <Button title="Review English clips" disabled={disabled||busy} onPress={()=>router.push({pathname:'/review/[id]',params:{id}})}/>
     </>:<>
-      <Body>{active?(state.task!.status==='queued'?'Transcription is queued. You may leave this screen.':'Transcribing on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?'Transcription failed. Your video is preserved. You can retry.':state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
+      <Body>{active?(state.task!.status==='queued'?'English analysis is queued. You may leave this screen.':'Analyzing your recording on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?'Transcription failed. Your video is preserved. You can retry.':state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
       {(active||waiting)?<Button title={busy?'Please wait…':'Cancel English analysis'} disabled={disabled||busy} onPress={()=>action(true)} secondary/>:
         state.eligible&&<Button title={busy?'Please wait…':state.task?'Retry English analysis':'Find English clips'} disabled={disabled||busy} onPress={()=>{
           const current=generation.current;
-          Alert.alert('Analyze your English recording?','The server will transcribe this video locally. Check the transcript, sentence endings and suggested clips before rendering. This does not publish your video.',[
+          Alert.alert('Analyze your English recording?','The server will transcribe this video and check visual changes using temporary samples. Check the transcript, sentence endings and suggested clips before rendering. This does not publish your video.',[
             {text:'Not now',style:'cancel'},{text:'Analyze recording',onPress:()=>{if(current===generation.current)action();}},
           ]);
         }}/>}

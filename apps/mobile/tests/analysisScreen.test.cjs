@@ -15,6 +15,7 @@ function harness(){
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
  const detailExports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/clipSelection.ts'),'utf8'),
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:detailExports});
+ const visual={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/sceneAnalysis.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:visual});
  const timing={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/audioTiming.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:timing});
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
@@ -22,7 +23,7 @@ function harness(){
     h.calls.push({preview:id,token,revision,candidate,captionStyle,framing});if(h.previewError)throw h.previewError;
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
-  '../../src/audioTiming':timing,'../../src/clipSelection':detailExports,'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
+  '../../src/sceneAnalysis':visual,'../../src/audioTiming':timing,'../../src/clipSelection':detailExports,'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
    getEnglishAnalysis:async(id,token)=>{h.calls.push({get:id,token});if(h.getError)throw h.getError;return h.delayedGet?h.delayedGet:structuredClone(h.value);},
@@ -192,4 +193,21 @@ test('audio guide shows bounded quiet passages and selected-range summary only w
  h.value.audio_timing.audio_duration_ms=10000;await h.button('Refresh review').props.onPress();await h.flush();
  assert(h.text().includes('Audio timing covers only part of this option'));
  const old=harness();await old.flush();assert(!old.text().includes('Audio timing guide'));
+});
+
+
+test('visual guidance shows source changes near selected start/end without changing the option',async()=>{
+ const h=harness();h.value.transcript.words=Array.from({length:20},(_,i)=>({text:'word'+i,start_ms:i*1000,end_ms:(i+1)*1000,confidence:.9}));
+ h.value.scene_analysis={status:'available',sample_count:40,analyzed_duration_ms:20000,changes:[{at_ms:1500,delta_milli:800},{at_ms:6500,delta_milli:900}]};
+ h.value.proposal.candidates=[{first_word:1,last_word:6,source_start_ms:1000,source_end_ms:7000,output_frames:180}];
+ await h.flush();assert(h.text().includes('Visual change guide'));
+ assert(h.text().includes('near the start')&&h.text().includes('near the end'));
+ assert(h.text().includes('Flashes, movement and lighting'));
+ assert.equal(h.value.proposal.candidates[0].source_start_ms,1000);assert(!h.calls.some(c=>c.preview));
+});
+test('unavailable visual guide preserves words and does not assert zero changes',async()=>{
+ const h=harness();h.value.scene_analysis={status:'unavailable',issue:'decode_or_resource_limit',sample_count:0,analyzed_duration_ms:0,changes:[]};
+ await h.flush();assert(h.text().includes('Visual guidance could not be prepared'));
+ assert(h.text().includes('Original'));assert(!h.text().includes('No large visual changes'));
+ const old=harness();await old.flush();assert(!old.text().includes('Visual change guide'));
 });

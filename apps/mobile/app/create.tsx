@@ -140,7 +140,7 @@ export default function Create() {
       </View>
       {englishAvailable&&<Pressable accessibilityRole="checkbox" accessibilityState={{checked:english,disabled:busy}} disabled={busy} onPress={()=>setEnglish(v=>!v)} style={s.card}>
         <Text style={s.cardTitle}>{english?'☑':'☐'} Find English clips after upload</Text>
-        <Body>I agree to local server transcription of this English recording (up to three minutes). I will check the transcript and clip suggestions before rendering them. Longer uploads keep the baseline render.</Body>
+        <Body>I agree to server transcription and visual analysis of this English recording (up to three minutes). I will check the transcript and clip suggestions before rendering them. Longer uploads keep the baseline render.</Body>
       </Pressable>}
       <Button title={busy?'Saving your upload…':'Upload and start cloud render'} disabled={busy||loading||verificationNeeded||!rights||!ownerId||!asset||!title.trim()} onPress={submit}/>
     </>}

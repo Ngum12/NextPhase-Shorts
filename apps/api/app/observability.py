@@ -10,7 +10,7 @@ import time
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-STAGES={'http_upload','http_download','http_control','attempt','source_fetch','source_probe','encode','output_probe','output_publish','audio_extract','audio_timing','transcribe','planning'}
+STAGES={'http_upload','http_download','http_control','attempt','source_fetch','source_probe','encode','output_probe','output_publish','scene_analysis','audio_extract','audio_timing','transcribe','planning'}
 FIELDS={'wall_seconds','cpu_seconds_lower_bound','rss_bytes_sampled_max','frames','frames_per_second',
         'received_bytes','sent_bytes','storage_read_bytes','storage_write_bytes','http_status','io_complete'}
 current=ContextVar('nextphase_trace',default=None)

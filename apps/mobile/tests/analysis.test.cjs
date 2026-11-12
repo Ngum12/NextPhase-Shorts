@@ -17,8 +17,9 @@ function fixture(){
   authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});if(state.error)throw state.error;return structuredClone(state.value);},extract:async response=>response};
  const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/analysis.ts'),'utf8'),
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const visual={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/sceneAnalysis.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:visual});
  const timing={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/audioTiming.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:timing});
- const exports={};vm.runInNewContext(code,{exports,require:name=>name==='./audioTiming'?timing:api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
+ const exports={};vm.runInNewContext(code,{exports,require:name=>name==='./sceneAnalysis'?visual:name==='./audioTiming'?timing:api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
  return {actions:exports,state,calls};
 }
 test('review reads the authenticated project route without altering source data',async()=>{
@@ -86,4 +87,32 @@ for(const [name,mutate] of Object.entries({
 }))test('invalid audio timing refuses '+name,async()=>{
  const f=fixture();f.state.value.audio_timing=timing();mutate(f.state.value.audio_timing);
  await assert.rejects(f.actions.getEnglishAnalysis('project-1','token'),/Audio timing could not be verified/);
+});
+
+
+function scenes(){return {schema_version:'scene-analysis-1',source_sha256:'c'.repeat(64),source_duration_ms:15000,
+ status:'available',issue:null,method:'sampled_rgb_difference',alignment:'ffmpeg_fps_start_zero',sample_interval_ms:500,
+ proxy_width:64,proxy_height:36,threshold_milli:180,minimum_gap_ms:1000,sample_count:30,analyzed_duration_ms:15000,
+ changes:[{at_ms:3000,delta_milli:800}]};}
+test('visual metadata is optional and unavailable guidance still permits transcript review',async()=>{
+ const f=fixture();f.state.value.scene_analysis=scenes();
+ assert.equal((await f.actions.getEnglishAnalysis('project-1','token')).scene_analysis.changes.length,1);
+ f.state.value.scene_analysis={...scenes(),status:'unavailable',issue:'decode_or_resource_limit',sample_count:0,analyzed_duration_ms:0,changes:[]};
+ assert.equal((await f.actions.getEnglishAnalysis('project-1','token')).scene_analysis.status,'unavailable');
+ f.state.value.scene_analysis=null;assert.equal((await f.actions.getEnglishAnalysis('project-1','token')).scene_analysis,null);
+});
+for(const [name,mutate] of Object.entries({
+ 'foreign source':v=>v.source_sha256='0'.repeat(64),
+ 'wrong duration':v=>v.source_duration_ms=16000,
+ 'too many samples':v=>v.sample_count=33,
+ 'wrong coverage':v=>v.analyzed_duration_ms=9000,
+ 'event outside source':v=>v.changes=[{at_ms:15000,delta_milli:900}],
+ 'off-grid event':v=>v.changes=[{at_ms:1250,delta_milli:900}],
+ 'closely repeated events':v=>v.changes=[{at_ms:1000,delta_milli:900},{at_ms:1500,delta_milli:900}],
+ 'bad delta':v=>v.changes=[{at_ms:1000,delta_milli:1001}],
+ 'different method':v=>v.method='semantic_scene_detection',
+ 'unavailable with false coverage':v=>{v.status='unavailable';v.issue='decode_or_resource_limit';},
+}))test('visual metadata rejects '+name,async()=>{
+ const f=fixture();f.state.value.scene_analysis=scenes();mutate(f.state.value.scene_analysis);
+ await assert.rejects(f.actions.getEnglishAnalysis('project-1','token'),/Visual change guidance could not be verified/);
 });

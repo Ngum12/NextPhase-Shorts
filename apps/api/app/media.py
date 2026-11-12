@@ -31,10 +31,13 @@ def teardown_decoder(process):
     process.wait(timeout=5)
 
 
-def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=()):
+def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=(),address_limit_bytes=None):
     # Read only the explicit guard flag here; decoder-launch tests and tools do
     # not need to initialize server credentials just to construct a subprocess.
     sandbox_required=os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true'
+    if address_limit_bytes is not None and (type(address_limit_bytes) is not int or
+            not 134217728<=address_limit_bytes<=2147483648 or not sys.platform.startswith('linux')):
+        raise MediaError('Bounded decoder needs a supported Linux address limit')
     # No JWT, database, S3, proxy or provider credentials reach the decoder.
     child_env={key:value for key,value in os.environ.items() if key.upper() in
                {'PATH','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR','LANG','LC_ALL'}}
@@ -44,6 +47,8 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=()):
         # Absolute helper path also works with uvicorn --app-dir, which changes
         # sys.path without exporting PYTHONPATH. Isolated Python ignores user sites.
         sandbox=[]
+        if address_limit_bytes is not None and cmd[0]=='ffmpeg' and max_file_bytes is None:
+            raise MediaError('Bounded decoder needs a fixed output file bound')
         if sandbox_required:
             source=cmd[cmd.index('-i')+1] if cmd[0]=='ffmpeg' else cmd[-1]
             output=str(Path(cmd[-1]).resolve()) if cmd[0]=='ffmpeg' else None
@@ -52,19 +57,21 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=()):
                 'read_files':[str(Path(path).resolve(strict=True)) for path in read_files]},separators=(',',':'))]
         child_cmd=[sys.executable,'-I',str(Path(__file__).with_name('render_child.py')),
                    str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),
-                   *(['--file-limit',str(max_file_bytes if cmd[0]=='ffmpeg' else 0)] if sandbox_required else []),*sandbox,*cmd]
+                   *(['--file-limit',str(max_file_bytes if cmd[0]=='ffmpeg' else 0)] if sandbox_required or address_limit_bytes is not None else []),
+                   *(['--address-limit',str(address_limit_bytes)] if address_limit_bytes is not None else []),*sandbox,*cmd]
     elif sandbox_required:
         raise MediaError('Required decoder isolation needs supported Linux')
     kwargs={'start_new_session':True} if os.name=='posix' else {}
     return child_cmd,child_env,kwargs
 
 
-def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=()):
+def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),address_limit_bytes=None):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
     samples=DecoderSamples()
-    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes,read_files)
+    child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes,read_files,
+        **({'address_limit_bytes':address_limit_bytes} if address_limit_bytes is not None else {}))
     # Diagnostics are deliberately discarded: malformed media cannot grow a
     # PIPE buffer without bound or put private source paths into general logs.
     with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:
