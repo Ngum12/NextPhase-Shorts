@@ -3,6 +3,7 @@ import {Alert,Pressable,ScrollView,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {useAuth} from '../../src/auth';
 import {ApiError} from '../../src/api';
+import {quietMilliseconds} from '../../src/audioTiming';
 import {clipContext} from '../../src/clipSelection';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
 import {Body,Button,Loading,Page,Title,s} from '../../src/ui';
@@ -102,6 +103,13 @@ export default function EnglishReview() {
       {loading&&!data&&<Loading/>}
       {data&&loadedScope.current===scope&&<>
         {data.proposal.warnings.includes('adjusted_word_timestamps')&&<Body>Some estimated word times were adjusted slightly because the speech engine gave them no duration. Check the clip cuts and captions against your recording.</Body>}
+        {data.audio_timing&&<View style={s.card}><Text style={s.cardTitle}>Audio timing guide</Text>
+          <Body>Audio checked: {(data.audio_timing.audio_duration_ms/1000).toFixed(1)} seconds.</Body>
+          <Body>{data.audio_timing.quiet_intervals.length?`${data.audio_timing.quiet_intervals.length} quiet passage(s) found. These can help you check clip boundaries.`:'No quiet passages of half a second or longer were detected.'}</Body>
+          {data.audio_timing.quiet_intervals.slice(0,5).map((interval,i)=><Body key={i}>Quiet: {(interval.start_ms/1000).toFixed(1)}–{(interval.end_ms/1000).toFixed(1)} seconds.</Body>)}
+          {data.audio_timing.quiet_intervals.length>5&&<Body>Showing the first five quiet passages.</Body>}
+          <Body>These are low-volume estimates. Background noise or music can hide pauses; check the recording in playback.</Body>
+        </View>}
         <View style={s.card}><Text style={s.cardTitle}>1. Mark sentence endings</Text>
           <Body>Tap the last word of each complete sentence. A marked word shows ■. Tap again to undo.</Body>
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:5}}>
@@ -145,6 +153,8 @@ export default function EnglishReview() {
             </View>)}
             {chosen&&<>
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
+              {data.audio_timing&&chosen.source_end_ms>data.audio_timing.audio_duration_ms&&<Body>Audio timing covers only part of this option. Check the remaining part in playback.</Body>}
+              {data.audio_timing&&<Body>Detected quiet audio inside this option: {(quietMilliseconds(data.audio_timing,chosen.source_start_ms,chosen.source_end_ms)/1000).toFixed(1)} seconds.</Body>}
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
               {context&&<>
                 <Text style={s.cardTitle}>Check the surrounding context</Text>

@@ -19,14 +19,17 @@ def process_analysis(job,source,*,should_cancel):
         with stage('source_fetch'):
             snapshot_source(job,source,should_cancel=should_cancel,spec=spec)
         with stage('audio_extract'):
-            extract_audio(source,audio,should_cancel=should_cancel)
+            extract_audio(source,audio,should_cancel=should_cancel,duration_ms=spec.source_duration_ms)
+        with stage('audio_timing'):
+            from .audio_timing import analyze
+            timing=analyze(audio,source_sha256=spec.source_sha256,source_duration_ms=spec.source_duration_ms,should_cancel=should_cancel)
         with stage('transcribe'):
             transcript=transcribe(audio,MODEL,source.parent,source_sha256=spec.source_sha256,
                 source_duration_ms=spec.source_duration_ms,model_sha256=spec.model_sha256,
                 should_cancel=should_cancel,timeout=get_settings().english_analysis_timeout_seconds)
         if should_cancel():raise MediaCancelled('Analysis cancelled')
         with stage('planning'):
-            return publish(job,transcript,time.monotonic()-began)
+            return publish(job,transcript,time.monotonic()-began,audio_timing=timing)
     except (ValueError,RuntimeError) as error:
         if isinstance(error,(MediaError,MediaCancelled)):raise
         raise MediaError('English analysis could not produce a valid transcript') from None

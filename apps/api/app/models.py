@@ -85,6 +85,7 @@ class ProjectAnalysis(Base):
     __tablename__ = 'project_analyses'
     job_id: Mapped[str] = mapped_column(ForeignKey('render_jobs.id'), primary_key=True)
     transcript_json: Mapped[str] = mapped_column(Text)
+    audio_timing_json: Mapped[str | None] = mapped_column(Text,nullable=True)
     review_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     proposal_json: Mapped[str] = mapped_column(Text)
     revision: Mapped[str] = mapped_column(String(64))

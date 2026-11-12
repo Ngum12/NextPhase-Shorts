@@ -329,3 +329,8 @@ Reviewed clip selection: [CLIP_SELECTION.md](docs/CLIP_SELECTION.md) covers
 diverse source-range alternatives, nearby transcript context and immutable
 plan-bound review revisions. It is a transparent local selection improvement,
 not semantic AI or a final interface redesign.
+
+Audio timing: [AUDIO_TIMING_GUIDE.md](docs/AUDIO_TIMING_GUIDE.md) describes delayed
+audio alignment and optional low-volume passage guidance for new automatic
+English analyses. Existing reviewed projects remain unchanged; quiet-energy
+estimates are informational and require playback review.

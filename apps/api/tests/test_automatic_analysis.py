@@ -145,6 +145,8 @@ def test_worker_pipeline_copies_hashes_decodes_and_cleans_attempt(client,monkeyp
     assert result['ready'] and result['task']['status']=='succeeded',result
     document=client.get(item['url'],headers=item['owner']).json()
     assert document['transcript']['timestamp_quality']=='model_token_estimate_adjusted'
+    assert document['audio_timing']['source_sha256']==item['transcript'].source_sha256
+    assert document['audio_timing']['method']=='pcm_window_energy'
     assert document['transcript']['words'][0]['text']=='Hello.'
     assert 'adjusted_word_timestamps' in document['proposal']['warnings']
     with SessionLocal() as db:

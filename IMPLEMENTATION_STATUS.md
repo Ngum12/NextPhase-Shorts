@@ -1,5 +1,44 @@
 # Implementation Status — 2026-11-10
 
+## Audio timing and quiet-passage guide — 2026-11-12
+
+Owner confirmed the deployed clip-selection/context package works on the phone.
+Continued Phase 3 with normalized analysis-audio timing and bounded low-energy
+evidence, leaving the prototype interface and original voice/media unchanged.
+
+Reproduced a delayed-AAC bug with an original six-second test-pattern/tone clip:
+the old extractor moved voice beginning at source second 2 to WAV second 0
+(65,536 samples; first-second mean-square 7,751,944.19). Fixed 16-kHz resampling
+with first_pts=0 and exact sample/duration caps produced 96,000 samples, zero
+first-second energy and a detected quiet interval at 0–2 seconds; source SHA-256
+was unchanged. Word times are still model estimates, not forced alignment.
+
+A bounded server-only PCM scan finds >=500-ms low-energy runs in 20-ms windows
+at fixed -40 dBFS. Quiet speech may be marked and background sound can hide
+pauses; this is not VAD, diarization or meaning detection. It never automatically
+removes pauses, changes word times, ranks clips or edits audio. New review shows
+checked audio duration, up to five passages and selected-option quiet duration,
+including incomplete-coverage disclosure. No new phone-heavy processing, model,
+provider, key, native dependency or paid activation is needed.
+
+Migration 0024_audio_timing adds nullable <=32-KiB source-bound numeric metadata
+to the existing analysis row. Publication/owner/claim/deletion/restore fences,
+private headers and scratch cleanup are retained; backups follow existing DB
+custody. Existing reviews, plans, timing and rendered outputs are preserved.
+Only new automatic analyses produce this guide; no silent re-transcription or
+bulk re-upload is required. See AUDIO_TIMING_GUIDE.md for one combined update.
+
+Validation: 626 backend tests passed on each SQLite and PostgreSQL; 145 mobile
+tests, TypeScript and Android export passed. Coverage includes delayed AAC timing,
+source integrity, threshold/minimum/interval bounds, cancellation/truncation,
+optional migration/legacy identity, source/owner/deletion custody and the real
+FFmpeg/executable-fixture transcript publication pipeline with timing metadata.
+Mobile tests cover optional/invalid metadata, bounded guide and partial coverage.
+The synthetic proof is at /workspace/artifacts/audio-timing/. Real speech,
+protected-host and physical-phone acceptance of the new filter/guide remains
+post-merge; no live VPS changes or customer recordings were used here.
+
+
 ## Clearer clip-selection package — 2026-11-12
 
 Owner confirmed the deployed English upload → transcription → transcript review

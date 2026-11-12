@@ -52,7 +52,7 @@ def revision_for(transcript, review, proposal=None):
     return hashlib.sha256(content.encode()).hexdigest()
 
 
-def import_transcript(db, *, owner, job_id, transcript):
+def import_transcript(db, *, owner, job_id, transcript, audio_timing=None):
     """Trusted operator/claimed-worker import: bind to the accepted upload's durable full checksum."""
     job = owned_project(db, owner, job_id)
     if job.preview_parent_id is not None:
@@ -66,6 +66,12 @@ def import_transcript(db, *, owner, job_id, transcript):
     if (accepted is None or accepted.source_sha256 != transcript.source_sha256
             or math.ceil(job.source_duration_seconds * 1000) != transcript.source_duration_ms):
         raise ValueError('Transcript differs from accepted project source')
+    if audio_timing is not None:
+        from .audio_timing import AudioTiming
+        audio_timing=AudioTiming.model_validate(audio_timing)
+        if (audio_timing.source_sha256!=transcript.source_sha256
+                or audio_timing.source_duration_ms!=transcript.source_duration_ms):
+            raise ValueError('Audio timing differs from accepted source')
     existing = db.get(ProjectAnalysis, job_id)
     if existing:
         if fingerprint(Transcript.model_validate_json(existing.transcript_json)) != fingerprint(transcript):
@@ -79,9 +85,11 @@ def import_transcript(db, *, owner, job_id, transcript):
     global_count = db.scalar(select(func.count()).select_from(ProjectAnalysis))
     if owner_count >= MAX_OWNER_ROWS or global_count >= MAX_GLOBAL_ROWS:
         raise ValueError('English review metadata capacity is full')
-    disk_available(MAX_TRANSCRIPT_BYTES * 2)
+    from .audio_timing import MAX_BYTES
+    disk_available((MAX_TRANSCRIPT_BYTES+MAX_BYTES) * 2)
     plan = propose(transcript, job.desired_seconds)
     row = ProjectAnalysis(job_id=job_id, transcript_json=transcript.model_dump_json(),
+        audio_timing_json=audio_timing.model_dump_json() if audio_timing is not None else None,
         review_json=None, proposal_json=plan.model_dump_json(), revision=revision_for(transcript, None))
     db.add(row)
     return row
@@ -100,7 +108,14 @@ def document(row):
             or proposal.transcript_sha256 != (fingerprint(transcript) if review else None)
             or row.revision != revision_for(transcript, review, proposal)):
         raise RuntimeError('Stored analysis identity differs')
+    timing=None
+    if row.audio_timing_json is not None:
+        from .audio_timing import AudioTiming
+        timing=AudioTiming.model_validate_json(row.audio_timing_json)
+        if timing.source_sha256!=transcript.source_sha256 or timing.source_duration_ms!=transcript.source_duration_ms:
+            raise RuntimeError('Stored audio timing identity differs')
     return {'job_id': row.job_id, 'revision': row.revision,
+        'audio_timing':timing.model_dump(mode='json') if timing is not None else None,
         'transcript_sha256': fingerprint(transcript),
         'transcript': transcript.model_dump(mode='json'),
         'review': review.model_dump(mode='json') if review else None,

@@ -1,5 +1,14 @@
 # Security / privacy — gating checklist, not completed certification
 
+The audio timing guide scans only the bounded normalized analysis PCM on the
+server. Optional numeric metadata is source-checksum/duration-bound, <=32 KiB,
+<=360 ordered quiet intervals and at most three minutes of PCM. It is published
+under existing owner/claim/deletion fences and retained/deleted with its analysis
+row. No samples enter this metadata, general logs or phone processing. Old rows
+remain unchanged. Quiet energy is informational, with no automatic cuts or speech
+approval; see AUDIO_TIMING_GUIDE.md for source-clock and coverage limitations.
+
+
 Reviewed clip diversity operates only over already bounded source windows and
 never changes their text/timing. New v4 review revisions additionally bind the
 canonical proposal, fencing changed option order against stale preview/polish

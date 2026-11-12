@@ -45,26 +45,29 @@ def verified_artifact(path, expected, *, maximum):
     return path
 
 
-def extract_audio(source, destination, *, timeout=120,should_cancel=lambda:False):
+def extract_audio(source, destination, *, timeout=120,should_cancel=lambda:False,duration_ms=600000):
     """Bounded file-only decode of one accepted video, mono 16-kHz PCM WAV."""
+    if type(duration_ms) is not int or not 1<=duration_ms<=600000:
+        raise AnalysisUnavailable('Unsupported analysis audio duration')
     source = regular_file(source, maximum=314572800)
     destination = Path(destination)
     descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     os.close(descriptor)
-    limit = 600*16000*2+4096
+    limit = duration_ms*32+4096
     def size_guard():
         if destination.stat().st_size > limit:
             raise AnalysisUnavailable('Analysis audio exceeds bound')
         return should_cancel()
     try:
         run_render(['ffmpeg','-nostdin','-v','error','-y','-max_alloc','67108864',
-            *input_args(),'-i',str(source),'-t','600','-map','0:a:0','-vn','-ac','1',
+            *input_args(),'-i',str(source),'-t',f'{duration_ms/1000:.3f}','-map','0:a:0','-vn','-ac','1',
+            '-af',f'aresample=16000:async=1:first_pts=0,atrim=end_sample={duration_ms*16}',
             '-ar','16000','-c:a','pcm_s16le','-f','wav',str(destination)],
             timeout,size_guard,max_file_bytes=limit)
         with wave.open(str(destination),'rb') as audio:
             if (audio.getnchannels(),audio.getsampwidth(),audio.getframerate()) != (1,2,16000):
                 raise AnalysisUnavailable('Unexpected audio profile')
-            if not 0 < audio.getnframes() <= 600*16000:
+            if not 0 < audio.getnframes() <= duration_ms*16:
                 raise AnalysisUnavailable('Analysis audio duration exceeds bound')
     except BaseException:
         destination.unlink(missing_ok=True)
