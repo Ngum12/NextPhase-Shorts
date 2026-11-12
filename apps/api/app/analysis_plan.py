@@ -40,7 +40,7 @@ class Transcript(ClosedModel):
     provider: Literal['manual', 'whisper_cpp']
     model_sha256: Digest | None = None
     engine_sha256: Digest | None = None
-    timestamp_quality: Literal['operator_supplied', 'model_token_estimate']
+    timestamp_quality: Literal['operator_supplied', 'model_token_estimate', 'model_token_estimate_adjusted']
     words: tuple[Word, ...] = Field(max_length=5000)
 
     @model_validator(mode='after')
@@ -51,7 +51,7 @@ class Transcript(ClosedModel):
                 raise ValueError('Words must be ordered, nonoverlapping and inside source')
             cursor = word.end_ms
         if self.provider == 'whisper_cpp':
-            if not self.model_sha256 or not self.engine_sha256 or self.timestamp_quality != 'model_token_estimate':
+            if not self.model_sha256 or not self.engine_sha256 or self.timestamp_quality not in ('model_token_estimate','model_token_estimate_adjusted'):
                 raise ValueError('Model transcripts require artifact identity and timestamp disclosure')
         elif self.model_sha256 or self.engine_sha256 or self.timestamp_quality != 'operator_supplied':
             raise ValueError('Manual input cannot claim model provenance')
@@ -92,7 +92,7 @@ class Proposal(ClosedModel):
     transcript_sha256: Digest | None = None
     review_sha256: Digest | None = None
     candidates: tuple[Candidate, ...] = Field(max_length=5)
-    warnings: tuple[Literal['manual_transcript', 'estimated_timestamps', 'confidence_unavailable',
+    warnings: tuple[Literal['manual_transcript', 'estimated_timestamps', 'adjusted_word_timestamps', 'confidence_unavailable',
                             'no_speech', 'no_complete_window', 'low_confidence_excluded',
                             'human_reviewed_boundaries', 'human_confirmed_words'], ...]
 
@@ -129,6 +129,8 @@ def propose(transcript: Transcript, requested_seconds: int, *, review=None) -> P
     if type(requested_seconds) is not int or not 5 <= requested_seconds <= 60:
         raise ValueError('Requested duration must be an integer from 5 to 60')
     warnings = ['manual_transcript' if transcript.provider == 'manual' else 'estimated_timestamps']
+    if transcript.timestamp_quality=='model_token_estimate_adjusted':
+        warnings.append('adjusted_word_timestamps')
     confirmed = set()
     sentence_ends = ()
     identities = {}

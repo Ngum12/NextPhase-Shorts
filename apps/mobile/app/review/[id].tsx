@@ -99,6 +99,7 @@ export default function EnglishReview() {
       {!!error&&<Text accessibilityRole="alert" style={{color:c.warning}}>{error}</Text>}
       {loading&&!data&&<Loading/>}
       {data&&loadedScope.current===scope&&<>
+        {data.proposal.warnings.includes('adjusted_word_timestamps')&&<Body>Some estimated word times were adjusted slightly because the speech engine gave them no duration. Check the clip cuts and captions against your recording.</Body>}
         <View style={s.card}><Text style={s.cardTitle}>1. Mark sentence endings</Text>
           <Body>Tap the last word of each complete sentence. A marked word shows ■. Tap again to undo.</Body>
           <View style={{flexDirection:'row',flexWrap:'wrap',gap:5}}>

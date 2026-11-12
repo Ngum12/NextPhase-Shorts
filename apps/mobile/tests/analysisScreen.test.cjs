@@ -150,3 +150,10 @@ test('saved selected clips open the combined polish workspace with bound revisio
  assert.equal(route.params.candidate,'1');
  h.check('Word 2:').props.onPress();await h.flush();assert(!h.button('Polish selected clip'));
 });
+
+
+test('adjusted model timing is disclosed before transcript review',async()=>{
+ const h=harness();h.value.proposal.warnings=['estimated_timestamps','adjusted_word_timestamps'];
+ await h.flush();assert(h.text().includes('Some estimated word times were adjusted slightly'));
+ assert.equal(h.button('Save review and find clips').props.disabled,true);
+});

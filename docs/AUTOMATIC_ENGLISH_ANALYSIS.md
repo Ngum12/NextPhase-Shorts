@@ -115,3 +115,28 @@ cannot fetch the real model under its network policy. Actual protected inference
 English accuracy/latency under VPS load and physical phone acceptance therefore
 remain post-merge checks on the operator's existing verified model. These tests do
 not constitute public production, ASR quality or commercial/legal clearance.
+
+## Zero-duration word timing repair — 2026-11-12
+
+A protected VPS run decoded the recording and ran the native engine successfully,
+but failed when a recognized word had equal start/end model timestamps. The
+adapter now preserves every recognized word and its score, and can make minimal
+positive intervals for that specific case. A forward/backward boundary pass keeps
+all words inside the source and nonoverlapping; no endpoint may move by more than
+20 ms (two Whisper timestamp ticks). Positive-length intervals must already be
+ordered/nonoverlapping. Backward order, excessive adjustment, invalid metadata,
+text/control errors or insufficient source time still fail closed. Strict Word
+and Transcript contracts continue rejecting zero-length or overlapping intervals.
+
+Adjusted transcripts explicitly use `model_token_estimate_adjusted`; proposals
+carry `adjusted_word_timestamps`, and mobile review displays a plain-language
+warning to check cuts/captions. This is bounded estimate repair, not forced
+alignment, measured word timing or verified meaning. Existing valid transcripts
+retain identical serialization/hashes; existing human review is not rewritten.
+No speech/audio is edited by this repair.
+
+After merge, use the usual backup-first updater with `--apply` (no new model,
+credentials or database migration). Pull the phone checkout for the additional
+review warning. Then tap **Retry English analysis** on the existing source
+project; no re-upload or transcript export is needed. Recognition against the
+owner's recording remains a live acceptance check after the update.

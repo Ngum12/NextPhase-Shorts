@@ -1,5 +1,34 @@
 # Implementation Status — 2026-11-10
 
+## Zero-duration ASR word validation fix — 2026-11-12
+
+Owner's deployed analysis completed source-copy and audio-extraction stages but
+failed transcription validation. A generated-silence test on the protected VPS
+confirmed native engine exit 0 with JSON output; the private recording diagnostic
+then reported the strict Word validator's invalid interval/text error. Parser
+construction already excludes blank words and rejects control characters
+separately, identifying a zero-duration merged word estimate as the failing case.
+
+Added bounded zero-width model timing repair, preserving all recognized text,
+order and confidence. Neighboring endpoints can move at most 20 ms; backward
+order, pre-existing positive-interval overlap, excessive shifts and insufficient
+source time remain refused. Strict Word/Transcript validation remains unchanged
+for intervals, with an explicit new adjusted-estimate provenance value. Proposals
+and mobile review disclose adjusted timing; human word/boundary/cut review remains
+required. Existing valid transcript fingerprints are regression-locked, so stored
+reviews are preserved. No model, credentials, native containment, audio processing
+or database schema changes are required. See AUTOMATIC_ENGLISH_ANALYSIS.md.
+
+Validation: 601 backend tests passed on each SQLite and PostgreSQL; 129 mobile
+tests, TypeScript and Android export passed. Regression cases cover first/middle/
+last/consecutive zero-width words, adjustment/source bounds, refusing pre-existing
+positive overlap or backward timing, preserving original valid fingerprints, and
+real FFmpeg plus a zero-width executable-fixture transcript through publication.
+The owner's recording remains private on the VPS and has not been tested here.
+Post-merge matching-image update and retry on its existing source project remain
+live acceptance steps.
+
+
 ## Automatic English analysis package — 2026-11-12
 
 Continued the functional roadmap rather than redesigning the prototype UI. Added

@@ -31,6 +31,13 @@ read grants in the private attempt; output write/network/credential restrictions
 remain. Caption job specs follow existing deletion/backup custody rules. See
 CLEAN_CAPTION_PREVIEWS.md for timing, cleanup and exported-copy limits.
 
+Zero-duration Whisper word estimates may be repaired only within 20 ms per
+endpoint, preserving words/scores and strict final source/order/interval bounds.
+Existing positive timing must already be nonoverlapping. Adjusted provenance and
+a review warning disclose this approximation; excessive/backward/invalid timing
+is still refused. Manual transcripts and already valid transcript hashes are
+unchanged. This does not approve caption timing, cuts or meaning automatically.
+
 ## Experimental local analysis boundary — 2026-11-11
 
 The separate English project-review preparation adds authenticated owner-only

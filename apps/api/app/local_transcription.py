@@ -72,6 +72,43 @@ def extract_audio(source, destination, *, timeout=120,should_cancel=lambda:False
     return destination
 
 
+def model_word_intervals(words, duration_ms):
+    """Repair zero-width model estimates only, with at most two 10-ms ticks.
+
+    Preserve words/scores/order. Positive intervals must already be nonoverlapping;
+    unrelated bad timing is not repaired. Small neighboring endpoints may move by
+    <=20 ms to leave each recognized word a positive interval inside the source.
+    These remain disclosed estimates, never acoustic alignment or verified cuts.
+    """
+    if not any(word['start_ms']==word['end_ms'] for word in words):
+        return words,False
+    cursor=0;previous_start=0
+    for word in words:
+        start,end=word['start_ms'],word['end_ms']
+        if start<previous_start or (end>start and start<cursor):
+            raise AnalysisUnavailable('ASR word timing is not safely ordered')
+        previous_start=start
+        if end>start:cursor=end
+    repaired=[dict(word) for word in words]
+    cursor=0
+    for word in repaired:
+        word['start_ms']=max(word['start_ms'],cursor)
+        word['end_ms']=max(word['end_ms'],word['start_ms']+1)
+        cursor=word['end_ms']
+    # A zero-width final word at the source boundary borrows only bounded time
+    # from its preceding estimate, never from outside the recording.
+    cursor=duration_ms
+    for word in reversed(repaired):
+        word['end_ms']=min(word['end_ms'],cursor)
+        word['start_ms']=min(word['start_ms'],word['end_ms']-1)
+        cursor=word['start_ms']
+    for before,after in zip(words,repaired):
+        if (after['start_ms']<0 or after['end_ms']>duration_ms
+                or max(abs(before[key]-after[key]) for key in ('start_ms','end_ms'))>20):
+            raise AnalysisUnavailable('ASR zero-width timing exceeds repair bound')
+    return repaired,True
+
+
 def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sha256, engine_sha256):
     if data.get('params',{}).get('translate') is not False or data.get('result',{}).get('language') != language:
         raise AnalysisUnavailable('Unexpected ASR language or translation mode')
@@ -125,7 +162,7 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
                 raise AnalysisUnavailable('Invalid ASR token probability')
             starts_word=text[0].isspace() and pending is not None
             if starts_word:
-                words.append(Word(**pending))
+                words.append(pending)
                 pending=None
             if pending is None:
                 pending={'text':piece,'start_ms':start,'end_ms':end,'confidence':probability}
@@ -135,12 +172,14 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
                 pending.update(text=pending['text']+piece,end_ms=max(end,pending['end_ms']),
                                confidence=min(probability,pending['confidence']))
         if pending is not None:
-            words.append(Word(**pending))
+            words.append(pending)
         if ' '.join(''.join(text_pieces).split()) != ' '.join(segment.get('text','').split()):
             raise AnalysisUnavailable('ASR text and token inventory disagree')
+    words,adjusted=model_word_intervals(words,source_duration_ms)
     return Transcript(source_sha256=source_sha256,source_duration_ms=source_duration_ms,
         language=language,provider='whisper_cpp',model_sha256=model_sha256,engine_sha256=engine_sha256,
-        timestamp_quality='model_token_estimate',words=tuple(words))
+        timestamp_quality='model_token_estimate_adjusted' if adjusted else 'model_token_estimate',
+        words=tuple(Word(**word) for word in words))
 
 
 def transcribe(audio, *, engine, engine_sha256, model, model_sha256,
