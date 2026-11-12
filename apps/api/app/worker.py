@@ -67,7 +67,9 @@ def claim_job():
         if not worker_available(db):return None
         now = utcnow()
         token = str(uuid.uuid4())
-        budget=settings.render_timeout_seconds+(300 if db.get(RenderJob,job_id).media_backend=='s3' else 90)
+        selected=db.get(RenderJob,job_id)
+        budget=(settings.english_analysis_timeout_seconds+240 if selected.operation=='analysis'
+                else settings.render_timeout_seconds+(300 if selected.media_backend=='s3' else 90))
         # Compare-and-set also protects SQLite, which has no SKIP LOCKED.
         job = db.execute(update(RenderJob).where(
             RenderJob.id == job_id, RenderJob.status == 'queued',
@@ -86,7 +88,7 @@ def claim_job():
                 'claim_token': token, 'media_backend': job.media_backend,
                 'object_store_id': job.object_store_id,
                 'max_render_bytes': job.max_render_bytes or settings.max_render_bytes,
-                'preview_parent_id':job.preview_parent_id,'preview_spec_json':job.preview_spec_json}
+                'preview_parent_id':job.preview_parent_id,'preview_spec_json':job.preview_spec_json,'operation':job.operation}
 
 
 def mark_done(job_id: str, claim_token: str, *, output_path=None, output_duration=None, error_code=None, wall_seconds=None, output_bytes=None,retryable=False):
@@ -171,6 +173,11 @@ def _process(job,supervisor):
                                    source, settings.max_upload_bytes)
                 observed['storage_read_bytes']=source.stat().st_size
         cancelled=lambda: stop or supervisor.lost.is_set() or not owns_claim(job)
+        if job.get('operation')=='analysis':
+            from .analysis_work import process_analysis
+            if remote:raise MediaError('Analysis requires a local source')
+            if process_analysis(job,source,should_cancel=cancelled):emit('analysis_completed',job_id=job['id'])
+            return
         if excerpt:
             if remote:raise MediaError('Unsupported preview source profile')
             from .excerpt_jobs import snapshot_source
@@ -215,7 +222,7 @@ def _process(job,supervisor):
         mark_done(job['id'], token, error_code='OUTPUT_LIMIT_EXCEEDED', wall_seconds=time.monotonic()-began)
     except MediaError:
         emit('render_failed',job_id=job['id'])
-        mark_done(job['id'], token, error_code='RENDER_FAILED', wall_seconds=time.monotonic()-began)
+        mark_done(job['id'], token, error_code='ANALYSIS_FAILED' if job.get('operation')=='analysis' else 'RENDER_FAILED', wall_seconds=time.monotonic()-began)
     except object_store.ObjectStoreError:
         emit('storage_unavailable',job_id=job['id'])
         mark_done(job['id'], token, error_code='STORAGE_UNAVAILABLE', wall_seconds=time.monotonic()-began,retryable=True)
@@ -250,6 +257,8 @@ def _process(job,supervisor):
 def recover_stale_jobs(limit=100):
     if not 1 <= limit <= 1000:
         raise ValueError('Recovery batch must be 1–1000')
+    from .automatic_analysis import reconcile_requested
+    reconcile_requested(min(limit,10))
     now = utcnow()
     expired = (RenderJob.status == 'processing', or_(RenderJob.lease_expires_at.is_(None),
         RenderJob.lease_expires_at <= now,RenderJob.claim_deadline_at<=now))

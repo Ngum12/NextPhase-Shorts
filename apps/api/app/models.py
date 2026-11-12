@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, String, Text, Index, Boolean
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, String, Text, Index, Boolean, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 
@@ -78,6 +78,7 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),nullable=True,index=True)
     preview_parent_id: Mapped[str | None] = mapped_column(ForeignKey('render_jobs.id'),nullable=True,index=True)
     preview_spec_json: Mapped[str | None] = mapped_column(Text,nullable=True)
+    operation: Mapped[str] = mapped_column(String(16),server_default='render')
 
 
 class ProjectAnalysis(Base):
@@ -118,6 +119,7 @@ class UploadSession(StorageBudget, RightsRecord, Base):
     user_id: Mapped[str] = mapped_column(ForeignKey('users.id'), index=True)
     client_key: Mapped[str] = mapped_column(String(128))
     descriptor_hash: Mapped[str] = mapped_column(String(64))
+    english_analysis: Mapped[bool] = mapped_column(Boolean,server_default=false())
     file_name: Mapped[str] = mapped_column(String(255))
     extension: Mapped[str] = mapped_column(String(8))
     title: Mapped[str] = mapped_column(String(120))

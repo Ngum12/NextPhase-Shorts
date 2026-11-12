@@ -9,7 +9,7 @@ export type Job = {
   desired_seconds: number; source_duration_seconds: number;
   output_duration_seconds: number | null; error_code: string | null;
   created_at: string; finished_at: string | null; attempt_count: number;
-  preview_parent_id?: string|null;
+  preview_parent_id?: string|null; operation?: 'render'|'preview'|'analysis';
 };
 
 export class ApiError extends Error {

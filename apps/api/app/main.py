@@ -74,6 +74,8 @@ app.include_router(auth_router)
 app.include_router(auth_actions_router)
 app.include_router(deletion_router)
 app.include_router(project_analysis_router)
+from .automatic_analysis import router as english_analysis_router
+app.include_router(english_analysis_router)
 
 @app.exception_handler(RequestValidationError)
 async def safe_auth_validation(request,error):
@@ -116,7 +118,7 @@ def storage_usage(user:User=Depends(current_user),db:Session=Depends(session_dep
 
 @app.get("/api/v1/jobs", response_model=list[JobResponse])
 def list_jobs(user: User = Depends(current_user), db: Session = Depends(session_dep)):
-    return db.scalars(select(RenderJob).where(RenderJob.user_id == user.id, RenderJob.status != 'deleted')
+    return db.scalars(select(RenderJob).where(RenderJob.user_id == user.id, RenderJob.status != 'deleted', RenderJob.operation != 'analysis')
                       .order_by(RenderJob.created_at.desc()).limit(100)).all()
 
 @app.get("/api/v1/jobs/{job_id}", response_model=JobResponse)

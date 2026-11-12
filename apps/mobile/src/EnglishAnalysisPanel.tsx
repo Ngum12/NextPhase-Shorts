@@ -1,0 +1,52 @@
+import React,{useEffect,useRef,useState} from 'react';
+import {Alert,View,Text} from 'react-native';
+import {router} from 'expo-router';
+import {englishCapability,englishState,startEnglish,cancelEnglish,EnglishState} from './englishAnalysis';
+import {Body,Button,s} from './ui';
+export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:string;disabled?:boolean}) {
+  const [state,setState]=useState<EnglishState|null>(null),[available,setAvailable]=useState(false);
+  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
+  const generation=useRef(0),running=useRef(false);
+  useEffect(()=>{
+    const current=++generation.current;let timer:ReturnType<typeof setTimeout>|undefined;
+    setState(null);setAvailable(false);setError('');setBusy(false);running.current=false;
+    const refresh=async()=>{
+      try{
+        const capability=await englishCapability(token);
+        if(generation.current!==current)return;
+        setAvailable(capability.available);if(!capability.available)return;
+        const next=await englishState(id,token);
+        if(generation.current===current){setState(next);setError('');}
+      }catch(e:any){if(generation.current===current)setError(e.message||'Could not check English analysis.');}
+      finally{if(generation.current===current)timer=setTimeout(refresh,5000);}
+    };
+    refresh();return()=>{generation.current++;if(timer)clearTimeout(timer);};
+  },[id,token,retry]);
+  const action=async(cancel=false)=>{
+    if(running.current||disabled||!state)return;
+    const current=generation.current;running.current=true;setBusy(true);
+    try{const next=cancel?await cancelEnglish(id,token):await startEnglish(id,token,state);
+      if(generation.current===current){setState(next);setError('');}}
+    catch(e:any){if(generation.current===current)setError(e.message||'Check the connection and retry.');}
+    finally{if(generation.current===current){running.current=false;setBusy(false);}}
+  };
+  if(!available)return error?<View style={s.card}><Body>{error}</Body><Button title="Retry English connection" onPress={()=>setRetry(n=>n+1)} secondary/></View>:<Button title="Review English clips" disabled={disabled} onPress={()=>router.push({pathname:'/review/[id]',params:{id}})} secondary/>;
+  const active=state?.task&&['queued','processing'].includes(state.task.status);
+  const waiting=!!state?.requested&&!state.task&&!state.ready&&state.eligible;
+  return <View style={s.card}><Text style={s.cardTitle}>English clip suggestions</Text>
+    {!!error&&<Body>{error}</Body>}
+    {!state?<Body>Checking analysis…</Body>:state.ready?<>
+      <Body>Your transcript is ready. Check the words and sentence endings before choosing clips.</Body>
+      <Button title="Review English clips" disabled={disabled||busy} onPress={()=>router.push({pathname:'/review/[id]',params:{id}})}/>
+    </>:<>
+      <Body>{active?(state.task!.status==='queued'?'Transcription is queued. You may leave this screen.':'Transcribing on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?'Transcription failed. Your video is preserved. You can retry.':state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
+      {(active||waiting)?<Button title={busy?'Please wait…':'Cancel English analysis'} disabled={disabled||busy} onPress={()=>action(true)} secondary/>:
+        state.eligible&&<Button title={busy?'Please wait…':state.task?'Retry English analysis':'Find English clips'} disabled={disabled||busy} onPress={()=>{
+          const current=generation.current;
+          Alert.alert('Analyze your English recording?','The server will transcribe this video locally. Check the transcript, sentence endings and suggested clips before rendering. This does not publish your video.',[
+            {text:'Not now',style:'cancel'},{text:'Analyze recording',onPress:()=>{if(current===generation.current)action();}},
+          ]);
+        }}/>}
+    </>}
+  </View>;
+}

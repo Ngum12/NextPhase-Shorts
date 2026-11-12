@@ -1,5 +1,5 @@
 {
-  "scope": "Optional local operator pilot; no runtime service activation",
+  "scope": "Private English queue pilot; operator-enabled worker image, no model weights in Git or image",
   "components": [
     {
       "name": "whisper.cpp",
@@ -8,17 +8,24 @@
       "source": "https://github.com/ggml-org/whisper.cpp",
       "license": "MIT",
       "notice": "licenses/whisper-cpp-v1.7.6/LICENSE",
-      "role": "Optional locally built CPU CLI, not redistributed as a binary",
-      "tested": "Compilation and command-line flags; model inference not verified",
+      "role": "Pinned CPU CLI built into the analysis-worker Docker target; other runtime targets exclude it",
+      "tested": "Portable static ggml/whisper compilation and CLI; inference protocol fixture only in managed cloud",
       "model_weights_included": false,
-      "native_transitive_legal_security_clearance": "pending"
+      "native_transitive_legal_security_clearance": "pending",
+      "embedded_notices": [
+        "licenses/whisper-cpp-v1.7.6/miniaudio.h.LICENSE",
+        "licenses/whisper-cpp-v1.7.6/stb_vorbis.c.LICENSE"
+      ]
     },
     {
       "name": "cmake Python distribution",
       "version": "3.31.6",
       "source": "https://pypi.org/project/cmake/3.31.6/",
       "declared_metadata_license": "Apache 2.0",
-      "packaged_notices": ["LICENSE_Apache_20", "LICENSE_BSD_3"],
+      "packaged_notices": [
+        "LICENSE_Apache_20",
+        "LICENSE_BSD_3"
+      ],
       "role": "Local development build tool only",
       "product_runtime_dependency": false
     }

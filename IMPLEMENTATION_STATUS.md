@@ -1,5 +1,50 @@
 # Implementation Status — 2026-11-10
 
+## Automatic English analysis package — 2026-11-12
+
+Continued the functional roadmap rather than redesigning the prototype UI. Added
+explicit per-upload English-analysis consent and an owner-restricted project
+panel for queued/processing/cancel/retry/ready analysis. New accepted local videos
+can reach the existing transcript review → suggestions → polish → render workflow
+without an operator transcript import. Existing reviewed projects remain intact.
+Initial profile: English, local accepted recordings <=180 seconds, <=1,000 words,
+256 KiB canonical transcript; longer uploads retain baseline-only behavior.
+Human word/boundary/cut/meaning review is still required; no autonomous semantic
+ranking, French rollout, final UI or public production acceptance is claimed.
+
+Migration 0023_english_analysis separates render/preview/analysis work and stores
+upload consent durably. Analysis uses existing owner/global queue admission,
+source-copy/hash/probe identity, bounded scratch reservations, renewable claims,
+cancellation/deletion/restore publication fences and attempt cleanup. Queue-full
+analysis requests preserve accepted uploads for bounded supervisor admission;
+terminal tasks require explicit retries. Stable source/terminal UUID request keys
+recover lost replies. Analysis-only tasks do not appear as playable videos.
+
+The worker Docker target builds pinned Whisper.cpp v1.7.6 with static ggml/whisper
+libraries, CPU-only portable options, no CURL/GPU/plugins, reduced credentials,
+fixed audio/model/engine/JSON grants and existing required Landlock/seccomp guards.
+The operator CLI guard remains intact. The existing verified public base model is
+copied to a read-only mount only by explicit updater activation; no weights or
+keys enter mobile/Git. The updater checks artifacts before stopping writers and
+keeps the existing backup/migration/timer recovery gates. One activation command
+and one phone workflow are in AUTOMATIC_ENGLISH_ANALYSIS.md.
+
+Validation: 590-test complete backend suites on SQLite and PostgreSQL, followed
+by 19 focused regressions on each after fencing cancellation between pending
+inventory and owner-lock admission; 128 mobile tests, TypeScript and Android export; separate real HTTP/worker render/restart/deletion/monitoring
+smoke passed. Real MP4 upload → verified private copy → FFmpeg PCM → executable
+protocol fixture → source-bound transcript publication passed. Cancellation,
+timeouts/child teardown, expired claims, deletion, queue-full recovery, migration,
+model identity/bootstrap and stale-session UI paths are covered. The native engine
+and analysis-worker Docker image built; container CLI/artifact identity/notices
+verified as UID1000 under read-only/no-network/resource limits. Evidence is outside
+Git at /workspace/artifacts/automatic-english/. This managed host cannot fetch the
+real model and lacks required Landlock support: actual protected inference,
+accuracy/latency on the VPS and physical-phone acceptance remain post-merge checks.
+No VPS deployment, paid service activation or real customer transcription occurred
+here. These tests do not establish production security, licensing or ASR quality.
+
+
 ## Combined polished-video package — 2026-11-12
 
 Owner requested related visible improvements be delivered together, with one PR,

@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Literal
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -33,6 +34,7 @@ class JobResponse(BaseModel):
     created_at: datetime
     finished_at: datetime | None
     preview_parent_id: str | None = None
+    operation: Literal['render','preview','analysis']='render'
 
 class StyleInfo(BaseModel):
     id: str

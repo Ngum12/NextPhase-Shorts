@@ -11,6 +11,14 @@ class Settings:
         self.env = os.getenv("APP_ENV", "development")
         self.english_review_enabled=os.getenv('ENGLISH_REVIEW_ENABLED','false').lower()=='true'
         self.english_review_user_ids=tuple(filter(None,(p.strip() for p in os.getenv('ENGLISH_REVIEW_USER_IDS','').split(','))))
+        self.english_analysis_enabled=os.getenv('ENGLISH_ANALYSIS_ENABLED','false').lower()=='true'
+        self.english_analysis_model_sha256=os.getenv('ENGLISH_ANALYSIS_MODEL_SHA256','')
+        self.english_analysis_timeout_seconds=900
+        if self.english_analysis_enabled:
+            import re
+            if (not self.english_review_enabled or self.env not in ('development','test')
+                    or not re.fullmatch(r'[0-9a-f]{64}',self.english_analysis_model_sha256)):
+                raise RuntimeError('English analysis requires the private review profile and verified model')
         if self.english_review_enabled:
             import uuid
             try:

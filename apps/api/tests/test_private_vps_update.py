@@ -93,3 +93,23 @@ def test_failed_timer_restoration_is_reported_as_failure(tmp_path):
         return run(args,**kwargs)
     result=module.update(m,failed_restore)
     assert not result['ok'] and result['timers_not_restored']==['nextphase-monitor.timer']
+
+
+def test_analysis_activation_verifies_artifacts_before_stopping_writers(tmp_path,monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    called=[]
+    monkeypatch.setitem(sys.modules,'prepare_english_analysis',SimpleNamespace(prepare=lambda **kw:called.append(kw)))
+    m,run,events,_=fixture(tmp_path)
+    (tmp_path/'compose.vps-trial.yaml').write_text('fixture')
+    old=m.dc
+    def dc(*args,**kwargs):
+        if 'app.worker_asrcheck' in args:
+            events.append(('dc',args));return json.dumps({'ready':True,'enabled':True})
+        return old(*args,**kwargs)
+    m.dc=dc
+    result=module.update(m,run,enable_english_analysis=True)
+    assert result['ok'] and called[0]['enable'] is True
+    probe=next(i for i,e in enumerate(events) if 'app.worker_asrcheck' in e[1])
+    pause=next(i for i,e in enumerate(events) if e[0]=='dc' and e[1][0]=='stop')
+    assert probe<pause

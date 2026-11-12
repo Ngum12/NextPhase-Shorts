@@ -33,6 +33,8 @@ def prepare(root=ROOT):
         raise ValueError('Data directory must be owned by this administrator and not publicly writable')
     destination = data / 'vps-trial'
     destination.mkdir(mode=0o700)  # Exclusive; never rotate a running database password.
+    (destination/'asr').mkdir(mode=0o755)
+    (destination/'asr').chmod(0o755)
     password = secrets.token_urlsafe(48)
     broker = secrets.token_urlsafe(48)
     url = 'postgresql+psycopg://nextphase:' + password + '@db:5432/nextphase'

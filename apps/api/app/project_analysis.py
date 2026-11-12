@@ -51,7 +51,7 @@ def revision_for(transcript, review):
 
 
 def import_transcript(db, *, owner, job_id, transcript):
-    """Trusted operator only: bind to the accepted upload's durable full checksum."""
+    """Trusted operator/claimed-worker import: bind to the accepted upload's durable full checksum."""
     job = owned_project(db, owner, job_id)
     if job.preview_parent_id is not None:
         raise ValueError('Preview projects cannot become analysis sources')
@@ -188,7 +188,7 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     preview_cap=min(settings.max_render_bytes,64*1024**2)
     label='polished' if payload.polish is not None else 'captions' if captions else 'preview'
     suffix=f' · {label} {payload.candidate_number}'+(' · crop' if payload.framing!='fit' else '')
-    child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:100-len(suffix)]+suffix,
+    child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:100-len(suffix)]+suffix,operation='preview',
         style=parent.style,desired_seconds=parent.desired_seconds,source_duration_seconds=parent.source_duration_seconds,
         source_path='',media_backend='local',status='queued',rights_version=parent.rights_version,
         rights_confirmed_at=parent.rights_confirmed_at,max_render_bytes=preview_cap,
