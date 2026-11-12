@@ -1,5 +1,15 @@
 # License provenance and integration gates
 
+## Combined polished-video package — 2026-11-12
+
+Independently authored editor, closed caption/audio settings, preset/retry helpers,
+update orchestration and synthetic geometry/tone reuse existing Python, Expo,
+React Native, FFmpeg and DejaVu dependencies. Expo Router's already installed
+SDK 58 usePreventRemove hook guards drafts. FFmpeg dynaudnorm/alimiter are existing
+filters, not a new speech model/library/provider. No new package, external font,
+media asset, reference-kit source or paid service was added. Existing notice,
+native/image/codec/patent/privacy/legal gates remain.
+
 ## Optional portrait preview framing — 2026-11-12
 
 Independently authored fixed crop/scale expressions, controls and synthetic

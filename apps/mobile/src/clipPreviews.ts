@@ -64,6 +64,10 @@ export async function requestClipPreview(parent:string,token:string,revision:str
 
 export async function forgetPreviewIntents(parent:string) {
   if(uuid.test(parent))await serial(parent,()=>SecureStore.deleteItemAsync(`nextphase.preview.${parent}`));
+  if(uuid.test(parent)){
+    const {forgetPolishIntents}=await import('./polish');
+    await forgetPolishIntents(parent);
+  }
 }
 
 export async function loadPreviewFile(id:string,token:string):Promise<{uri:string;remove:()=>Promise<void>}> {

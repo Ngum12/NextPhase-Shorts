@@ -20,5 +20,6 @@ export default function RootLayout() {
     <Stack.Screen name="create" options={{title:'Create a Short'}}/>
     <Stack.Screen name="project/[id]" options={{title:'Your Short'}}/>
     <Stack.Screen name="review/[id]" options={{title:'English clip review'}}/>
+    <Stack.Screen name="polish/[id]" options={{title:'Polish your clip'}}/>
   </Stack><SessionGuard/></AuthProvider>;
 }

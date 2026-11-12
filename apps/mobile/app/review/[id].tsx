@@ -141,6 +141,8 @@ export default function EnglishReview() {
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
               <Body>This is a clip suggestion. Watch the rendered preview before using it.</Body>
+              {data.polished_preview_supported&&data.review&&<Button title="Polish selected clip" disabled={blocked||conflict}
+                onPress={()=>router.push({pathname:'/polish/[id]',params:{id,candidate:String(selected+1),revision:data.revision}})}/>}
               {data.portrait_framing_supported&&<View style={{gap:10}}>
                 <Text style={s.cardTitle}>Framing</Text>
                 <Button title={framing==='fit'?'Fit full video · selected':'Fit full video'} secondary

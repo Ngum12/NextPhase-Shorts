@@ -15,6 +15,7 @@ from .media import MediaCancelled, MediaError, probe_video
 from .models import RenderJob
 from .caption_plan import CaptionCue, validate_cues
 from .preview_framing import Framing
+from .polish import PolishSettings
 
 
 class ExcerptSpec(ClosedModel):
@@ -34,12 +35,16 @@ class ExcerptSpec(ClosedModel):
     caption_style: Literal['none','clean-1']='none'
     captions: tuple[CaptionCue,...] = Field(default=(), max_length=80)
     framing: Framing='fit'
+    polish: PolishSettings=Field(default_factory=PolishSettings)
+    caption_edits_applied: bool=Field(default=False,strict=True)
 
     @model_validator(mode='after')
     def valid(self):
         validate_cues(self.captions, self.output_frames)
         if (self.caption_style == 'clean-1') != bool(self.captions):
             raise ValueError('Caption style and cues disagree')
+        if self.caption_edits_applied and not self.captions:
+            raise ValueError('Caption edits need captions')
         duration=self.source_end_ms-self.source_start_ms
         if (not 0<duration<=self.requested_seconds*1000
                 or self.source_end_ms>self.source_duration_ms

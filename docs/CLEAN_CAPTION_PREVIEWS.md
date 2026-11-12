@@ -1,5 +1,9 @@
 # Clean captions in private English previews
 
+The subsequent [polished-video workspace](POLISHED_VIDEO.md) adds optional manual
+caption text/timing corrections and fixed appearance/voice choices. Plain and
+the original clean-caption action remain available.
+
 The existing saved-review flow can now render a separate **Clean captions**
 version. Plain remains the default. A fixed server renderer overlays short white
 phrases on a dark box in the lower portrait safe area. It preserves original

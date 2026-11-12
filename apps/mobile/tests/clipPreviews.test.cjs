@@ -4,6 +4,7 @@ function fixture(){
  const storage=new Map(),files=new Map(),calls=[],state={status:202,offline:false,storageFailure:false,downloadStatus:200,size:100,downloadFailure:false};
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
  const adapters={
+  './polish':{forgetPolishIntents:async id=>storage.delete(`nextphase.polish.intent.${id}`)},
   'expo-crypto':{randomUUID:crypto.randomUUID},
   'expo-secure-store':{getItemAsync:async key=>storage.get(key)||null,setItemAsync:async(key,value)=>{if(state.storageFailure)throw Error('unavailable');storage.set(key,value);},deleteItemAsync:async key=>storage.delete(key)},
   './api':{BASE:'https://private.example.invalid',ApiError,downloadUrl:id=>'https://private.example.invalid/api/v1/jobs/'+id+'/download',

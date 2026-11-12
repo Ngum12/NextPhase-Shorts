@@ -1,5 +1,10 @@
 # Private English clip previews in the app
 
+The combined [polished-video editor](POLISHED_VIDEO.md) adds appearance, manual
+caption corrections, bounded voice leveling and local presets through this same
+queue. Its separate retry store retains five recent hashes/UUIDs per source;
+existing per-option plain/captioned requests retain their own keys.
+
 After saving a human review, select a suggestion and press **Render selected
 preview**. The app acknowledges the need to check the actual cut and opens a new
 preview project. It polls the existing queue; when successful, **Watch preview**
