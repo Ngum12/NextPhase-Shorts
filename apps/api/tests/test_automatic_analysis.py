@@ -129,8 +129,8 @@ def test_worker_pipeline_copies_hashes_decodes_and_cleans_attempt(client,monkeyp
     engine=tmp_path/'engine'
     data={'params':{'translate':False},'result':{'language':'en'},'model':{'multilingual':True,'vocab':51865},
         'transcription':[{'text':' Hello.', 'tokens':[
-            {'text':' Hello','id':2425,'offsets':{'from':0,'to':1000},'p':.9},
-            {'text':'.','id':13,'offsets':{'from':1000,'to':1000},'p':.95}]}]}
+            {'text':' Hello','id':2425,'offsets':{'from':0,'to':0},'p':.9},
+            {'text':'.','id':13,'offsets':{'from':0,'to':0},'p':.95}]}]}
     engine.write_text(f'#!{sys.executable}\nimport sys\nfrom pathlib import Path\n'
         f'Path(sys.argv[sys.argv.index("-of")+1]+".json").write_text({json.dumps(json.dumps(data))})\n');engine.chmod(0o700)
     monkeypatch.setattr(get_settings(),'english_analysis_enabled',True)
@@ -143,6 +143,10 @@ def test_worker_pipeline_copies_hashes_decodes_and_cleans_attempt(client,monkeyp
     process(job)
     result=client.get(item['auto'],headers=item['owner']).json()
     assert result['ready'] and result['task']['status']=='succeeded',result
+    document=client.get(item['url'],headers=item['owner']).json()
+    assert document['transcript']['timestamp_quality']=='model_token_estimate_adjusted'
+    assert document['transcript']['words'][0]['text']=='Hello.'
+    assert 'adjusted_word_timestamps' in document['proposal']['warnings']
     with SessionLocal() as db:
         row=db.get(RenderJob,child);assert row.output_path is None
         from pathlib import Path

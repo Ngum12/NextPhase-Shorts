@@ -220,3 +220,52 @@ def test_bad_provider_output_is_rejected(mutation):
     if mutation=='monolingual':data['model']['multilingual']=False
     if mutation=='probability':data['transcription'][0]['tokens'][1]['p']=float('nan')
     with pytest.raises((AnalysisUnavailable,ValidationError)):parse(data)
+
+
+def zero_words(intervals, *, duration=2000):
+    data={'params':{'translate':False},'result':{'language':'en'},
+        'model':{'multilingual':True,'vocab':51865},'transcription':[{
+            'text':' '.join('word'+str(i) for i in range(len(intervals))),
+            'tokens':[{'text':' word'+str(i),'id':100+i,'p':.8,
+                       'offsets':{'from':start,'to':end}} for i,(start,end) in enumerate(intervals)]}]}
+    return parse_whisper(data,source_sha256='a'*64,source_duration_ms=duration,
+        language='en',model_sha256='b'*64,engine_sha256='c'*64)
+
+
+@pytest.mark.parametrize('intervals,expected',[
+    ([(0,0),(0,1000)],[(0,1),(1,1000)]),
+    ([(0,1000),(1000,1000)],[(0,999),(999,1000)]),
+    ([(0,500),(500,500),(500,1000)],[(0,500),(500,501),(501,1000)]),
+    ([(0,0),(0,0),(0,1000)],[(0,1),(1,2),(2,1000)]),
+])
+def test_zero_width_native_words_preserved_with_disclosed_bounded_timing(intervals,expected):
+    transcript=zero_words(intervals,duration=1000)
+    assert [word.text for word in transcript.words]==['word'+str(i) for i in range(len(intervals))]
+    assert [word.confidence for word in transcript.words]==[.8]*len(intervals)
+    assert [(word.start_ms,word.end_ms) for word in transcript.words]==expected
+    assert transcript.timestamp_quality=='model_token_estimate_adjusted'
+    proposal=propose(transcript,15)
+    assert 'adjusted_word_timestamps' in proposal.warnings and proposal.human_review_required
+    assert not proposal.semantic_quality_verified
+
+
+def test_normal_native_fingerprint_is_unchanged_by_zero_word_support():
+    from app.analysis_annotations import fingerprint
+    assert fingerprint(parse(whisper_data()))=='08be3d447a1aba15d0f636595c1ebba961ba2fc8bcd64abac4145d35b0c02107'
+
+
+@pytest.mark.parametrize('intervals,duration',[
+    ([(0,600),(500,500),(500,1000)],1000),  # Positive intervals already overlap.
+    ([(500,500),(0,1000)],1000),  # Backward model order.
+    ([(0,1000)]+[(1000,1000)]*21,1000),  # More than two model ticks of movement.
+    ([(0,0),(0,0)],1),  # Insufficient time for every preserved word.
+])
+def test_ambiguous_or_excessive_zero_word_repair_remains_refused(intervals,duration):
+    with pytest.raises(AnalysisUnavailable):zero_words(intervals,duration=duration)
+
+
+def test_manual_zero_width_words_still_refused():
+    with pytest.raises(ValidationError):
+        Word(text='spoken',start_ms=500,end_ms=500,confidence=.8)
+    with pytest.raises(ValidationError):
+        zero_words([(0,600),(500,1000)],duration=1000)
