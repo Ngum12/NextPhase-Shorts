@@ -55,6 +55,8 @@ async def connect():
 
 def reconcile(limit=100):
     if not 1<=limit<=1000:raise ValueError('Queue reconciliation must be 1–1000')
+    from .automatic_analysis import reconcile_requested
+    reconcile_requested(min(limit,10))
     now=utcnow()
     with SessionLocal() as db:
         jobs=list(db.execute(select(RenderJob.id,RenderJob.user_id).outerjoin(QueueSignal,QueueSignal.job_id==RenderJob.id).where(RenderJob.status=='queued',

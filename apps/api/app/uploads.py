@@ -40,6 +40,7 @@ KeyHeader = Annotated[str, Header(min_length=8, max_length=128, pattern=r'^[A-Za
 
 class SessionRequest(RightsAcknowledgement):
     direct_upload: StrictBool = False
+    english_analysis: StrictBool = False
     file_name: str = Field(min_length=1, max_length=255)
     total_bytes: int = Field(gt=0, le=314572800, strict=True)
     title: str = Field(default='My Short', min_length=1, max_length=120)
@@ -139,6 +140,7 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     if payload.total_bytes > settings.max_upload_bytes:
         raise HTTPException(413, 'File exceeds the configured upload limit')
     descriptor = payload.model_dump(exclude={'rights_confirmed','consent_version','direct_upload'})
+    if not payload.english_analysis:descriptor.pop('english_analysis',None)  # Preserve legacy upload fingerprints.
     descriptor['title'] = title
     digest = hashlib.sha256(json.dumps(descriptor, sort_keys=True).encode()).hexdigest()
     lock_owner(db, user.id)
@@ -160,13 +162,16 @@ def create_session(payload: SessionRequest, response: Response, idempotency_key:
     if active_count(db, user.id) + reserved_upload_count(db, user.id) >= settings.max_active_jobs_per_user:
         raise HTTPException(429, 'Your queue is full. Finish or discard a pending upload, or cancel a queued job.',
                             headers={'Retry-After': '5'})
+    if payload.english_analysis:
+        from .automatic_analysis import require_enabled
+        require_enabled(user.id)
     direct = payload.direct_upload and settings.direct_uploads_enabled
     budget=reservation(payload.total_bytes * (3 if direct else 1),settings.max_render_bytes)
     require_capacity(db,user.id,budget)
     row = UploadSession(transfer_backend='direct-s3' if direct else 'api',
                         object_store_id=object_store.namespace_id() if direct else None,
                         rights_version=RIGHTS_VERSION,rights_confirmed_at=utcnow(),storage_reserved_bytes=budget,max_render_bytes=settings.max_render_bytes,id=str(uuid.uuid4()), user_id=user.id, client_key=idempotency_key,
-                        descriptor_hash=digest, file_name=payload.file_name, extension=extension,
+                        descriptor_hash=digest, file_name=payload.file_name, extension=extension,english_analysis=payload.english_analysis,
                         title=title, style=payload.style, desired_seconds=payload.desired_seconds,
                         total_bytes=payload.total_bytes, chunk_bytes=settings.upload_chunk_bytes,
                         expires_at=utcnow() + timedelta(hours=settings.upload_session_hours))
@@ -378,6 +383,10 @@ def complete_session(session_id: str, user: User = Depends(upload_user), db: Ses
                               max_render_bytes=row.max_render_bytes or settings.max_render_bytes)
         job, _ = admit_job(db, candidate, upload_session_id=session_id,source_bytes=row.total_bytes)
         row.status, row.job_id, row.source_sha256 = 'completed', job.id, full_hash.hexdigest()
+        db.flush()
+        if row.english_analysis:
+            from .automatic_analysis import enqueue_requested
+            enqueue_requested(db,job,row)
         retain_source = True  # Preserve accepted input even if COMMIT acknowledgement is lost.
         db.commit()
         if job.media_backend == 's3':

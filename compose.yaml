@@ -48,6 +48,7 @@ services:
   worker:
     build:
       context: ./apps/api
+      target: analysis-worker
     command: python -m app.worker
     init: true
     read_only: true

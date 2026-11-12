@@ -18,7 +18,7 @@ import vps_maintenance as maintenance
 TIMERS=('nextphase-backup.timer','nextphase-monitor.timer')
 
 
-def update(m=maintenance,run=subprocess.run):
+def update(m=maintenance,run=subprocess.run,enable_english_analysis=False):
     state=m.state_dir();phase='preflight';paused=False;active=[];timer_errors=[]
     def systemd(*args,check=True,interactive=False,timeout=120):
         result=run((['sudo','-v'] if interactive else ['sudo','-n','systemctl',*args]),
@@ -61,6 +61,10 @@ def update(m=maintenance,run=subprocess.run):
             with source.open('rb') as handle:
                 if hashlib.file_digest(handle,'sha256').hexdigest()!=digest:raise RuntimeError('Local recovery bundle changed')
             writers=m.running_writers()
+            step('preparing_analysis_model')
+            from prepare_english_analysis import prepare
+            if hasattr(m,'ROOT') and (m.ROOT/'compose.vps-trial.yaml').is_file():
+                prepare(root=m.ROOT,enable=enable_english_analysis)
             services=['api','worker','queue-supervisor','operator-agent','backup-tool','migrate']
             if 'mail-worker' in writers:services.append('mail-worker')
             step('building_matching_images')
@@ -68,6 +72,11 @@ def update(m=maintenance,run=subprocess.run):
             step('worker_host_check')
             host=json.loads(m.dc('run','--rm','--no-deps','-T','worker','python','-m','app.worker_hostcheck',timeout=180))
             if host.get('ready') is not True:raise RuntimeError('Required worker host checks failed')
+            if enable_english_analysis:
+                step('analysis_artifact_check')
+                analysis=json.loads(m.dc('run','--rm','--no-deps','-T','worker','python','-m','app.worker_asrcheck',timeout=180))
+                if analysis.get('ready') is not True or analysis.get('enabled') is not True:
+                    raise RuntimeError('Analysis artifacts unavailable')
             systemd(interactive=True)
             systemd('stop','nextphase-monitor.timer','nextphase-monitor.service')
             step('checking_idle_queue')
@@ -104,6 +113,7 @@ def update(m=maintenance,run=subprocess.run):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply',action='store_true',help='Run the verified private-trial update')
+    parser.add_argument('--enable-english-analysis',action='store_true',help='Stage the existing verified base model and enable the private English analysis pilot')
     args=parser.parse_args()
     if not args.apply:parser.error('Use --apply only after pulling merged code and closing the phone app.')
     os.umask(0o077)
@@ -112,7 +122,7 @@ def main():
     if hasattr(signal,'SIGHUP'):signal.signal(signal.SIGHUP,interrupt)
     try:
         if not sys.platform.startswith('linux') or os.geteuid()==0:raise RuntimeError('Use the unprivileged VPS administrator')
-        result=update()
+        result=update(enable_english_analysis=args.enable_english_analysis)
     except (Exception,KeyboardInterrupt) as error:
         result={'ok':False,'failed_step':'preflight','error_type':type(error).__name__,'credentials_printed':False}
     print(json.dumps(result))

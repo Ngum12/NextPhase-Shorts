@@ -5,6 +5,8 @@ import { pickVideo } from '../src/videoPicker';
 import { Alert, ScrollView, Text, TextInput, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { api } from '../src/api';
+import {englishCapability} from '../src/englishAnalysis';
+import {englishReviewVisible} from '../src/analysis';
 import { confirmUploadRights, discardUpload, loadPending, PendingUpload, prepareUpload, resumeUpload } from '../src/uploads';
 import {RIGHTS_TEXT,RIGHTS_VERSION} from '../src/uploadRights';
 import { useAuth } from '../src/auth';
@@ -18,6 +20,10 @@ const styles = [
 export default function Create() {
   const {token}=useAuth();
   const [rights,setRights]=useState(false);
+  const [english,setEnglish]=useState(false),[englishAvailable,setEnglishAvailable]=useState(false);
+  useEffect(()=>{let live=true;setEnglish(false);setEnglishAvailable(false);
+    if(token)englishCapability(token).then(caps=>{if(live)setEnglishAvailable(englishReviewVisible&&caps.available);}).catch(()=>{});
+    return()=>{live=false;};},[token]);
   const [ownerId,setOwnerId]=useState('');
   const [verificationNeeded,setVerificationNeeded]=useState(false);
   const [recovery,setRecovery]=useState(0);
@@ -60,7 +66,7 @@ export default function Create() {
     const abort=new AbortController();controller.current=abort;
     try {
       const record=pending?(pending.rightsVersion===RIGHTS_VERSION?pending:await confirmUploadRights(pending,rights))
-        :await prepareUpload(ownerId,asset!,title,style,seconds,rights);
+        :await prepareUpload(ownerId,asset!,title,style,seconds,rights,english);
       setPending(record);
       if(abort.signal.aborted)throw new Error('Upload paused');
       const job=await resumeUpload(record,token,(sent,total)=>{
@@ -104,6 +110,7 @@ export default function Create() {
     </Pressable>
     {pending?<View style={s.card}>
       <Text style={s.cardTitle}>{pending.title}</Text>
+      <Body>{pending.englishAnalysis?'English analysis requested after upload.':'Baseline render requested.'}</Body>
       <Body>{pending.fileName} · {(pending.totalBytes/1048576).toFixed(1)} MiB</Body>
       <Body>{progress===null?'Progress will be checked with the server when you resume.':`Upload: ${Math.floor(progress*100)}% received`}</Body>
       <Body>Resume after a connection interruption or app restart. Keep this app’s data. Transfers run while the app is active.</Body>
@@ -131,6 +138,10 @@ export default function Create() {
           <Text style={{color:seconds===n?c.bg:c.text,fontWeight:'800'}}>{n}s</Text>
         </Pressable>)}</View>
       </View>
+      {englishAvailable&&<Pressable accessibilityRole="checkbox" accessibilityState={{checked:english,disabled:busy}} disabled={busy} onPress={()=>setEnglish(v=>!v)} style={s.card}>
+        <Text style={s.cardTitle}>{english?'☑':'☐'} Find English clips after upload</Text>
+        <Body>I agree to local server transcription of this English recording (up to three minutes). I will check the transcript and clip suggestions before rendering them. Longer uploads keep the baseline render.</Body>
+      </Pressable>}
       <Button title={busy?'Saving your upload…':'Upload and start cloud render'} disabled={busy||loading||verificationNeeded||!rights||!ownerId||!asset||!title.trim()} onPress={submit}/>
     </>}
   </ScrollView></Page>;

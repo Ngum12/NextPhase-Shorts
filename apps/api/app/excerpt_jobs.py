@@ -53,9 +53,9 @@ class ExcerptSpec(ClosedModel):
         return self
 
 
-def snapshot_source(job,destination,*,should_cancel):
+def snapshot_source(job,destination,*,should_cancel,spec=None):
     """Never let the decoder follow a client path or read an unchecked original."""
-    spec=ExcerptSpec.model_validate_json(job['preview_spec_json'])
+    spec=spec or ExcerptSpec.model_validate_json(job['preview_spec_json'])
     with SessionLocal() as db:
         parent=db.scalar(select(RenderJob).where(RenderJob.id==job['preview_parent_id'],
             RenderJob.user_id==job['user_id'],RenderJob.status!='deleted',

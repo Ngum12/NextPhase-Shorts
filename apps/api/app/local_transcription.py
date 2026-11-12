@@ -1,7 +1,8 @@
 """Opt-in operator-only local Whisper.cpp adapter. No downloads or cloud ASR.
 
-Not wired into the API or production worker. Token timing/probability are model
-estimates; real English/French accuracy requires an independently reviewed set.
+The operator launcher stays separate from the protected worker launcher in
+contained_asr. Token timing/probability are model estimates; real English/French
+accuracy requires an independently reviewed set.
 """
 import hashlib
 import json
@@ -44,7 +45,7 @@ def verified_artifact(path, expected, *, maximum):
     return path
 
 
-def extract_audio(source, destination, *, timeout=120):
+def extract_audio(source, destination, *, timeout=120,should_cancel=lambda:False):
     """Bounded file-only decode of one accepted video, mono 16-kHz PCM WAV."""
     source = regular_file(source, maximum=314572800)
     destination = Path(destination)
@@ -54,7 +55,7 @@ def extract_audio(source, destination, *, timeout=120):
     def size_guard():
         if destination.stat().st_size > limit:
             raise AnalysisUnavailable('Analysis audio exceeds bound')
-        return False
+        return should_cancel()
     try:
         run_render(['ffmpeg','-nostdin','-v','error','-y','-max_alloc','67108864',
             *input_args(),'-i',str(source),'-t','600','-map','0:a:0','-vn','-ac','1',

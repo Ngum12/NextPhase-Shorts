@@ -28,8 +28,9 @@ def test_prepare_create_only_and_private_credentials(tmp_path):
     finally:
         os.umask(previous)
     directory = tmp_path / '.data/vps-trial'
-    original = {p.name: p.read_bytes() for p in directory.iterdir()}
+    original = {p.name: p.read_bytes() for p in directory.iterdir() if p.is_file()}
     assert directory.stat().st_mode & 0o077 == 0
+    assert (directory / 'asr').stat().st_mode & 0o777 == 0o755
     assert (directory / 'valkey.conf').stat().st_mode & 0o777 == 0o644
     for name in ('compose.env', 'server.env'):
         assert (directory / name).stat().st_mode & 0o077 == 0
@@ -37,7 +38,7 @@ def test_prepare_create_only_and_private_credentials(tmp_path):
     assert 'GLOBAL_PROCESSING_LIMIT=1\n' in (directory / 'server.env').read_text()
     with pytest.raises(FileExistsError):
         trial.prepare(tmp_path)
-    assert original == {p.name: p.read_bytes() for p in directory.iterdir()}
+    assert original == {p.name: p.read_bytes() for p in directory.iterdir() if p.is_file()}
     (directory / 'server.env').chmod(0o644)
     with pytest.raises(ValueError):
         trial.compose_command(tmp_path)

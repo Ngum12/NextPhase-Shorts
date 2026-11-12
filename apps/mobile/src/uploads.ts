@@ -7,7 +7,7 @@ import { api, ApiError, Job, BASE, extract, authenticatedFetch } from './api';
 export type PendingUpload = {
   version: 1; revision: number; ownerId: string; key: string; localName: string;
   fileName: string; totalBytes: number; title: string; style: string; seconds: number;
-  sessionId?: string; rightsVersion?: string;
+  sessionId?: string; rightsVersion?: string; englishAnalysis?: boolean;
 };
 type Session = {
   id: string; status: string; total_bytes: number; received_bytes: number;
@@ -30,6 +30,7 @@ function valid(value:any, ownerId:string): value is PendingUpload {
     Number.isSafeInteger(value.totalBytes) && value.totalBytes>0 && value.totalBytes<=MAX_BYTES &&
     typeof value.fileName==='string' && typeof value.title==='string' && typeof value.style==='string' &&
     Number.isInteger(value.seconds) && value.seconds>=5 && value.seconds<=60 &&
+    (value.englishAnalysis===undefined || typeof value.englishAnalysis==='boolean') &&
     (value.sessionId===undefined || /^[a-f0-9-]{36}$/i.test(value.sessionId));
 }
 export async function loadPending(ownerId:string):Promise<PendingUpload|null> {
@@ -63,7 +64,7 @@ async function clearPending(record:PendingUpload) {
   for(const index of [0,1])await FileSystem.deleteAsync(slot(record.ownerId,index),{idempotent:true});
 }
 async function prepareUploadImpl(ownerId:string, selected:{uri:string;name:string},
-    title:string,style:string,seconds:number,rightsConfirmed=false):Promise<PendingUpload> {
+    title:string,style:string,seconds:number,rightsConfirmed=false,englishAnalysis=false):Promise<PendingUpload> {
   if(rightsConfirmed!==true)throw new Error('Confirm upload rights and server processing first.');
   if(await loadPending(ownerId))throw new Error('Resume or discard your pending upload first');
   const extension=selected.name.match(/\.(mp4|mov|webm|m4v)$/i)?.[0].toLowerCase();
@@ -81,7 +82,7 @@ async function prepareUploadImpl(ownerId:string, selected:{uri:string;name:strin
     if(!Number.isSafeInteger(totalBytes)||totalBytes<=0||totalBytes>MAX_BYTES)
       throw new Error('Video must be nonempty and no larger than 300 MiB');
     return await savePending({version:1,revision:0,ownerId,key:Crypto.randomUUID(),localName,
-      fileName:selected.name,totalBytes,title:title.trim(),style,seconds,rightsVersion:RIGHTS_VERSION});
+      fileName:selected.name,totalBytes,title:title.trim(),style,seconds,rightsVersion:RIGHTS_VERSION,...(englishAnalysis?{englishAnalysis:true}:{})});
   } catch(error) {
     await FileSystem.deleteAsync(localUri,{idempotent:true});
     throw error;
@@ -91,7 +92,7 @@ async function requestSession(record:PendingUpload,token:string,signal?:AbortSig
   return extract(await authenticatedFetch(token,`${BASE}/api/v1/upload-sessions`,{
     method:'POST',signal,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','Idempotency-Key':record.key},
     body:JSON.stringify({file_name:record.fileName,total_bytes:record.totalBytes,title:record.title,
-      style:record.style,desired_seconds:record.seconds,rights_confirmed:true,consent_version:record.rightsVersion,direct_upload:true}),
+      style:record.style,desired_seconds:record.seconds,rights_confirmed:true,consent_version:record.rightsVersion,direct_upload:true,...(record.englishAnalysis?{english_analysis:true}:{})}),
   })) as Promise<Session>;
 }
 function paused(signal?:AbortSignal) {

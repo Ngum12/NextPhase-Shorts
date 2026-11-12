@@ -318,3 +318,9 @@ one-render limits and `scripts/vps_trial.py accept --synthetic`. It preserves th
 working PC installation. This is private host acceptance preparation; trusted
 public HTTPS, private cloud storage, offsite recovery and external approvals
 remain required before an actual hosted release.
+
+Private English automatic analysis: [AUTOMATIC_ENGLISH_ANALYSIS.md](docs/AUTOMATIC_ENGLISH_ANALYSIS.md)
+describes opt-in uploads, queued server transcription, transcript review and
+suggestions, plus the single existing-model VPS activation command. English
+recordings up to three minutes only; actual protected inference/phone acceptance
+remains an operator check. The prototype UI is unchanged in scope.

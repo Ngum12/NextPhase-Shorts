@@ -1,0 +1,44 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),path=require('node:path');
+function load(file,adapters,globals={}){const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React}}).outputText,{exports,require:n=>{assert(adapters[n],n);return adapters[n];},...globals});return exports;}
+test('lost start replies and explicit retries use stable server-recoverable keys',async()=>{
+ const calls=[];const adapters={'./api':{api:async()=>({available:true}),authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});return {};},extract:async()=>({})}};
+ const api=load('../src/englishAnalysis.ts',adapters),initial={task:null};
+ await api.startEnglish('source','token',initial);await load('../src/englishAnalysis.ts',adapters).startEnglish('source','token',initial);
+ assert.equal(JSON.parse(calls[0].init.body).idempotency_key,JSON.parse(calls[1].init.body).idempotency_key);
+ await api.startEnglish('source','token',{task:{id:'failed-attempt',status:'failed'}});
+ const retry=JSON.parse(calls[2].init.body);assert.equal(retry.idempotency_key,'failed-attempt');assert(retry.retry_failed&&retry.acknowledged_server_analysis);
+ await api.cancelEnglish('source','token');assert(calls[3].url.endsWith('/cancel'));assert.equal(calls[3].init.method,'POST');
+});
+function harness(){
+ const h={slots:[],cursor:0,pending:true,effects:[],tree:null,props:{id:'source',token:'session'},calls:[],alerts:[],value:{ready:false,eligible:true,requested:false,task:null}};
+ const react={createElement:(type,props,...children)=>({type,props:props||{},children:children.flat(Infinity)}),
+  useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return[h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
+  useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
+  useEffect(effect,deps){const i=h.cursor++,old=h.slots[i];if(!old||deps.some((v,n)=>v!==old.deps[n]))h.effects.push(()=>{old?.cleanup?.();h.slots[i]={deps,cleanup:effect()};});}};react.default=react;
+ const actions={englishCapability:async()=>({available:true}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
+ startEnglish:async(id,token,state)=>{h.calls.push({start:id,token,state});return {...h.value,task:{id:'attempt',status:'queued'}};},
+ cancelEnglish:async(id,token)=>{h.calls.push({cancel:id,token});return {...h.value,task:{id:'attempt',status:'cancelled'}};}};
+ const component=load('../src/EnglishAnalysisPanel.tsx',{react,'react-native':{View:'View',Text:'Text',Alert:{alert:(...args)=>h.alerts.push(args)}},
+  'expo-router':{router:{push:route=>h.calls.push({push:route})}},'./englishAnalysis':actions,'./ui':{Body:'Body',Button:'Button',s:{card:{},cardTitle:{}}}}, {setTimeout:()=>0,clearTimeout:()=>{}}).EnglishAnalysisPanel;
+ h.render=()=>{h.cursor=0;h.pending=false;h.tree=component(h.props);};
+ h.flush=async()=>{for(let i=0;i<12;i++){if(h.pending)h.render();while(h.effects.length)h.effects.shift()();await new Promise(r=>setImmediate(r));if(!h.pending&&!h.effects.length)break;}};
+ h.nodes=()=>{const result=[];function visit(n){if(n&&typeof n==='object'){result.push(n);n.children?.forEach(visit);}}visit(h.tree);return result;};
+ h.button=title=>h.nodes().find(n=>n.type==='Button'&&n.props.title===title);return h;
+}
+test('transcription requires consent and queued work exposes cancellation',async()=>{
+ const h=harness();await h.flush();assert(!h.calls.some(c=>c.start));
+ h.button('Find English clips').props.onPress();assert.equal(h.alerts.length,1);assert(!h.calls.some(c=>c.start));
+ await h.alerts[0][2][1].onPress();await h.flush();assert(h.calls.some(c=>c.start));
+ await h.button('Cancel English analysis').props.onPress();await h.flush();assert(h.calls.some(c=>c.cancel));assert(h.button('Retry English analysis'));
+});
+test('ready transcript opens human review without automatic preview render',async()=>{
+ const h=harness();h.value.ready=true;await h.flush();h.button('Review English clips').props.onPress();
+ assert(h.calls.some(c=>c.push?.pathname==='/review/[id]'));assert(!h.calls.some(c=>c.start));
+});
+test('old session reply and consent dialog cannot start work after account switch',async()=>{
+ const h=harness();await h.flush();h.button('Find English clips').props.onPress();const consent=h.alerts[0][2][1];
+ let release;h.delay=new Promise(r=>{release=r;});h.props={id:'different-source',token:'different-session'};h.pending=true;await h.flush();
+ await consent.onPress();assert(!h.calls.some(c=>c.start));
+ h.props={id:'third-source',token:'third-session'};h.delay=null;h.value.ready=false;h.pending=true;await h.flush();
+ release({ready:true,eligible:true,requested:false,task:null});await h.flush();assert(!h.button('Review English clips'));assert(h.button('Find English clips'));
+});

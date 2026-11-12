@@ -80,6 +80,11 @@ def caption_read_paths(source, paths):
 
 def apply(source,output=None,read_files=()):
     caption_paths=caption_read_paths(source,read_files)
+    return apply_files(source,output,{path:4 for path in caption_paths})
+
+
+def apply_files(source,output=None,additional=None):
+    """Internal exact file grants; not callable from an API-supplied rule list."""
     if not supported():raise RuntimeError('Required decoder isolation is unsupported')
     libc=ctypes.CDLL(None,use_errno=True)
     if libc.prctl(38,1,0,0,0)!=0:raise RuntimeError('Cannot enforce no-new-privileges')
@@ -88,7 +93,7 @@ def apply(source,output=None,read_files=()):
     if descriptor<0:raise RuntimeError('Cannot create decoder filesystem rules')
     try:
         rules={Path(source).resolve(strict=True):4}
-        rules.update({path:4 for path in caption_paths})
+        rules.update(additional or {})
         for name in ('/usr','/lib','/lib64','/etc/ld.so.cache','/etc/localtime','/etc/fonts'):
             path=Path(name)
             if path.exists():rules[path.resolve()]=READ if path.is_dir() else 4

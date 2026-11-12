@@ -55,7 +55,7 @@ async def run():
     logger=logging.getLogger('arq');logger.handlers=[logging.NullHandler()];logger.propagate=False
     redis=await broker.connect()
     consumer=Worker([render_next],redis_pool=redis,queue_name=broker.QUEUE,max_jobs=1,max_tries=3,
-        job_timeout=settings.render_timeout_seconds+390,job_completion_wait=15,keep_result=0,log_results=False,
+        job_timeout=max(settings.render_timeout_seconds+390,settings.english_analysis_timeout_seconds+300),job_completion_wait=15,keep_result=0,log_results=False,
         on_startup=startup,on_shutdown=shutdown,job_serializer=broker.dumps,job_deserializer=broker.loads,
         health_check_interval=10,health_check_key='np:worker:'+str(uuid.uuid4()))
     def stop(signum,*_):

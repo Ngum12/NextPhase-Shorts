@@ -340,3 +340,23 @@ All Python additions use existing cryptography/HTTP/ASGI/database dependencies;
 no new Python/npm dependency or reference-kit source/media/font was introduced.
 Local certificate/backup keys are generated, private and never included in Git.
 No paid service, provider contract, billing, AI or public certificate was activated.
+
+## Private English worker engine — 2026-11-12
+
+The analysis-worker Docker target now builds the same pinned Whisper.cpp v1.7.6
+commit above. The other runtime targets exclude the binary. The native
+ggml/whisper libraries are statically linked with GPU, OpenMP, CPU-specific AVX,
+backend plugins and CURL disabled; standard libc/libm/libgcc/libstdc++ remain
+system dependencies. No model weights or executable are checked into Git; the
+operator copies the previously verified public multilingual base model into a
+read-only mount. Its identity check is not independent provenance/legal clearance.
+
+The image retains upstream root LICENSE plus the complete embedded
+`examples/miniaudio.h` and `examples/stb_vorbis.c` files under
+`/opt/nextphase-asr/notices`, preserving their inlined dependencies and notices.
+Their terminal license texts are recorded verbatim in
+`licenses/whisper-cpp-v1.7.6/`: miniaudio offers MIT-0/public-domain alternatives;
+stb_vorbis offers MIT/public-domain alternatives. This uses permissive upstream
+code, no user skill-pack assets. See the updated analysis-pilot-dependencies.json
+for scope. Broader system/transitive/model/patent/security/legal review remains
+necessary before commercial release; this is an owner-restricted prototype.

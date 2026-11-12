@@ -39,8 +39,9 @@ to explicitly allowlisted development/test owners. Operator imports must match a
 accepted resumable upload's checksum/duration and fixed metadata limits. Stale
 edits are fenced; project/account deletion and protected restore replay remove
 stored analysis. See ENGLISH_PROJECT_REVIEW.md for migration, bounded metadata,
-backup/phone copies and unverified runtime/lifecycle acceptance. These routes do
-not invoke the native ASR adapter. The selected-preview route admits only
+backup/phone copies and unverified runtime/lifecycle acceptance. The review routes themselves do
+not invoke the native ASR adapter. Separate explicit analysis admission is
+available only in the operator-enabled private English queue pilot. The selected-preview route admits only
 source-bound numeric candidates from a saved review to the existing fenced queue.
 Same-owner source copies, byte reservations, required decoder guards, child/source
 deletion and private native playback are described in QUEUED_CLIP_PREVIEWS.md.
@@ -54,7 +55,9 @@ without raising its original model score. Content hashes are not reviewer
 authentication/signatures. Private trusted-operator custody and actual recording/
 cut review remain required; annotations are outside automated customer retention.
 
-The optional native ASR adapter has no API/mobile/worker invocation. Transcript text
+The separate operator ASR launcher is not used by the API/worker. The optional
+private English queue pilot uses its own required-isolation launcher; see
+AUTOMATIC_ENGLISH_ANALYSIS.md for its fixed artifacts, consent and claim fences. Transcript text
 is untrusted data, validated/bounded and escaped into a private offline review
 page with a fixed-script CSP. Local file hashes bind source and reviewed native
 artifacts; they do not independently prove artifact origin or legal clearance.

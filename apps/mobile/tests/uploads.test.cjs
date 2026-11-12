@@ -80,7 +80,7 @@ function fixture(options={}) {
     }
     if(route.pathname==='/api/v1/upload-sessions') {
       const key=options.headers['Idempotency-Key'];
-      if(!sessions.has(key))sessions.set(key,{id:crypto.randomUUID(),key,status:'uploading',offset:0,parts:[],completeCalls:0});
+      if(!sessions.has(key))sessions.set(key,{id:crypto.randomUUID(),key,status:'uploading',offset:0,parts:[],completeCalls:0,intent:JSON.parse(options.body)});
       return response(snapshot(sessions.get(key)));
     }
     if(route.pathname.startsWith('/api/v1/jobs/'))return response({id:'job-one',status:'queued'});
@@ -368,4 +368,14 @@ test('cancelled or empty picker result returns no new selection',async()=>{
   for(const result of [{canceled:true,assets:null},{canceled:false,assets:[]}]){
     assert.equal(await picker('android',result).run(),null);
   }
+});
+
+
+test('English transcription consent survives restart and reaches the immutable upload intent',async()=>{
+  const world=fixture();let app=world.restart();
+  const record=await app.prepareUpload('owner-a',{uri:'file:///original.mp4',name:'source.mp4'},'English','vlog',30,true,true);
+  assert.equal(record.englishAnalysis,true);app=world.restart();
+  const saved=await app.loadPending('owner-a');assert.equal(saved.englishAnalysis,true);
+  await app.resumeUpload(saved,'token',()=>{});
+  assert.equal([...world.sessions.values()][0].intent.english_analysis,true);
 });

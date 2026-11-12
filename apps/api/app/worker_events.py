@@ -7,6 +7,7 @@ from .models import utcnow
 
 PHASES={'starting','maintenance','idle','rendering','database_retry','stopping','stopped'}
 EVENTS={
+    'analysis_completed':(logging.INFO,'English analysis completed; human review required'),
     'worker_started':(logging.INFO,'worker started'),
     'worker_stopped':(logging.INFO,'worker stopped'),
     'database_unavailable':(logging.WARNING,'worker database unavailable; retrying'),

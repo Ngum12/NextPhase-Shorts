@@ -5,6 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { api, ApiError, cancelJob, deleteJob, Job } from '../../src/api';
 import { exportVideo } from '../../src/videoExports';
 import {englishReviewVisible} from '../../src/analysis';
+import {EnglishAnalysisPanel} from '../../src/EnglishAnalysisPanel';
 import {ClipPlayer} from '../../src/ClipPlayer';
 import {forgetPreviewIntents} from '../../src/clipPreviews';
 import { useAuth } from '../../src/auth';
@@ -79,15 +80,15 @@ export default function Project() {
       </View>
       {['queued','processing'].includes(job.status)&&<Button title={cancelling?'Cancelling…':'Cancel render'} onPress={cancel} disabled={cancelling||deleting||downloading} secondary/>}
       <Button title="Refresh status" onPress={refresh} disabled={deleting} secondary />
-      {englishReviewVisible&&!job.preview_parent_id&&<Button title="Review English clips" onPress={()=>router.push({pathname:'/review/[id]',params:{id}})} disabled={deleting||downloading||cancelling} secondary/>}
+      {englishReviewVisible&&!job.preview_parent_id&&token&&<EnglishAnalysisPanel key={`${id}:${token}`} id={id} token={token} disabled={deleting||downloading||cancelling}/>}
       {job.preview_parent_id&&<Button title="Back to source review" onPress={()=>router.push({pathname:'/review/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling} secondary/>}
-      {job.status==='succeeded'&&<>
+      {job.status==='succeeded'&&job.operation!=='analysis'&&<>
         {job.preview_parent_id&&token&&<ClipPlayer key={`${job.id}:${token}`} id={job.id} token={token}/>}
         <Button title={downloading?'Please wait…':'Save video to phone'} onPress={()=>download('save')} disabled={downloading||deleting||cancelling}/>
         <Button title="Share video" onPress={()=>download('share')} disabled={downloading||deleting||cancelling} secondary/>
       </>}
       <Button title={deleting?'Deleting…':'Delete project'} onPress={remove} disabled={deleting||downloading||cancelling} secondary/>
-      <Body>{job.preview_parent_id?'Reviewed excerpt preview: original voice, vertical letterbox. Captions and advanced styles are not applied.':'Stage 1 preview: trimmed vertical MP4 only. Intelligent highlight selection and advanced styles will be built in later phases.'}</Body>
+      <Body>{job.preview_parent_id?'Reviewed clip preview. Framing, captions and voice settings follow your chosen options.':'The baseline short trims the start of your recording. English suggestions use a separate transcript review; advanced editing styles are still planned.'}</Body>
     </>}
   </ScrollView></Page>;
 }
