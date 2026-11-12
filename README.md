@@ -24,6 +24,11 @@ Reviewed previews also offer optional [centered portrait framing](docs/PORTRAIT_
 Fit remains the default; fill crops outer details and requires watching the result.
 This is fixed center cropping, not automatic speaker tracking.
 
+The [polished-video workspace](docs/POLISHED_VIDEO.md) combines reviewed-caption
+text/timing corrections, fixed appearance choices, optional voice leveling and a
+local preset into one render flow. It still needs a prepared English review and
+human recording comparison; no automatic transcription or face tracking is added.
+
 ## Step 1 — Run local or Docker backend
 
 ### Recommended: Docker Desktop

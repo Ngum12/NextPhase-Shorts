@@ -141,3 +141,12 @@ test('portrait framing is optional, warns about cropping and composes with capti
  await h.alerts.at(-1)[2][1].onPress();await h.flush();
  assert.equal(h.calls.filter(c=>c.preview).at(-1).framing,'fit');
 });
+
+test('saved selected clips open the combined polish workspace with bound revision',async()=>{
+ const h=harness();enablePreviews(h);h.value.polished_preview_supported=true;await h.flush();
+ h.button('Polish selected clip').props.onPress();
+ const route=h.calls.find(c=>c.push).push;
+ assert.equal(route.pathname,'/polish/[id]');assert.equal(route.params.revision,h.value.revision);
+ assert.equal(route.params.candidate,'1');
+ h.check('Word 2:').props.onPress();await h.flush();assert(!h.button('Polish selected clip'));
+});

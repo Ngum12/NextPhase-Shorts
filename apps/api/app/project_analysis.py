@@ -1,10 +1,11 @@
 """Private English review and selected-excerpt queue admission; inference is offline."""
 import hashlib
+import json
 import math
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import Field, UUID4
+from fastapi import APIRouter, Depends, HTTPException, Response, Query
+from pydantic import Field, UUID4, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,8 @@ from .db import session_dep
 from .models import ProjectAnalysis, RenderJob, UploadSession, User, utcnow
 from .queue import lock_owner
 from .preview_framing import Framing
+from .caption_plan import CaptionCue, captions_for, validate_cues
+from .polish import PolishSettings
 
 router = APIRouter(prefix='/api/v1/jobs', tags=['English review pilot'])
 MAX_TRANSCRIPT_BYTES = 262144
@@ -101,7 +104,7 @@ def document(row):
         'review': review.model_dump(mode='json') if review else None,
         'proposal': proposal.model_dump(mode='json'), 'render_enabled': False,
         'queued_preview_supported': True, 'clean_captions_supported': True,
-        'portrait_framing_supported': True}
+        'portrait_framing_supported': True, 'polished_preview_supported': True}
 
 
 class PreviewRequest(ClosedModel):
@@ -111,6 +114,15 @@ class PreviewRequest(ClosedModel):
     acknowledged_preview: bool = Field(strict=True)
     caption_style: Literal['none','clean-1']='none'
     framing: Framing='fit'
+    polish: PolishSettings | None=None
+    caption_edits: tuple[CaptionCue,...] | None=Field(default=None,min_length=1,max_length=80)
+    acknowledged_caption_edits: bool=Field(default=False,strict=True)
+
+    @model_validator(mode='after')
+    def edits_acknowledged(self):
+        if self.caption_edits is not None and (self.caption_style!='clean-1' or not self.acknowledged_caption_edits):
+            raise ValueError('Caption corrections require captions and explicit recording comparison')
+        return self
 
 
 @router.post('/{job_id}/analysis/previews',status_code=202)
@@ -131,6 +143,10 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     identity=f'{parent.id}:{payload.revision}:{payload.candidate_number}'
     if payload.caption_style != 'none':identity += ':'+payload.caption_style
     if payload.framing != 'fit':identity += ':framing-'+payload.framing
+    if payload.polish is not None or payload.caption_edits is not None:
+        customization={'polish':(payload.polish or PolishSettings()).model_dump(mode='json'),
+                       'caption_edits':[cue.model_dump(mode='json') for cue in payload.caption_edits] if payload.caption_edits is not None else None}
+        identity += ':polish-'+hashlib.sha256(json.dumps(customization,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
     request_hash=hashlib.sha256(identity.encode()).hexdigest()
     previous=db.scalar(select(RenderJob).where(RenderJob.user_id==user.id,RenderJob.idempotency_key==key))
     if previous:
@@ -147,9 +163,11 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     plan=Proposal.model_validate_json(row.proposal_json)
     if payload.candidate_number>len(plan.candidates):raise HTTPException(422,'Choose an available clip suggestion',headers=PRIVATE)
     candidate=plan.candidates[payload.candidate_number-1]
-    from .caption_plan import captions_for
     try:
         captions=captions_for(Transcript.model_validate_json(row.transcript_json), candidate) if payload.caption_style=='clean-1' else ()
+        if payload.caption_edits is not None:
+            if len(payload.caption_edits)!=len(captions):raise ValueError('Caption count differs')
+            captions=validate_cues(payload.caption_edits,candidate.output_frames)
     except ValueError:
         raise HTTPException(422,'This clip does not fit the clean caption limits. Choose a plain preview.',headers=PRIVATE) from None
     accepted=db.scalar(select(UploadSession).where(UploadSession.job_id==parent.id,
@@ -162,12 +180,13 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
         output_frames=candidate.output_frames,requested_seconds=parent.desired_seconds,
         review_sha256=plan.review_sha256,transcript_sha256=plan.transcript_sha256,
         review_revision=row.revision,candidate_number=payload.candidate_number,
-        caption_style=payload.caption_style,captions=captions,framing=payload.framing)
+        caption_style=payload.caption_style,captions=captions,framing=payload.framing,
+        polish=payload.polish or PolishSettings(),caption_edits_applied=payload.caption_edits is not None)
     settings=get_settings()
     if not 0<accepted.total_bytes<=min(settings.max_upload_bytes,314572800):
         raise HTTPException(409,'Source exceeds the preview profile',headers=PRIVATE)
     preview_cap=min(settings.max_render_bytes,64*1024**2)
-    label='captions' if captions else 'preview'
+    label='polished' if payload.polish is not None else 'captions' if captions else 'preview'
     suffix=f' · {label} {payload.candidate_number}'+(' · crop' if payload.framing!='fit' else '')
     child=RenderJob(id=str(uuid.uuid4()),user_id=user.id,title=parent.title[:100-len(suffix)]+suffix,
         style=parent.style,desired_seconds=parent.desired_seconds,source_duration_seconds=parent.source_duration_seconds,
@@ -183,6 +202,30 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
 class SaveReview(ClosedModel):
     revision: Digest
     review: TranscriptReview
+
+
+@router.get('/{job_id}/analysis/captions')
+def get_caption_draft(job_id:str,revision:Digest,response:Response,
+                      candidate_number:int=Query(ge=1,le=5),
+                      user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    response.headers['Cache-Control']='private, no-store'
+    parent=owned_project(db,user.id,job_id)
+    row=db.get(ProjectAnalysis,job_id)
+    if row is None:raise HTTPException(404,'No English review is ready',headers=PRIVATE)
+    data=document(row)
+    if row.revision!=revision:raise HTTPException(409,'Review changed. Refresh before editing captions.',headers=PRIVATE)
+    if data['review'] is None:raise HTTPException(409,'Save the transcript review first',headers=PRIVATE)
+    plan=Proposal.model_validate_json(row.proposal_json)
+    if candidate_number>len(plan.candidates):raise HTTPException(422,'Choose an available clip',headers=PRIVATE)
+    candidate=plan.candidates[candidate_number-1]
+    try:
+        cues=captions_for(Transcript.model_validate_json(row.transcript_json),candidate)
+    except ValueError:
+        raise HTTPException(422,'This clip exceeds caption layout limits. Use a plain preview.',headers=PRIVATE) from None
+    result={'job_id':parent.id,'revision':row.revision,'candidate_number':candidate_number,
+            'duration_ms':candidate.output_frames*1000//30,
+            'cues':[cue.model_dump(mode='json') for cue in cues]}
+    db.commit();return result
 
 
 @router.get('/{job_id}/analysis')

@@ -12,13 +12,15 @@ from .media_policy import CODEC_THREADS, input_args
 from .observability import stage
 from .caption_plan import validate_cues
 from .preview_framing import framing_filter
+from .polish import PolishSettings, caption_appearance, voice_filter
 
 CAPTION_FONT=Path('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf')
 
 
-def caption_filters(cues, source, start_ms):
+def caption_filters(cues, source, start_ms, polish=None):
     """Text stays in private UTF-8 files, outside FFmpeg's filter grammar."""
     filters=[];paths=[]
+    size,color,position=caption_appearance(polish or PolishSettings())
     try:
         if not CAPTION_FONT.is_file():raise MediaError('Caption font is unavailable')
         for cue in cues:
@@ -32,8 +34,8 @@ def caption_filters(cues, source, start_ms):
             begin=(start_ms+cue.start_ms)/1000
             end=(start_ms+cue.end_ms)/1000
             filters.append(f"drawtext=fontfile={CAPTION_FONT}:textfile={path}:expansion=none:"
-                "fontsize=56:fontcolor=white:box=1:boxcolor=black@0.82:boxborderw=18:"
-                "line_spacing=12:x=(w-text_w)/2:y=1500:"
+                f"fontsize={size}:fontcolor={color}:box=1:boxcolor=black@0.82:boxborderw=18:"
+                f"line_spacing=12:x=(w-text_w)/2:y={position}:"
                 f"enable='gte(t,{begin:.3f})*lt(t,{end:.3f})'")
         return filters,paths
     except BaseException:
@@ -61,7 +63,8 @@ def output_frames(path):
 
 
 def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_seconds,
-                   max_output_bytes, should_cancel=lambda:False, timeout=300, captions=(), framing='fit'):
+                   max_output_bytes, should_cancel=lambda:False, timeout=300, captions=(), framing='fit', polish=None):
+    polish=PolishSettings.model_validate(polish or {})
     try:
         video_filter=framing_filter(framing)
     except ValueError:
@@ -91,8 +94,11 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
         '-movflags','+faststart','-max_muxing_queue_size','1024',str(temporary)]
     caption_paths=[]
     try:
+        audio_filter=voice_filter(polish)
+        if audio_filter:
+            command[-1:-1]=['-af',audio_filter]
         if captions:
-            filters,caption_paths=caption_filters(captions,source,start_ms)
+            filters,caption_paths=caption_filters(captions,source,start_ms,polish)
             command[command.index('-vf')+1]+=','+','.join(filters)
         def guard():
             if temporary.stat().st_size>=max_output_bytes:

@@ -1,5 +1,15 @@
 # Security / privacy — gating checklist, not completed certification
 
+Manual polish exposes only owner/revision-bound prepared caption cues and closed
+appearance/voice enums. Corrected cues need explicit recording comparison and
+bounded count/text/timing validation; they do not overwrite transcript provenance.
+Settings/edits enter the immutable request hash/spec. Text remains outside native
+filter grammar. Drafts remain in editor memory, presets contain only local
+per-account choices, and five recent render intents store only hashes/UUIDs.
+Deletion clears specs/local intent metadata, not earlier exports/backups or local
+appearance presets. See POLISHED_VIDEO.md for privacy, interruption and operator
+update boundaries. This is not automatic semantic, audio-quality or legal approval.
+
 Reviewed preview framing accepts only fit or fixed centered fill. It does not
 accept coordinates, filters, paths or commands. The choice is snapshotted in the
 same source/review-bound spec and idempotency identity; every variant retains

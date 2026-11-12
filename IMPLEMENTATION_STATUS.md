@@ -1,5 +1,58 @@
 # Implementation Status — 2026-11-10
 
+## Combined polished-video package — 2026-11-12
+
+Owner requested related visible improvements be delivered together, with one PR,
+deployment and phone review. The merged portrait-framing increment has not yet
+been deployed; this package includes it in the next matching-image update.
+
+Added a single **Polish selected clip** workspace for prepared saved English
+suggestions. It combines framing, captions on/off, manual phrase text/start/end
+corrections, standard/large size, white/yellow colour, lower/middle placement,
+original/leveled audio and one reusable preset per account/device. Corrections
+require comparison with the recording. Drafts stay in memory, guarded navigation
+warns before removal, same-owner token refresh preserves validated workspaces,
+and account changes hide prior content. Presets retain only six small choices;
+five recent retry fingerprints/UUIDs per source retain no caption text. Native
+playback/Save/Share remain in the existing private child-project flow.
+
+The owner/revision-bound no-store caption-draft GET and closed preview POST
+settings validate existing phrase count (<=80), two 26-character lines, ordered
+nonoverlapping integer times and actual frame-derived duration. Immutable specs
+record corrections/settings and participate in idempotency; the original
+transcript/review/recording is not rewritten. Legacy specs/hashes/defaults remain
+valid; schema remains 0022. All worker credentials/guards, caption-file exact read
+grants, frame/duration/byte QA, leases, budgets, and source/child/account deletion
+fences are reused. Corrected text remains outside FFmpeg grammar. Voice leveling
+uses fixed bounded dynaudnorm (<=4x gain) and a limiter, not synthesis, denoising,
+pitch/time manipulation or a guaranteed integrated-loudness target. It may raise
+background noise. No new dependency, model, asset, paid provider or public rollout.
+
+Added an explicit single-command private VPS updater: clean merged-main check,
+fresh verified offsite backup plus local ciphertext rehash before image build,
+host check, observed-writer preservation, idle-queue check, explicit migration,
+matching service restart and schema/font checks. Prior active timers are restored
+on success/handled failure/interruption. It reports failed phases, potentially
+stopped writers and restoration failures; no blind rollback or volume/key deletion
+is attempted. Actual host loss/hard kill can still prevent cleanup.
+
+Validation: full SQLite and disposable PostgreSQL suites passed (574 tests each),
+then the final 18 polish/updater regressions passed on both databases after the
+local-bundle rehash and final auth/overlap assertions. Real checks include custom
+caption styling pixels, quiet-tone volume increase without pitch shift, silent
+input, complete queued crop/caption/audio render/private download and deletion;
+mocked updater checks exercise verification-before-build, dirty checkout,
+failures/restoration and mail-service preservation. All 123 mobile tests and
+TypeScript passed; Android Metro/Hermes export passed. The inspected synthetic
+six-second before/polished videos each have 180 frames; measured render/probe
+paths took 1.108/1.202 seconds and the sample audio RMS rose 102.327→408.675 (16-bit
+units). This is a synthetic geometry/tone/manual-text proof, not speech/meaning,
+real-person or production-performance acceptance. Artifacts are outside Git at
+/workspace/artifacts/polished-video/demo/. No live VPS execution of the updater,
+protected polished render or physical phone/editor/audio acceptance occurred here.
+See POLISHED_VIDEO.md for owner workflow, draft/preset/backup privacy limits and
+the single combined deployment.
+
 ## Optional centered portrait preview framing — 2026-11-12
 
 Operational owner acceptance before this increment: Google OAuth reached external
