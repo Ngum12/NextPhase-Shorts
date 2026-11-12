@@ -15,13 +15,14 @@ function harness(){
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
  const detailExports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/clipSelection.ts'),'utf8'),
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:detailExports});
+ const timing={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/audioTiming.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:timing});
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
   '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate,captionStyle,framing)=>{
     h.calls.push({preview:id,token,revision,candidate,captionStyle,framing});if(h.previewError)throw h.previewError;
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
-  '../../src/clipSelection':detailExports,'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
+  '../../src/audioTiming':timing,'../../src/clipSelection':detailExports,'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
    getEnglishAnalysis:async(id,token)=>{h.calls.push({get:id,token});if(h.getError)throw h.getError;return h.delayedGet?h.delayedGet:structuredClone(h.value);},
@@ -179,4 +180,16 @@ test('legacy suggestions do not claim the new diversity rules',async()=>{
  h.value.proposal.candidates=[{first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360}];
  await h.flush();assert(!h.text().includes('reduce near-duplicate ranges'));
  assert(h.text().includes('first transcribed word')&&h.text().includes('last transcribed word'));
+});
+
+
+test('audio guide shows bounded quiet passages and selected-range summary only when present',async()=>{
+ const h=harness();h.value.audio_timing={audio_duration_ms:12000,quiet_intervals:[{start_ms:0,end_ms:1000}]};
+ h.value.proposal.candidates=[{first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360}];
+ await h.flush();assert(h.text().includes('Audio timing guide'));
+ assert(h.text().includes('low-volume estimates'));assert(h.text().includes('Detected quiet audio inside this option:'));
+ assert(!h.calls.some(c=>c.preview));
+ h.value.audio_timing.audio_duration_ms=10000;await h.button('Refresh review').props.onPress();await h.flush();
+ assert(h.text().includes('Audio timing covers only part of this option'));
+ const old=harness();await old.flush();assert(!old.text().includes('Audio timing guide'));
 });

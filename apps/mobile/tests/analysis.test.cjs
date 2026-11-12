@@ -17,7 +17,8 @@ function fixture(){
   authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});if(state.error)throw state.error;return structuredClone(state.value);},extract:async response=>response};
  const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/analysis.ts'),'utf8'),
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- const exports={};vm.runInNewContext(code,{exports,require:()=>api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
+ const timing={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/audioTiming.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:timing});
+ const exports={};vm.runInNewContext(code,{exports,require:name=>name==='./audioTiming'?timing:api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
  return {actions:exports,state,calls};
 }
 test('review reads the authenticated project route without altering source data',async()=>{
@@ -61,4 +62,28 @@ const mutations={
 for(const [label,mutate] of Object.entries(mutations))test('refuses '+label,async()=>{
  const f=fixture();mutate(f.state.value);
  await assert.rejects(f.actions.getEnglishAnalysis('project-1','token'));
+});
+
+
+function timing(){return {schema_version:'audio-timing-1',source_sha256:'c'.repeat(64),source_duration_ms:15000,
+ audio_duration_ms:14000,alignment:'normalized_pcm_first_pts_zero',method:'pcm_window_energy',window_ms:20,
+ threshold_dbfs:-40,minimum_quiet_ms:500,quiet_intervals:[{start_ms:0,end_ms:1000},{start_ms:13000,end_ms:14000}]};}
+test('source-bound audio timing is optional for legacy reviews and retained for new ones',async()=>{
+ const f=fixture();f.state.value.audio_timing=timing();
+ const value=await f.actions.getEnglishAnalysis('project-1','token');assert.equal(value.audio_timing.quiet_intervals.length,2);
+ f.state.value.audio_timing=null;assert.equal((await f.actions.getEnglishAnalysis('project-1','token')).audio_timing,null);
+});
+for(const [name,mutate] of Object.entries({
+ 'foreign source':v=>v.source_sha256='0'.repeat(64),
+ 'different duration':v=>v.source_duration_ms=16000,
+ 'audio outside source':v=>v.audio_duration_ms=16000,
+ 'overlapping quiet passages':v=>v.quiet_intervals=[{start_ms:0,end_ms:1000},{start_ms:500,end_ms:1500}],
+ 'outside audio':v=>v.quiet_intervals=[{start_ms:13000,end_ms:15000}],
+ 'short quiet passage':v=>v.quiet_intervals=[{start_ms:0,end_ms:499}],
+ 'different method':v=>v.method='speech_detector',
+ 'boolean window':v=>v.window_ms=true,
+ 'oversized intervals':v=>v.quiet_intervals=Array(361).fill({start_ms:0,end_ms:1000}),
+}))test('invalid audio timing refuses '+name,async()=>{
+ const f=fixture();f.state.value.audio_timing=timing();mutate(f.state.value.audio_timing);
+ await assert.rejects(f.actions.getEnglishAnalysis('project-1','token'),/Audio timing could not be verified/);
 });

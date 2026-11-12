@@ -1,3 +1,4 @@
+import {validAudioTiming,type AudioTiming} from './audioTiming';
 import {api, authenticatedFetch, BASE, extract} from './api';
 
 export const englishReviewVisible = process.env.EXPO_PUBLIC_ENGLISH_REVIEW === 'true';
@@ -17,6 +18,7 @@ export type EnglishAnalysis = {
   clean_captions_supported?:boolean;
   portrait_framing_supported?:boolean;
   polished_preview_supported?:boolean;
+  audio_timing?:AudioTiming|null;
   transcript:{language:'en'; source_sha256:string; source_duration_ms:number; words:ReviewWord[]};
   review:TranscriptReview|null;
   proposal:{algorithm?:string; requested_seconds:number; candidates:ClipCandidate[]; warnings:string[]};
@@ -49,6 +51,8 @@ function validated(value:any):EnglishAnalysis {
         c.output_frames!==Math.floor((c.source_end_ms-c.source_start_ms)*30/1000))) {
     throw new Error('The review could not be loaded. Refresh and try again.');
   }
+  if(value.audio_timing!=null&&!validAudioTiming(value.audio_timing,value.transcript.source_sha256,duration))
+    throw new Error('Audio timing could not be verified. Refresh and try again.');
   if(value.review!==null) {
     const review=value.review;
     if(review?.schema_version!=='transcript-review-1' ||

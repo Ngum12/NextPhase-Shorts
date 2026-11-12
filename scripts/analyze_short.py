@@ -66,7 +66,7 @@ def analyze(args):
             else:
                 if not all((args.engine,args.engine_sha256,args.model,args.model_sha256,args.language)):
                     raise RuntimeError('Select manual input or complete local ASR configuration')
-                audio=extract_audio(source,Path(work)/'audio.wav')
+                audio=extract_audio(source,Path(work)/'audio.wav',duration_ms=duration)
                 transcript=transcribe(audio,engine=args.engine,engine_sha256=args.engine_sha256,
                     model=args.model,model_sha256=args.model_sha256,language=args.language,
                     source_sha256=digest,source_duration_ms=duration,work=work,timeout=args.timeout)
