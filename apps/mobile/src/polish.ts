@@ -5,9 +5,9 @@ import {api,authenticatedFetch,BASE,extract,Job,ApiError} from './api';
 export type Cue={text:string;start_ms:number;end_ms:number};
 export type PolishOptions={framing:'fit'|'fill-center';captions:boolean;
   caption_size:'standard'|'large';caption_color:'white'|'yellow';
-  caption_position:'lower'|'middle';voice:'original'|'level'};
+  caption_position:'lower'|'middle';voice:'original'|'level';audio_edges:'original'|'soft'};
 export const defaultPolish:PolishOptions={framing:'fit',captions:true,caption_size:'standard',
-  caption_color:'white',caption_position:'lower',voice:'original'};
+  caption_color:'white',caption_position:'lower',voice:'original',audio_edges:'original'};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const hash=/^[0-9a-f]{64}$/;
 const pending=new Map<string,Promise<Job>>(),writes=new Map<string,Promise<unknown>>();
@@ -16,12 +16,16 @@ async function serial<T>(key:string,fn:()=>Promise<T>):Promise<T>{
   try{return await next;}finally{if(writes.get(key)===next)writes.delete(key);}
 }
 export function validateOptions(value:any):PolishOptions{
-  if(!value||Object.keys(value).sort().join(',')!==Object.keys(defaultPolish).sort().join(',')||
+  const keys=Object.keys(value||{}).sort().join(',');
+  const current=Object.keys(defaultPolish).sort().join(',');
+  const legacy=Object.keys(defaultPolish).filter(key=>key!=='audio_edges').sort().join(',');
+  if(!value||(keys!==current&&keys!==legacy)||
     !['fit','fill-center'].includes(value.framing)||typeof value.captions!=='boolean'||
     !['standard','large'].includes(value.caption_size)||!['white','yellow'].includes(value.caption_color)||
-    !['lower','middle'].includes(value.caption_position)||!['original','level'].includes(value.voice))
+    !['lower','middle'].includes(value.caption_position)||!['original','level'].includes(value.voice)||
+    !['original','soft'].includes(value.audio_edges??'original'))
     throw Error('Choose valid appearance and voice settings.');
-  return {...value};
+  return {...defaultPolish,...value};
 }
 export function wrapCaption(text:string):string{
   const words=text.trim().split(/\s+/u);const lines:string[]=[];let line='';
@@ -93,7 +97,8 @@ export async function requestPolishedPreview(id:string,token:string,revision:str
   const body={revision,candidate_number:candidate,acknowledged_preview:true,
     caption_style:chosen.captions?'clean-1':'none',framing:chosen.framing,
     polish:{caption_size:chosen.caption_size,caption_color:chosen.caption_color,
-      caption_position:chosen.caption_position,voice:chosen.voice},
+      caption_position:chosen.caption_position,voice:chosen.voice,
+      ...(chosen.audio_edges==='soft'?{audio_edges:'soft'}:{})},
     ...(edits!==null?{caption_edits:validateCues(edits,duration),acknowledged_caption_edits:true}:{})};
   const fingerprint=await digestStringAsync(CryptoDigestAlgorithm.SHA256,JSON.stringify(body));
   const scope=`${token}:${id}:${fingerprint}`,name=`nextphase.polish.intent.${id}`;
