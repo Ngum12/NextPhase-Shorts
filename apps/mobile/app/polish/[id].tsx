@@ -26,6 +26,7 @@ export default function PolishClip(){
   const [owner,setOwner]=useState(''),[duration,setDuration]=useState(0),[base,setBase]=useState<Cue[]>([]);
   const [edits,setEdits]=useState<Editable[]>([]),[index,setIndex]=useState(0),[editing,setEditing]=useState(false);
   const [options,setOptions]=useState<PolishOptions>({...defaultPolish});
+  const [softEdgesSupported,setSoftEdgesSupported]=useState(false);
   const [ack,setAck]=useState(false),[dirty,setDirty]=useState(false),[captionNotice,setCaptionNotice]=useState('');
   const load=async()=>{
     if(!token||working.current)return;
@@ -36,6 +37,7 @@ export default function PolishClip(){
       if(analysis.revision!==revision||!analysis.review||!analysis.proposal.candidates[candidate-1])
         throw Error('The saved review changed. Return to review and select the clip again.');
       if(request!==generation.current)return;
+      setSoftEdgesSupported(analysis.soft_audio_edges_supported===true);
       const identity=`${me.id}:${id}:${candidate}:${revision}`;
       // An access-token refresh must not erase a draft. Revalidate ownership
       // before revealing it; a different owner/review gets a fresh workspace.
@@ -70,7 +72,8 @@ export default function PolishClip(){
       if(save){await savePolishPreset(owner,options);if(request===generation.current)Alert.alert('Preset saved','Appearance, framing and voice choices are saved for this account on this device. Caption words and times are not stored in the preset.');}
       else{const value=await loadPolishPreset(owner);if(request===generation.current){
         if(!value)Alert.alert('No saved preset','Choose your settings, then save your preset.');
-        else{setOptions({...value,captions:base.length>0&&value.captions});setDirty(true);}}}
+        else{setOptions({...value,audio_edges:softEdgesSupported?value.audio_edges:'original',
+          captions:base.length>0&&value.captions});setDirty(true);}}}
     }catch(e:any){if(request===generation.current)setError(e.message||'Preset storage is unavailable.');}
     finally{if(request===generation.current){working.current=false;setBusy(false);}}
   };
@@ -85,6 +88,7 @@ export default function PolishClip(){
     Alert.alert('Render this polished preview?',
       'Watch the result before sharing. '+(options.framing==='fill-center'?'Center cropping removes outer details. ':'')+
       (options.voice==='level'?'Voice leveling can also raise background noise. ':'')+
+      (options.audio_edges==='soft'?'Short fades soften only the first and last 80 ms of audio. ':'')+
       (options.captions?'Check caption wording and timing against the speech.':''),[
       {text:'Keep editing',style:'cancel'},
       {text:'Render preview',onPress:async()=>{
@@ -153,6 +157,10 @@ export default function PolishClip(){
         <Choice label="Voice volume" value={options.voice} disabled={busy}
           choices={[["original","Original volume"],["level","Level voice volume"]]} change={v=>choose('voice',v as PolishOptions['voice'])}/>
         <Body>Leveling adjusts quiet and loud passages when audio exists. It can raise background noise; it does not remove noise or change the speaker.</Body>
+        {softEdgesSupported&&<><Choice label="Audio cut edges" value={options.audio_edges} disabled={busy}
+          choices={[["original","Keep original cut"],["soft","Gentle audio fades (80 ms)"]]}
+          change={v=>choose('audio_edges',v as PolishOptions['audio_edges'])}/>
+          <Body>Optional short volume fades at both clip boundaries; no background music, voice replacement or noise removal. Compare the preview with the original.</Body></>}
       </View>
       <Button title="Save my preset" secondary disabled={busy} onPress={()=>preset(true)}/>
       <Button title="Use my saved preset" secondary disabled={busy} onPress={()=>preset(false)}/>
