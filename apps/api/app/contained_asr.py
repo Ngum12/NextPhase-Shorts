@@ -6,7 +6,8 @@ import subprocess
 import sys
 import time
 
-from .local_transcription import verified_artifact,parse_whisper,regular_file
+from .local_transcription import verified_artifact,parse_whisper,regular_file,WordTimingUnavailable
+from .asr_failures import AsrFailure
 from .media import MediaCancelled,MediaError,teardown_decoder
 from .resource_measure import DecoderSamples
 from .observability import active_attributes
@@ -42,16 +43,25 @@ def transcribe(audio,model,work,*,source_sha256,source_duration_ms,model_sha256,
                 while child.poll() is None:
                     measured.sample(child.pid)
                     if should_cancel():raise MediaCancelled('Analysis cancelled')
-                    if time.monotonic()-began>=timeout:raise MediaError('Analysis deadline exceeded')
+                    if time.monotonic()-began>=timeout:raise AsrFailure('ASR_DEADLINE_EXCEEDED')
                     try:child.wait(timeout=.25)
                     except subprocess.TimeoutExpired:pass
-                if child.returncode:raise MediaError('English transcription failed')
+                if child.returncode:raise AsrFailure('ASR_PROCESS_FAILED')
             finally:teardown_decoder(child)
         if should_cancel():raise MediaCancelled('Analysis cancelled')
-        raw=json.loads(regular_file(output,maximum=OUTPUT_CAP).read_bytes())
-        if not isinstance(raw,dict):raise MediaError('Invalid analysis output')
-        return parse_whisper(raw,source_sha256=source_sha256,source_duration_ms=source_duration_ms,
-            language='en',model_sha256=model_sha256,engine_sha256=engine_digest)
+        try:
+            raw=json.loads(regular_file(output,maximum=OUTPUT_CAP).read_bytes())
+        except (OSError,ValueError,UnicodeError):
+            # Never return raw Whisper JSON, text, path or parser error.
+            raise AsrFailure('ASR_OUTPUT_INVALID') from None
+        if not isinstance(raw,dict):raise AsrFailure('ASR_OUTPUT_INVALID')
+        try:
+            return parse_whisper(raw,source_sha256=source_sha256,source_duration_ms=source_duration_ms,
+                language='en',model_sha256=model_sha256,engine_sha256=engine_digest)
+        except WordTimingUnavailable:
+            raise AsrFailure('ASR_WORD_TIMING_REJECTED') from None
+        except (ValueError,RuntimeError,TypeError,KeyError):
+            raise AsrFailure('ASR_TRANSCRIPT_REJECTED') from None
     finally:
         output.unlink(missing_ok=True)
         if active_attributes.get() is not None:active_attributes.get().update(measured.attributes())
