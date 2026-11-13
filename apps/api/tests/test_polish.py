@@ -69,6 +69,21 @@ def test_edited_caption_snapshot_is_acknowledged_immutable_and_idempotent(client
     assert request(client,prepared,data,caption_edits=overlapping,acknowledged_caption_edits=True).status_code==422
 
 
+def test_original_audio_keeps_preupgrade_request_fingerprint(client,prepared):
+    data=review(client,prepared)
+    result=request(client,prepared,data,polish={})
+    assert result.status_code==202,result.text
+    legacy={'polish':{'caption_size':'standard','caption_color':'white',
+                      'caption_position':'lower','voice':'original'},
+            'caption_edits':None}
+    customization=hashlib.sha256(json.dumps(legacy,sort_keys=True,
+        separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+    identity=f"{prepared['jid']}:{data['revision']}:1:clean-1:polish-{customization}"
+    old_hash=hashlib.sha256(identity.encode()).hexdigest()
+    with SessionLocal() as db:
+        assert db.get(RenderJob,result.json()['id']).request_hash==old_hash
+
+
 @pytest.mark.parametrize('change',[
     {'polish':{'caption_color':'drawtext=evil'}},
     {'polish':{'voice':'movie=https://example.invalid'}},
