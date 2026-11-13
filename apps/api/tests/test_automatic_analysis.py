@@ -213,3 +213,27 @@ def test_pending_cancel_between_inventory_and_owner_lock_cannot_enqueue(client,a
     assert reconcile_requested()==0
     with SessionLocal() as db:
         assert db.scalar(select(RenderJob.id).where(RenderJob.preview_parent_id==item['jid'],RenderJob.operation=='analysis')) is None
+
+
+def test_failed_asr_category_is_durable_and_owner_only(client,automatic,monkeypatch):
+    from app import worker
+    from app.asr_failures import AsrFailure
+    child=start(client,automatic).json()['task']['id']
+    with SessionLocal.begin() as db:
+        db.get(RenderJob,automatic['jid']).status='succeeded'
+    job=worker.claim_job()
+    assert job['id']==child
+
+    def simulated_failure(*args,**kwargs):
+        raise AsrFailure('ASR_WORD_TIMING_REJECTED')
+
+    monkeypatch.setattr('app.analysis_work.process_analysis',simulated_failure)
+    worker.process(job)
+    state=client.get(automatic['auto'],headers=automatic['owner'])
+    assert state.status_code==200
+    assert state.json()['task']['error_code']=='ASR_WORD_TIMING_REJECTED'
+    assert state.json()['task']['status']=='failed'
+    assert client.get(automatic['auto'],headers=automatic['other']).status_code==404
+    with SessionLocal() as db:
+        saved=db.get(RenderJob,child)
+        assert saved.error_code=='ASR_WORD_TIMING_REJECTED'
