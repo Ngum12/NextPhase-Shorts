@@ -15,7 +15,7 @@
     "test:account": "node tests/accountDeletion.test.cjs",
     "test:recovery": "node tests/emailActions.test.cjs",
     "test:refresh": "node tests/refreshSession.test.cjs",
-    "test:analysis": "node --test tests/analysis.test.cjs tests/analysisScreen.test.cjs tests/clipPreviews.test.cjs tests/clipPlayer.test.cjs tests/polish.test.cjs tests/polishScreen.test.cjs tests/englishAnalysis.test.cjs tests/clipSelection.test.cjs tests/sceneAnalysis.test.cjs tests/clipTimeline.test.cjs tests/cutReview.test.cjs",
+    "test:analysis": "node --test tests/analysis.test.cjs tests/analysisScreen.test.cjs tests/reviewShortcuts.test.cjs tests/clipPreviews.test.cjs tests/clipPlayer.test.cjs tests/polish.test.cjs tests/polishScreen.test.cjs tests/englishAnalysis.test.cjs tests/clipSelection.test.cjs tests/sceneAnalysis.test.cjs tests/clipTimeline.test.cjs tests/cutReview.test.cjs",
     "test": "npm run test:uploads && npm run test:auth && npm run test:exports && npm run test:account && npm run test:recovery && npm run test:refresh && npm run test:analysis && npm run test:toolchain",
     "test:toolchain": "node tests/toolchain.test.cjs"
   },
