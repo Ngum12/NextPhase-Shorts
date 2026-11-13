@@ -17,6 +17,7 @@ function harness(){
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:detailExports});
  const visual={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/sceneAnalysis.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:visual});
  const timing={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/audioTiming.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:timing});
+  const shortcuts={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/reviewShortcuts.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:shortcuts});
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:h.id}),router:{replace:route=>h.calls.push({back:route}),push:route=>h.calls.push({push:route})}},
   '../../src/clipPreviews':{requestClipPreview:async(id,token,revision,candidate,captionStyle,framing)=>{
@@ -24,6 +25,7 @@ function harness(){
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
   '../../src/sceneAnalysis':visual,'../../src/audioTiming':timing,'../../src/clipSelection':detailExports,
+  '../../src/reviewShortcuts':shortcuts,
   '../../src/ClipEvidenceTimeline':{ClipEvidenceTimeline:'ClipEvidenceTimeline'},'../../src/CutReviewPanel':{CutReviewPanel:'CutReviewPanel'},'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
@@ -246,4 +248,43 @@ test('changing selected option updates review checkpoints without requesting a r
  assert.equal(h.calls.filter(c=>c.preview).length,0);
  h.check('Word 2:').props.onPress();await h.flush();
  assert.equal(h.nodes().filter(n=>n.type==='CutReviewPanel').length,0);
+});
+
+test('long transcripts use one unverified draft and an optional word editor',async()=>{
+ const h=harness();h.value.transcript.words=Array.from({length:90},(_,i)=>({
+   text:i%12===11?'sentence.':'word'+i,start_ms:i*450,end_ms:i*450+370,
+   confidence:i===0?.2:.98,
+ }));
+ await h.flush();
+ assert(h.button('Draft 8 sentence endings'));
+ assert(h.button('Edit individual word endings'));
+ assert(!h.check('Word 89:'));
+ h.button('Draft 8 sentence endings').props.onPress();await h.flush();
+ assert(h.nodes().some(n=>n.type==='Body'&&n.children.includes(8)&&n.children.includes(' sentence endings marked.')));
+ assert.equal(h.ack().props.accessibilityState.checked,false);
+ assert.equal(h.button('Save review and find clips').props.disabled,true);
+ assert.equal(h.check('Confirm word 1:').props.accessibilityState.checked,false);
+ h.button('Edit individual word endings').props.onPress();await h.flush();
+ assert(h.check('Word 89:'));
+ h.check('Word 89:').props.onPress();await h.flush();
+ assert(h.nodes().some(n=>n.type==='Body'&&n.children.includes(9)&&n.children.includes(' sentence endings marked.')));
+ h.button('Read entire transcript').props.onPress();await h.flush();
+ assert(h.button('Show shorter transcript'));
+});
+test('replacing saved marks with drafted cues requires approval and hides stale candidates',async()=>{
+ const h=harness();enablePreviews(h);await h.flush();
+ const title='Draft 1 sentence endings';
+ assert(h.button(title));
+ h.button(title).props.onPress();
+ assert.equal(h.alerts.at(-1)[0],'Replace marked sentence endings?');
+ assert(h.nodes().some(n=>n.type==='Button'&&n.props.title.startsWith('Option 1')));
+ h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert(!h.nodes().some(n=>n.type==='ClipEvidenceTimeline'));
+ assert(h.text().includes('Save your changes to update suggestions.'));
+ assert.equal(h.ack().props.accessibilityState.checked,false);
+});
+test('saved clip choices appear before the detailed word editor',async()=>{
+ const h=harness();enablePreviews(h);await h.flush();
+ const output=h.text();
+ assert(output.indexOf('Clip suggestions')<output.indexOf('1. Mark sentence endings'));
 });
