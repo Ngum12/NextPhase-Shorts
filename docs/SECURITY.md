@@ -1,13 +1,16 @@
 # Security / privacy — gating checklist, not completed certification
 
 The optional visual-change decoder uses exact private input/output grants, a
-1-GiB address bound, 60-second wall deadline and 3-MiB kernel file bound. Required
+1-GiB address bound, 120-second wall deadline and 3-MiB kernel file bound. Required
 containment is never disabled for fallback. Temporary sampled pixels are cleaned
 with attempt scratch and never sent to phones/logs; crash remnants retain the
 existing cleanup/encrypted-backup custody. <=32-KiB source-bound numeric metadata
 is owner/claim/deletion/restore fenced and revalidated on read. Unavailable guides
 do not claim zero changes. Old rows/reviews are preserved. See SCENE_CHANGE_GUIDE.md
-for temporal uncertainty, optional failure and remaining host acceptance.
+for temporal uncertainty, optional failure and remaining host acceptance. On a
+wall timeout only, a fully stopped decoder's complete prefix frames can provide
+explicit partial coverage after validation; unfinished frames are discarded.
+Cancellation/claim loss and malformed output cannot publish a partial result.
 
 
 The audio timing guide scans only the bounded normalized analysis PCM on the

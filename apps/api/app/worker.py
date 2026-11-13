@@ -17,6 +17,7 @@ from .media import MediaCancelled, MediaError, OutputLimitExceeded, render_basel
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner,dead_letter
 from . import object_store
+from .analysis_limits import ANALYSIS_OVERHEAD_SECONDS
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 from .worker_events import emit
@@ -68,7 +69,7 @@ def claim_job():
         now = utcnow()
         token = str(uuid.uuid4())
         selected=db.get(RenderJob,job_id)
-        budget=(settings.english_analysis_timeout_seconds+240 if selected.operation=='analysis'
+        budget=(settings.english_analysis_timeout_seconds+ANALYSIS_OVERHEAD_SECONDS if selected.operation=='analysis'
                 else settings.render_timeout_seconds+(300 if selected.media_backend=='s3' else 90))
         # Compare-and-set also protects SQLite, which has no SKIP LOCKED.
         job = db.execute(update(RenderJob).where(
