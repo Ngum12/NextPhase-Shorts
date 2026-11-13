@@ -51,7 +51,7 @@ def transcribe(audio,model,work,*,source_sha256,source_duration_ms,model_sha256,
         if should_cancel():raise MediaCancelled('Analysis cancelled')
         try:
             raw=json.loads(regular_file(output,maximum=OUTPUT_CAP).read_bytes())
-        except (OSError,ValueError,UnicodeError):
+        except (OSError,ValueError,UnicodeError,RuntimeError):
             # Never return raw Whisper JSON, text, path or parser error.
             raise AsrFailure('ASR_OUTPUT_INVALID') from None
         if not isinstance(raw,dict):raise AsrFailure('ASR_OUTPUT_INVALID')
