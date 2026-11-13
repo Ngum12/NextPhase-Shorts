@@ -9,13 +9,25 @@ ASR, semantic rewriting, face tracking, noise removal, music or a public rollout
 
 1. Open the original English project → Review English clips → Refresh review.
 2. Select a saved suggestion → **Polish selected clip**.
-3. Choose fit/centered fill; captions on/off; standard/large text; white/yellow;
+3. Choose fit/centered fill, or opt-in left/right fill when advertised; captions
+   on/off; standard/large text; white/yellow;
    lower/middle placement; original/leveled voice volume.
 4. Optionally open the caption editor. Correct text and start/end seconds for
    each existing phrase, comparing against the recording. Confirm that comparison.
 5. Save/use **My preset** for appearance, framing, caption on/off and voice choices.
 6. **Render polished preview** → confirm → wait → **Watch preview**. Check wording,
    speech alignment, edge details, readability and sound before Save/Share.
+
+Manual **Fill portrait (left/right)** anchors crop in the original video space
+before scaling. This helps keep an off-center subject visible in wide sources;
+it is not motion tracking, face detection or automatic composition. Portrait
+sources may have little or no horizontal room to change the crop. The default
+Fit/Center choices remain unchanged; older servers do not advertise
+`manual_crop_focus_supported:true`, so the mobile polish screen hides left and
+right. Revalidated older-server presets and requests fall back to Center if
+a previously selected left/right anchor is no longer supported. Source media,
+transcript timings, caption plan, queue and 60-second cap remain unchanged.
+Always watch both output edges and compare the selected subject to the source.
 
 Caption edits change only the preview's caption copy. The original recognized
 words, scores, word timestamps, review and recording remain unchanged. Timing is
@@ -75,6 +87,19 @@ files with expansion disabled. Exact read grants, credential reduction, process/
 network limits, output size/frame/duration QA, leases, quotas and deletion fences
 remain. Specs/backups contain caption corrections; exported videos cannot be
 recalled. Preset/render features remain restricted to development/test owners.
+
+## Deployment and acceptance for manual horizontal reframing
+
+This feature changes the API/worker renderer and therefore requires the
+existing backup-first VPS updater after merging and verifying CI. Preserve
+volumes, certificate state, the current owner allowlist, and backup verification.
+Do not deploy directly from a feature branch. The UI offers the new choices
+only after the new server advertises its capability. Test a landscape source
+with a person clearly to the left, and another to the right. Compare Fit,
+Center, Left and Right, confirm that 1080x1920/30fps output duration, captions,
+original voice, safe output bounds and Save/Share are intact. Also check one
+portrait clip (horizontal selection may have no visible effect). Automated
+band-color pixel checks prove geometry only, not human quality or gaze tracking.
 
 ## Deployment gate and acceptance for gentle audio cuts
 
