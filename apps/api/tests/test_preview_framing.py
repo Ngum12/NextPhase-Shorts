@@ -128,6 +128,20 @@ def test_framing_admission_is_closed_and_retries_preserve_legacy_fit_hashes(clie
     assert request(client,{**prepared,'owner':prepared['other']},data,framing='fill-center').status_code==404
 
 
+@pytest.mark.parametrize('focus', ['fill-left', 'fill-right'])
+def test_manual_anchor_requests_are_owner_bound_and_idempotent(client,prepared,focus):
+    data=review(client,prepared)
+    key=str(uuid.uuid4())
+    result=request(client,prepared,data,key=key,framing=focus)
+    assert result.status_code==202,result.text
+    assert request(client,prepared,data,key=key,framing=focus).json()['id']==result.json()['id']
+    assert request(client,prepared,data,key=key,framing='fill-center').status_code==409
+    with SessionLocal() as db:
+        child=db.get(RenderJob,result.json()['id'])
+        assert ExcerptSpec.model_validate_json(child.preview_spec_json).framing==focus
+    assert request(client,{**prepared,'owner':prepared['other']},data,framing=focus).status_code==404
+
+
 def test_actual_cropped_captioned_job_uses_existing_worker_and_private_download(client,actual):
     from app.worker import claim_job,process
     response=request(client,actual,actual['data'],framing='fill-center',caption_style='clean-1')
