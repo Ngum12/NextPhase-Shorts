@@ -61,6 +61,15 @@ test('old server hides soft edges and keeps older polish previews compatible',as
  assert.equal(h.button('Gentle audio fades (80 ms)'),undefined);
  assert(h.button('Keep original cut')===undefined);
 });
+test('downgraded backend cannot receive an earlier soft-audio choice',async()=>{
+ const h=harness();await h.flush();
+ h.button('Gentle audio fades (80 ms)').props.onPress();await h.flush();
+ h.softEdges=false;h.token='refreshed';h.render();await h.flush();
+ assert.equal(h.button('Gentle audio fades (80 ms)'),undefined);
+ await h.button('Render polished preview').props.onPress();
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.find(c=>c.render).options.audio_edges,'original');
+});
 test('preset save/use is scoped to the validated owner and excludes draft words',async()=>{
  const h=harness();await h.flush();h.button('Level voice volume').props.onPress();await h.flush();
  await h.button('Save my preset').props.onPress();await h.flush();
