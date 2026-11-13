@@ -235,7 +235,7 @@ test('changing selected option updates review checkpoints without requesting a r
  const h=harness();
  h.value.proposal.candidates=[
   {first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360},
-  {first_word:0,last_word:1,source_start_ms:2000,source_end_ms:12000,output_frames:300}
+  {first_word:1,last_word:1,source_start_ms:6000,source_end_ms:12000,output_frames:180}
  ];
  await h.flush();
  const first=h.nodes().find(n=>n.type==='CutReviewPanel');
