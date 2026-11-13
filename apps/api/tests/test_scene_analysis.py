@@ -82,6 +82,50 @@ def test_decode_timeout_is_optional_but_cancellation_is_preserved(source,monkeyp
     assert list(source.parent.iterdir())==[source]
 
 
+@pytest.mark.parametrize('decode_seconds,prefix_frames,cancel_at',[(75,0,None),(125,4,None),(125,2,None),(125,0,None),(125,4,70)])
+def test_slow_decoder_can_finish_or_keep_truthful_partial_coverage(source,monkeypatch,decode_seconds,prefix_frames,cancel_at):
+    # Exercise the real subprocess watchdog with a deterministic clock/process,
+    # rather than sleeping for minutes or requiring a particular CPU speed.
+    import os
+    from app import media
+    clock=[0.0]
+    class Decoder:
+        pid=os.getpid()
+        returncode=None
+        def __init__(self,command,**kwargs):
+            self.output=Path(command[-1])
+            if prefix_frames:self.output.write_bytes(bytes(FRAME_BYTES*prefix_frames)+b'unfinished')
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def wait(self,timeout):
+            clock[0]+=timeout
+            if clock[0]<decode_seconds:raise subprocess.TimeoutExpired('fixture',timeout)
+            self.output.write_bytes(bytes(FRAME_BYTES*12))
+            self.returncode=0
+    class Samples:
+        def sample(self,*args):pass
+        def attributes(self):return {}
+    monkeypatch.setattr(media.time,'monotonic',lambda:clock[0])
+    monkeypatch.setattr(media.subprocess,'Popen',Decoder)
+    monkeypatch.setattr(media,'DecoderSamples',Samples)
+    monkeypatch.setattr(media,'teardown_decoder',lambda process:None)
+    def run():
+        return analyze(source,source_sha256='a'*64,source_duration_ms=6000,
+            should_cancel=lambda:cancel_at is not None and clock[0]>=cancel_at)
+    if cancel_at is not None:
+        with pytest.raises(MediaCancelled):run()
+        assert clock[0]==cancel_at
+    elif decode_seconds<120 or prefix_frames>=3:
+        result=run()
+        count=12 if decode_seconds<120 else prefix_frames-1
+        assert result.status=='available' and result.sample_count==count
+        assert result.analyzed_duration_ms==count*500
+    else:
+        with pytest.raises(SceneUnavailable):run()
+        assert clock[0]==120
+    assert list(source.parent.iterdir())==[source]
+
+
 def test_bad_proxy_shape_and_short_sources_cannot_claim_available_analysis(tmp_path,source):
     path=tmp_path/'proxy.rgb';path.write_bytes(b'partial')
     with pytest.raises(ValueError):read_proxy(path,source_sha256='a'*64,source_duration_ms=6000,should_cancel=lambda:False)

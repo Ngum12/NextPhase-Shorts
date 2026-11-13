@@ -12,6 +12,7 @@ from .analysis_plan import ClosedModel,Digest
 from .local_transcription import regular_file
 from .media import MediaCancelled,MediaError,run_render
 from .media_policy import input_args
+from .analysis_limits import VISUAL_TIMEOUT_SECONDS
 
 MAX_BYTES=32768
 MAX_MS=180000
@@ -19,7 +20,7 @@ WIDTH=64
 HEIGHT=36
 FRAME_BYTES=WIDTH*HEIGHT*3
 MAX_PROXY_BYTES=3*1024**2
-TIMEOUT=60
+TIMEOUT=VISUAL_TIMEOUT_SECONDS
 ADDRESS_BYTES=1024**3
 
 
@@ -126,6 +127,24 @@ def analyze(source,*,source_sha256,source_duration_ms,should_cancel=lambda:False
                 '-fps_mode','passthrough','-threads','1','-pix_fmt','rgb24','-f','rawvideo',str(output)],
                 TIMEOUT,stop,max_file_bytes=MAX_PROXY_BYTES,address_limit_bytes=ADDRESS_BYTES)
             return read_proxy(output,source_sha256=source_sha256,source_duration_ms=source_duration_ms,should_cancel=should_cancel)
+        except subprocess.TimeoutExpired:
+            # run_render has already killed/waited for the decoder. Raw RGB is
+            # fixed-size: retain only its complete prefix frames, never a partly
+            # written frame or an invented estimate of the unchecked remainder.
+            if should_cancel():raise MediaCancelled('Visual analysis cancelled')
+            try:
+                regular_file(output,maximum=MAX_PROXY_BYTES)
+                complete=output.stat().st_size//FRAME_BYTES
+                # The metadata reports half-second bins. Keep one decoded frame
+                # as lookahead so the reported prefix cannot extend half a
+                # second beyond the last frame actually decoded at timeout.
+                if complete<3:raise SceneUnavailable()
+                with output.open('r+b') as stream:
+                    stream.truncate((complete-1)*FRAME_BYTES)
+                return read_proxy(output,source_sha256=source_sha256,source_duration_ms=source_duration_ms,should_cancel=should_cancel)
+            except MediaCancelled:raise
+            except (SceneUnavailable,OSError,ValueError,RuntimeError):
+                raise SceneUnavailable() from None
         except (MediaCancelled,SceneUnavailable):raise
         except (MediaError,OSError,ValueError,RuntimeError,subprocess.SubprocessError):
             raise SceneUnavailable() from None

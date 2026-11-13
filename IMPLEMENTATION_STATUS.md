@@ -1,5 +1,45 @@
 # Implementation Status — 2026-11-10
 
+## Visual scan timeout allowance — 2026-11-13
+
+Owner protected-VPS evidence showed the new visual stage exiting after 60.3
+seconds and memory.events reporting zero max/OOM/OOM-kill events. Its decoder
+was killed with no error text; this establishes the 60-second watchdog expiry,
+not why source decoding was slow. The separate failed preview encoded
+successfully during an isolated diagnostic, without publishing a replacement;
+its initial encoding error remains unresolved rather than attributed to this scan.
+
+Raised only the optional visual decoder wall allowance to 120 seconds, retaining
+the 1-GiB address, 3-MiB file, CPU, cancellation and required isolation bounds.
+Shared constants coordinate the database analysis hard deadline (ASR + 300s)
+and broker dispatch (at least ASR + 360s). This covers the extra visual allowance
+without letting lease renewal extend the absolute deadline. Render-only budgets,
+ASR cap, source/voice, review revisions and stored metadata remain unchanged.
+No migrations, model/key changes, mobile changes or unprotected retries.
+
+On wall timeout only, after decoder teardown, validate any complete RGB prefix
+and discard the incomplete trailing frame, reserving the last complete frame as
+lookahead so coverage cannot extend beyond decoded time. At least three complete
+frames can leave two valid samples that produce partial guidance with explicit
+checked duration; the unchecked remainder
+is never represented as no-change evidence. Empty/invalid/oversized proxies and
+other decoder errors remain unavailable. Cancellation/claim loss still aborts.
+The current mobile guide already displays sampled duration and partial-option
+coverage, so no API schema or client update is needed for this fallback.
+
+Validation: 653 backend tests passed on each SQLite and PostgreSQL. No mobile
+code changed. Deterministic watchdog tests cover a
+75-second decoder completing, a 125-second decoder stopped at 120 with partial
+or empty output, and cancellation that prevents partial publication, alongside
+claim expiry and broker budget coverage. A real original 57.4-second 4K H.264
+fixture decoded to 115 samples in 4.846 seconds in this managed environment;
+it did not reproduce the owner's VPS latency. A separate real two-second
+watchdog run stopped that decoder and returned 36 samples covering only the
+first 18 seconds, with the source hash unchanged. Evidence lives outside Git at
+/workspace/artifacts/scene-timeout/. This is a bounded allowance correction,
+not proof that the owner's recording now succeeds; protected-VPS confirmation
+and any further source-specific performance diagnosis remain after deployment.
+
 ## Sampled visual-change guide — 2026-11-13
 
 Owner reported the deployed audio timing guide works on the phone. Continued

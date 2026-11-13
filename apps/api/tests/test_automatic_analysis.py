@@ -44,6 +44,28 @@ def test_private_capabilities_optin_replay_and_hidden_nonvideo_task(client,autom
         assert not task.source_path and task.storage_reserved_bytes>80*1024**2
     assert client.get('/api/v1/jobs/'+child['id']+'/download',headers=item['owner']).status_code==409
 
+
+def test_analysis_claim_covers_longer_visual_scan_and_still_expires(client,automatic,monkeypatch):
+    from app import worker,broker
+    from app.analysis_limits import VISUAL_TIMEOUT_SECONDS
+    from app.job_supervision import renew_claim
+    child=start(client,automatic).json()['task']['id']
+    # The prepared source fixture need not be processed to claim its analysis.
+    with SessionLocal.begin() as db:
+        db.get(RenderJob,automatic['jid']).status='succeeded'
+    began=utcnow()
+    monkeypatch.setattr(worker,'utcnow',lambda:began)
+    job=worker.claim_job()
+    assert job['id']==child
+    with SessionLocal() as db:
+        row=db.get(RenderJob,child)
+        deadline=broker.aware(row.claim_deadline_at)
+        assert (deadline-began).total_seconds()==get_settings().english_analysis_timeout_seconds+VISUAL_TIMEOUT_SECONDS+180
+        assert broker.aware(db.get(RenderAttempt,job['claim_token']).deadline_at)==deadline
+    # Renewals cannot make this expanded allowance unbounded.
+    monkeypatch.setattr('app.job_supervision.utcnow',lambda:deadline+timedelta(seconds=1))
+    assert not renew_claim(job)
+
 def test_publish_is_review_required_idempotent_and_preserves_existing_annotations(client,automatic):
     item=automatic;child=start(client,item).json()['task']['id'];job=claimed(child)
     assert publish(job,item['transcript'],1)

@@ -40,6 +40,16 @@ class FakeRedis:
         return None if old else key
 
 
+@pytest.mark.parametrize('render_seconds',[10,1800])
+def test_dispatch_budget_covers_analysis_and_existing_render_deadlines(monkeypatch,render_seconds):
+    from app.analysis_limits import VISUAL_TIMEOUT_SECONDS
+    settings=get_settings()
+    monkeypatch.setattr(settings,'render_timeout_seconds',render_seconds)
+    timeout=broker_worker.dispatch_timeout(settings)
+    assert timeout>=settings.english_analysis_timeout_seconds+VISUAL_TIMEOUT_SECONDS+180+60
+    assert timeout>=render_seconds+300+90
+
+
 def test_admission_signal_is_durable_and_contains_only_identifiers(queued):
     row=signal(queued);assert row and row.job_id==queued and not row.published_at
     assert str(uuid.UUID(row.generation))==row.generation

@@ -20,6 +20,17 @@ transcript; the UI explains that transcript review can continue. Cancellation,
 claim loss and storage/worker failures retain the existing job recovery/fencing
 rules. An abrupt worker crash is not treated as a successful optional fallback.
 
+If the wall deadline stops a scan after at least three complete RGB frames, the
+server can retain that checked prefix as partial guidance. It first waits for
+decoder teardown, discards any unfinished trailing frame and reserves the final
+complete frame as lookahead, then validates the same sample/count/source bounds.
+Only the complete prefix contributes coverage;
+the remaining recording is not represented as checked or unchanged. Lookahead
+prevents the half-second coverage bins extending beyond the last decoded frame.
+Empty, too-short, malformed or oversized output still yields unavailable guidance.
+Cancellation/claim loss cannot publish a partial result. Non-timeout decoder
+failures are not converted into successful partial guidance.
+
 ## Method, uncertainty and bounds
 
 The protected FFmpeg decoder creates a temporary **64×36 RGB proxy at 2 fps** on
@@ -37,14 +48,28 @@ No audio, source footage, word timestamps or automatic cuts are changed by it.
 No model download, external provider, new dependency or phone-heavy analysis is
 introduced. The current private English/local/three-minute profile remains.
 
-The optional decoder has a 60-second wall deadline, a **1-GiB virtual-address
+The optional decoder has a 120-second wall deadline, a **1-GiB virtual-address
 limit**, CPU/process limits, a **3-MiB kernel output-file bound** and existing
 required Landlock/seccomp file/network isolation. The memory/file bounds apply
 also to native Linux test mode. Unsupported required containment stays closed;
 there is no retry without protection. Only one extra decoder runs at a time,
 before existing audio/ASR stages. Existing 40-MiB-per-attempt scratch reservations
-cover the proxy, PCM and bounded ASR JSON, within the existing analysis hard lease.
+cover the proxy, PCM and bounded ASR JSON. The shared analysis allowance adds
+300 seconds to the ASR cap: 120 for visual decoding, 120 for audio extraction,
+30 for source probing and 30 for copy/planning/publication margin. The broker
+allows another 60 seconds beyond that database deadline. Renewals do not extend
+the absolute deadline. Render-only job budgets remain unchanged.
 Parent pixel comparison streams two tiny frames and polls cancellation.
+
+Owner VPS evidence on 2026-11-13 showed a visual stage failing after 60.3 seconds,
+with no cgroup memory-limit hits or OOM kills. This confirms the old wall timeout,
+not the underlying reason decoding was slow. A tiny output still requires
+full-resolution source decoding. The larger allowance and prefix fallback are
+not a speedup or a guarantee that every accepted recording finishes. Timeout fallback,
+cancellation and all memory/file/isolation limits remain enforced. Existing
+unavailable metadata is not silently rewritten; check a new automatic analysis
+after deployment. The owner's failed preview encoded successfully in a separate
+diagnostic; its original encoding failure remains unexplained by this evidence.
 
 ## Storage, privacy and compatibility
 
