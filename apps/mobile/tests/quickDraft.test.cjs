@@ -4,7 +4,7 @@ const id='11111111-1111-4111-8111-111111111111',revision='a'.repeat(64);
 function harness(){
   class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
   const state={review:{},supported:true,layout:true,clean:true,soft:true,manual:true,portrait:true,
-    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,calls:[],error:null};
+    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null};
   const defaults={framing:'fit',captions:true,caption_size:'standard',caption_color:'white',
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
@@ -16,7 +16,7 @@ function harness(){
       proposal:{candidates:state.candidates},
     };}},
     './polish':{defaultPolish:defaults,loadPolishPreset:async()=>state.save,
-      getCaptionDraft:async(p,t,rev,n)=>{state.captionCalls++;assert.equal(p,id);assert.equal(rev,revision);assert.equal(n,1);
+      getCaptionDraft:async(p,t,rev,n)=>{state.captionCalls++;assert.equal(p,id);assert.equal(rev,revision);assert.equal(n,state.captionCandidate);
         if(state.error)throw state.error;
         if(!state.layout)throw new ApiError(422,'Caption layout unavailable');
         return {duration_ms:30000,cues:[{start_ms:0,end_ms:500,text:'My real words.'}]};},
@@ -76,4 +76,42 @@ test('unsupported polished backend is never sent a new render request',async()=>
  await assert.rejects(h.actions.prepareQuickDraft(id,'token'),/does not support polished previews/);
  assert.equal(h.state.captionCalls,0);
  assert(!h.state.calls.some(x=>x.render));
+});
+
+
+test('listing three ranked candidate choices is read-only and retains server order',async()=>{
+ const h=harness();h.state.candidates=[1,2,3,4,5].map((n)=>({
+   output_frames:n*150,source_start_ms:n*6000,source_end_ms:n*6000+n*5000,
+ }));
+ const result=await h.actions.listQuickDrafts(id,'token');
+ assert.equal(result.needsReview,false);
+ assert.equal(result.choices.length,3);
+ assert.deepEqual(Array.from(result.choices,c=>c.candidate),[1,2,3]);
+ assert.equal(result.choices[1].source_start_ms,12000);
+ assert.equal(h.state.captionCalls,0);
+ assert.equal(h.state.calls.filter(x=>x.render).length,0);
+ assert.equal(h.state.calls.filter(x=>x.me).length,0);
+});
+test('selected second clip only preflights and renders candidate two',async()=>{
+ const h=harness();h.state.candidates=[
+  {output_frames:450,source_start_ms:0,source_end_ms:15000},
+  {output_frames:600,source_start_ms:16000,source_end_ms:36000},
+  {output_frames:300,source_start_ms:37000,source_end_ms:47000},
+ ];h.state.captionCandidate=2;
+ const result=await h.actions.prepareQuickDraft(id,'token',2);
+ assert.equal(result.plan.candidate,2);
+ assert.equal(result.plan.duration_ms,20000);
+ assert.equal(h.state.captionCalls,1);
+ assert(!h.state.calls.some(x=>x.render));
+ await h.actions.renderQuickDraft(id,'token',result.plan);
+ assert.equal(h.state.calls.find(x=>x.render).render[3],2);
+});
+test('rejects out-of-range choice before making requests',async()=>{
+ const h=harness();await assert.rejects(h.actions.prepareQuickDraft(id,'token',4),/Choose one/);
+ assert.equal(h.state.calls.length,0);
+});
+test('missing review offers human review without render or preflight',async()=>{
+ const h=harness();h.state.review=null;
+ assert.equal((await h.actions.listQuickDrafts(id,'token')).needsReview,true);
+ assert.equal(h.state.captionCalls,0);assert(!h.state.calls.some(x=>x.render));
 });
