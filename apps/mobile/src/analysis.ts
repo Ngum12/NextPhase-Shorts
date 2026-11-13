@@ -19,6 +19,7 @@ export type EnglishAnalysis = {
   clean_captions_supported?:boolean;
   portrait_framing_supported?:boolean;
   polished_preview_supported?:boolean;
+  soft_audio_edges_supported?:boolean;
   audio_timing?:AudioTiming|null;
   scene_analysis?:SceneAnalysis|null;
   transcript:{language:'en'; source_sha256:string; source_duration_ms:number; words:ReviewWord[]};
@@ -39,6 +40,7 @@ function validated(value:any):EnglishAnalysis {
       (value.clean_captions_supported!==undefined && typeof value.clean_captions_supported!=='boolean') ||
       (value.portrait_framing_supported!==undefined && typeof value.portrait_framing_supported!=='boolean') ||
       (value.polished_preview_supported!==undefined && typeof value.polished_preview_supported!=='boolean') ||
+      (value.soft_audio_edges_supported!==undefined && typeof value.soft_audio_edges_supported!=='boolean') ||
       words.some((w:any,i:number)=>typeof w?.text!=='string' || !w.text.length || w.text.length>160 ||
         !Number.isInteger(w.start_ms) || !Number.isInteger(w.end_ms) || w.end_ms<=w.start_ms ||
         w.start_ms<0 || w.end_ms>duration || (i>0 && w.start_ms<words[i-1].end_ms) ||

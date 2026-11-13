@@ -14,7 +14,7 @@ from app.excerpt_jobs import ExcerptSpec
 from app.excerpt_render import render_excerpt,output_frames
 from app.models import ProjectAnalysis,RenderJob
 from app.caption_plan import CaptionCue
-from app.polish import PolishSettings
+from app.polish import PolishSettings,clip_audio_filter
 from test_excerpt_jobs import actual,prepared,review
 
 
@@ -69,9 +69,25 @@ def test_edited_caption_snapshot_is_acknowledged_immutable_and_idempotent(client
     assert request(client,prepared,data,caption_edits=overlapping,acknowledged_caption_edits=True).status_code==422
 
 
+def test_original_audio_keeps_preupgrade_request_fingerprint(client,prepared):
+    data=review(client,prepared)
+    result=request(client,prepared,data,polish={})
+    assert result.status_code==202,result.text
+    legacy={'polish':{'caption_size':'standard','caption_color':'white',
+                      'caption_position':'lower','voice':'original'},
+            'caption_edits':None}
+    customization=hashlib.sha256(json.dumps(legacy,sort_keys=True,
+        separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+    identity=f"{prepared['jid']}:{data['revision']}:1:clean-1:polish-{customization}"
+    old_hash=hashlib.sha256(identity.encode()).hexdigest()
+    with SessionLocal() as db:
+        assert db.get(RenderJob,result.json()['id']).request_hash==old_hash
+
+
 @pytest.mark.parametrize('change',[
     {'polish':{'caption_color':'drawtext=evil'}},
     {'polish':{'voice':'movie=https://example.invalid'}},
+    {'polish':{'audio_edges':'amovie=https://example.invalid'}},
     {'polish':{'fontfile':'/etc/passwd'}},
     {'caption_edits':[{'text':'word','start_ms':0,'end_ms':60000}],'acknowledged_caption_edits':True},
     {'caption_edits':[],'acknowledged_caption_edits':True},
@@ -130,6 +146,31 @@ def test_rendered_style_pixels_and_leveling_change_volume_without_changing_pitch
         for y in range(1100,1300) for x in range(150,930) for i in [(y*1080+x)*3])
     assert yellow>2000
     assert output_frames(leveled)==150
+
+
+def test_soft_audio_edges_are_bounded_and_source_clocked(tmp_path):
+    source=tmp_path/'source.mp4'
+    subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','color=c=black:s=160x90:r=30',
+        '-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t','8',
+        '-c:v','libx264','-threads','2','-c:a','aac',str(source)],check=True)
+    raw=tmp_path/'raw.mp4';soft=tmp_path/'soft.mp4'
+    for output,polish in ((raw,PolishSettings()),(soft,PolishSettings(audio_edges='soft'))):
+        render_excerpt(source,output,start_ms=2000,end_ms=7000,frames=150,
+            requested_seconds=15,max_output_bytes=64*1024**2,polish=polish)
+    def rms_at(path,at,seconds=.03):
+        audio=subprocess.check_output(['ffmpeg','-v','error','-ss',str(at),'-i',str(path),
+            '-t',str(seconds),'-vn','-ar','48000','-ac','1','-f','s16le','pipe:1'])
+        samples=struct.unpack('<'+'h'*(len(audio)//2),audio)
+        return math.sqrt(sum(value*value for value in samples)/len(samples))
+    assert output_frames(soft)==output_frames(raw)==150
+    assert rms_at(soft,0.01)<rms_at(raw,0.01)*.45
+    assert rms_at(soft,2)>rms_at(raw,2)*.8
+    assert rms_at(soft,4.96)<rms_at(raw,4.96)*.45
+    assert 'afade=t=in:st=2.000000:d=0.08' in clip_audio_filter(
+        PolishSettings(audio_edges='soft'),start_ms=2000,frames=150)
+    assert 'afade=t=out:st=6.920000:d=0.08' in clip_audio_filter(
+        PolishSettings(audio_edges='soft'),start_ms=2000,frames=150)
+    assert clip_audio_filter(PolishSettings(),start_ms=2000,frames=150) is None
 
 
 def test_leveling_allows_source_without_audio(tmp_path):

@@ -24,6 +24,17 @@ is limited to two 26-character lines, positive ordered non-overlapping times and
 the actual frame-derived clip duration. Long text needs shortening/correcting;
 the tool does not summarize it. Caption position is fixed, not face-aware.
 
+Optional **Gentle audio fades (80 ms)** taper the first/last 80 milliseconds of
+an excerpt's original audio at its source-bound cut points, after optional
+leveling. They do not change source video, words, pitch, framing, captions, clip
+duration or insert music. No fade is applied by default, so existing presets,
+requests and renders retain their original audio behavior. The phone offers
+this choice only when the backend advertises `soft_audio_edges_supported:true`.
+Legacy device presets without the new field load with original edges; soft
+settings are not sent to older servers. Audition real dialogue at both cut
+boundaries: source timing can vary and a fade may hide the start of a word. This
+is a small boundary treatment, not crossfade, noise removal or source repair.
+
 Voice leveling is one-pass bounded dynamic normalization (maximum 4x gain) and
 a peak limiter, not voice synthesis, denoising or a guaranteed integrated-LUFS
 target. It may increase background noise. It applies only when audio exists and
@@ -64,6 +75,23 @@ files with expansion disabled. Exact read grants, credential reduction, process/
 network limits, output size/frame/duration QA, leases, quotas and deletion fences
 remain. Specs/backups contain caption corrections; exported videos cannot be
 recalled. Preset/render features remain restricted to development/test owners.
+
+## Deployment gate and acceptance for gentle audio cuts
+
+This increment changes the protected FFmpeg renderer, so unlike the earlier
+mobile-only timeline/checkpoints it **must not be treated as deployed** until
+the VPS backup-first updater completes with a fresh authenticated and offsite-
+verified backup. The owner's Google Drive quota is currently too small for the
+new 788-MiB archive; restore backup capacity before applying this increment.
+Do not bypass the backup gate or enable the new option with an old server.
+
+After the VPS update, refresh the phone bundle and compare original versus
+Gentle audio fades using a reviewed clip whose cuts occur away from source time
+zero. Test both speech starting at the boundary and speech near the ending,
+including a no-audio source. Verify frame count, voice pitch, captions,
+output duration and no unexpected clipping or added silence. Test Original
+volume and Level voice volume independently. Synthetic FFmpeg RMS checks
+are not human listening or real-device proof.
 
 ## One combined deployment
 

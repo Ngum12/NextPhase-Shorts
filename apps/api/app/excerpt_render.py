@@ -12,7 +12,7 @@ from .media_policy import CODEC_THREADS, input_args
 from .observability import stage
 from .caption_plan import validate_cues
 from .preview_framing import framing_filter
-from .polish import PolishSettings, caption_appearance, voice_filter
+from .polish import PolishSettings, caption_appearance, clip_audio_filter
 
 CAPTION_FONT=Path('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf')
 
@@ -94,7 +94,7 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
         '-movflags','+faststart','-max_muxing_queue_size','1024',str(temporary)]
     caption_paths=[]
     try:
-        audio_filter=voice_filter(polish)
+        audio_filter=clip_audio_filter(polish,start_ms=start_ms,frames=frames)
         if audio_filter:
             command[-1:-1]=['-af',audio_filter]
         if captions:

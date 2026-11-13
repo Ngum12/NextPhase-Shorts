@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),path=require('node:path');
 const revision='a'.repeat(64),parent='11111111-1111-4111-8111-111111111111',owner='22222222-2222-4222-8222-222222222222';
 function harness(){
- const h={slots:[],cursor:0,pending:true,effects:[],tree:null,token:'token',owner,ready:true,calls:[],alerts:[],draft:[{text:'Original words.',start_ms:0,end_ms:3000}]};
+ const h={slots:[],cursor:0,pending:true,effects:[],tree:null,token:'token',owner,ready:true,softEdges:true,calls:[],alerts:[],draft:[{text:'Original words.',start_ms:0,end_ms:3000}]};
  const react={createElement:(type,props,...children)=>({type,props:props||{},children:children.flat(Infinity)}),
   useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return [h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
   useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
@@ -10,14 +10,14 @@ function harness(){
    h.effects.push(()=>{old?.cleanup?.();h.slots[i]={deps,cleanup:effect()};});}}
  };react.default=react;
  class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
- const defaults={framing:'fit',captions:true,caption_size:'standard',caption_color:'white',caption_position:'lower',voice:'original'};
+ const defaults={framing:'fit',captions:true,caption_size:'standard',caption_color:'white',caption_position:'lower',voice:'original',audio_edges:'original'};
  const adapters={react,'react-native':{Alert:{alert:(...args)=>h.alerts.push(args)},Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',TextInput:'TextInput',View:'View'},
   'expo-router':{useLocalSearchParams:()=>({id:parent,candidate:'1',revision}),
    usePreventRemove:(active,callback)=>{h.prevent=active;h.preventCallback=callback;return()=>{h.prevent=false;};},
    router:{replace:r=>h.calls.push({back:r}),push:r=>h.calls.push({push:r})}},
   '../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError,api:async()=>({id:h.owner})},
   '../../src/analysis':{getEnglishAnalysis:async()=>{if(h.loadError)throw h.loadError;return {revision,review:{},polished_preview_supported:h.ready,
-    proposal:{candidates:[{output_frames:150}]}};}},
+    soft_audio_edges_supported:h.softEdges,proposal:{candidates:[{output_frames:150}]}};}},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{},input:{}}]])),
   '../../src/theme':{colors:{}},
   '../../src/polish':{defaultPolish:defaults,getCaptionDraft:async()=>({duration_ms:5000,cues:structuredClone(h.draft)}),
@@ -48,13 +48,27 @@ test('one screen edits captions, appearance and voice, then renders confirmed im
  h.input('Caption text').props.onChangeText('Corrected words.');await h.flush();
  h.input('Caption start seconds').props.onChangeText('0.250');await h.flush();
  h.button('Large').props.onPress();h.button('Warm yellow').props.onPress();h.button('Middle').props.onPress();
- h.button('Level voice volume').props.onPress();await h.flush();
+ h.button('Level voice volume').props.onPress();h.button('Gentle audio fades (80 ms)').props.onPress();await h.flush();
  await h.button('Render polished preview').props.onPress();await h.flush();assert(h.text().includes('Compare your caption corrections'));
  h.check().props.onPress();await h.flush();await h.button('Render polished preview').props.onPress();
  assert(h.alerts.at(-1)[1].includes('background noise'));
  await h.alerts.at(-1)[2][1].onPress();await h.flush();
  const sent=h.calls.find(c=>c.render);assert.equal(sent.edits[0].text,'Corrected words.');assert.equal(sent.edits[0].start_ms,250);
- assert.equal(sent.options.voice,'level');assert.equal(sent.options.caption_color,'yellow');assert(h.calls.some(c=>c.push?.params.id==='child'));
+ assert.equal(sent.options.voice,'level');assert.equal(sent.options.audio_edges,'soft');assert.equal(sent.options.caption_color,'yellow');assert(h.calls.some(c=>c.push?.params.id==='child'));
+});
+test('old server hides soft edges and keeps older polish previews compatible',async()=>{
+ const h=harness();h.softEdges=false;await h.flush();
+ assert.equal(h.button('Gentle audio fades (80 ms)'),undefined);
+ assert(h.button('Keep original cut')===undefined);
+});
+test('downgraded backend cannot receive an earlier soft-audio choice',async()=>{
+ const h=harness();await h.flush();
+ h.button('Gentle audio fades (80 ms)').props.onPress();await h.flush();
+ h.softEdges=false;h.token='refreshed';h.render();await h.flush();
+ assert.equal(h.button('Gentle audio fades (80 ms)'),undefined);
+ await h.button('Render polished preview').props.onPress();
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.find(c=>c.render).options.audio_edges,'original');
 });
 test('preset save/use is scoped to the validated owner and excludes draft words',async()=>{
  const h=harness();await h.flush();h.button('Level voice volume').props.onPress();await h.flush();
