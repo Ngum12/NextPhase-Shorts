@@ -30,6 +30,10 @@ test('presets are per-account enums only and reject poisoned settings',async()=>
  assert.equal(await f.actions.loadPolishPreset(parent),null);
  const raw=[...f.storage.values()][0];assert(raw.length<512&&!raw.includes('text'));
  await assert.rejects(f.actions.savePolishPreset(owner,{...f.options,fontfile:'/etc/passwd'}));
+ await assert.rejects(f.actions.savePolishPreset(owner,{...f.options,audio_edges:'movie=evil'}));
+ const legacy={...f.options};delete legacy.audio_edges;
+ f.storage.set(`nextphase.polish.preset.${owner}`,JSON.stringify(legacy));
+ assert.equal((await f.actions.loadPolishPreset(owner)).audio_edges,'original');
  f.storage.set(`nextphase.polish.preset.${owner}`,'{"voice":"filter=evil"}');
  await assert.rejects(f.actions.loadPolishPreset(owner));
 });
@@ -48,6 +52,13 @@ test('changed settings create distinct keys and duplicate in-flight requests sha
  const two=f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false);
  await new Promise(r=>setImmediate(r));assert.equal(f.calls.length,1);release();await Promise.all([one,two]);
  await f.actions.requestPolishedPreview(parent,'token',revision,1,{...f.options,voice:'level'},null,5000,false);
+ assert.notEqual(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
+});
+test('soft audio fades are explicit; default requests keep backward-compatible payloads',async()=>{
+ const f=fixture();await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false);
+ assert.equal(f.calls[0].body.polish.audio_edges,undefined);
+ await f.actions.requestPolishedPreview(parent,'token',revision,1,{...f.options,audio_edges:'soft'},null,5000,false);
+ assert.equal(f.calls[1].body.polish.audio_edges,'soft');
  assert.notEqual(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
 });
 test('edits require recording comparison and storage failure prevents POST',async()=>{
