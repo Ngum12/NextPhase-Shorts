@@ -22,6 +22,11 @@ class AnalysisUnavailable(RuntimeError):
     pass
 
 
+class WordTimingUnavailable(AnalysisUnavailable):
+    """Invalid model word boundaries, never repaired beyond the bounded policy."""
+    pass
+
+
 def regular_file(path, *, maximum):
     path = Path(path).absolute()
     if any(p.is_symlink() or getattr(p,'is_junction',lambda:False)() for p in (path, *path.parents)):
@@ -89,7 +94,7 @@ def model_word_intervals(words, duration_ms):
     for word in words:
         start,end=word['start_ms'],word['end_ms']
         if start<previous_start or (end>start and start<cursor):
-            raise AnalysisUnavailable('ASR word timing is not safely ordered')
+            raise WordTimingUnavailable('ASR word timing is not safely ordered')
         previous_start=start
         if end>start:cursor=end
     repaired=[dict(word) for word in words]
@@ -108,7 +113,7 @@ def model_word_intervals(words, duration_ms):
     for before,after in zip(words,repaired):
         if (after['start_ms']<0 or after['end_ms']>duration_ms
                 or max(abs(before[key]-after[key]) for key in ('start_ms','end_ms'))>20):
-            raise AnalysisUnavailable('ASR zero-width timing exceeds repair bound')
+            raise WordTimingUnavailable('ASR zero-width timing exceeds repair bound')
     return repaired,True
 
 
@@ -156,7 +161,7 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             offsets=token.get('offsets',{})
             start,end=offsets.get('from'),offsets.get('to')
             if type(start) is not int or type(end) is not int or not 0<=start<=end<=source_duration_ms:
-                raise AnalysisUnavailable('Missing or invalid ASR timestamps')
+                raise WordTimingUnavailable('Missing or invalid ASR timestamps')
             piece=text.strip()
             if any(c.isspace() for c in piece):
                 raise AnalysisUnavailable('A token spans multiple words; timing is ambiguous')
