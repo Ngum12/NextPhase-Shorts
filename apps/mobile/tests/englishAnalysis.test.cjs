@@ -10,7 +10,8 @@ test('lost start replies and explicit retries use stable server-recoverable keys
  await api.cancelEnglish('source','token');assert(calls[3].url.endsWith('/cancel'));assert.equal(calls[3].init.method,'POST');
 });
 function harness(){
- const h={slots:[],cursor:0,pending:true,effects:[],tree:null,props:{id:'source',token:'session'},calls:[],alerts:[],quick:{needsReview:false,plan:{revision:'a'.repeat(64),candidate:1,duration_ms:15000,options:{framing:'fit',captions:true,voice:'original'},title:'Top clip',notice:null}},value:{ready:false,eligible:true,requested:false,task:null}};
+ const h={slots:[],cursor:0,pending:true,effects:[],tree:null,props:{id:'source',token:'session'},calls:[],alerts:[],quick:{needsReview:false,plan:{revision:'a'.repeat(64),candidate:1,duration_ms:15000,options:{framing:'fit',captions:true,voice:'original'},title:'Top clip',notice:null}},
+  choices:{needsReview:false,choices:[{revision:'a'.repeat(64),candidate:1,duration_ms:15000,source_start_ms:0,source_end_ms:15000,title:'Option 1 · 15.0s · source 0.0s–15.0s'}]},value:{ready:false,eligible:true,requested:false,task:null}};
  const react={createElement:(type,props,...children)=>({type,props:props||{},children:children.flat(Infinity)}),
   useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return[h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
   useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
@@ -18,7 +19,9 @@ function harness(){
  const actions={englishCapability:async()=>({available:true}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
  startEnglish:async(id,token,state)=>{h.calls.push({start:id,token,state});return {...h.value,task:{id:'attempt',status:'queued'}};},
  cancelEnglish:async(id,token)=>{h.calls.push({cancel:id,token});return {...h.value,task:{id:'attempt',status:'cancelled'}};}};
- const quickDraft={prepareQuickDraft:async(id,token)=>{h.calls.push({prepare:id,token});return h.quickWait||h.quick;},
+ const quickDraft={
+  listQuickDrafts:async(id,token)=>{h.calls.push({list:id,token});return h.choiceWait||h.choices;},
+  prepareQuickDraft:async(id,token,candidate)=>{h.calls.push({prepare:id,token,candidate});return h.quickWait||{...h.quick,plan:h.quick.plan&&{...h.quick.plan,candidate}};},
   renderQuickDraft:async(id,token,plan)=>{h.calls.push({renderDraft:id,token,plan});
     return h.renderWait||{id:'preview-2',status:'queued'};}};
   const component=load('../src/EnglishAnalysisPanel.tsx',{react,'react-native':{View:'View',Text:'Text',Alert:{alert:(...args)=>h.alerts.push(args)}},
@@ -61,7 +64,7 @@ test('a ready review queues exactly one private draft only after confirmation',a
  assert(h.calls.find(x=>x.push?.params.id==='preview-2'));
 });
 test('an unreviewed source directs the owner to review rather than silently rendering',async()=>{
- const h=harness();h.value.ready=true;h.quick={needsReview:true};await h.flush();
+ const h=harness();h.value.ready=true;h.choices={needsReview:true};await h.flush();
  await h.button('Prepare a Short draft').props.onPress();await h.flush();
  assert.equal(h.alerts.at(-1)[0],'Finish checking the recording');
  assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
@@ -70,10 +73,10 @@ test('an unreviewed source directs the owner to review rather than silently rend
 });
 test('stale prepare response after switching sessions cannot open a draft confirmation',async()=>{
  const h=harness();h.value.ready=true;
- let release;h.quickWait=new Promise(r=>{release=r;});await h.flush();
+ let release;h.choiceWait=new Promise(r=>{release=r;});await h.flush();
  const pending=h.button('Prepare a Short draft').props.onPress();
- h.props={id:'another-project',token:'another-session'};h.quickWait=null;h.pending=true;await h.flush();
- release(h.quick);await pending;await h.flush();
+ h.props={id:'another-project',token:'another-session'};h.choiceWait=null;h.pending=true;await h.flush();
+ release(h.choices);await pending;await h.flush();
  assert(!h.alerts.length);assert(!h.calls.some(x=>x.renderDraft));
 });
 
@@ -90,4 +93,49 @@ test('owner sees a fixed failure category instead of user recording text',async(
  const texts2=h.nodes().flatMap(n=>n.children).filter(c=>typeof c==='string').join(' ');
  assert.match(texts2,/precise cause is not yet available/);
  assert(!texts2.includes('Private speech transcript'));
+});
+
+
+test('three alternatives are shown without automatically queuing three preview jobs',async()=>{
+ const h=harness();h.value.ready=true;
+ h.choices={needsReview:false,choices:[1,2,3].map(i=>({
+   revision:'a'.repeat(64),candidate:i,duration_ms:i*5000,
+   source_start_ms:(i-1)*6000,source_end_ms:(i-1)*6000+i*5000,
+   title:`Option ${i} · ${i*5}.0s`,
+ }))};
+ await h.flush();await h.button('Prepare a Short draft').props.onPress();await h.flush();
+ assert(h.button('Option 1 · 5.0s')&&h.button('Option 2 · 10.0s')&&h.button('Option 3 · 15.0s'));
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+ assert.equal(h.calls.filter(x=>x.prepare).length,0);
+ await h.button('Option 2 · 10.0s').props.onPress();await h.flush();
+ assert.equal(h.calls.filter(x=>x.prepare).length,1);
+ assert.equal(h.calls.find(x=>x.prepare).candidate,2);
+ assert.equal(h.alerts.at(-1)[0],'Prepare a private Short draft?');
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,1);
+ assert.equal(h.calls.find(x=>x.renderDraft).plan.candidate,2);
+});
+test('canceling a draft confirmation does not reserve server storage',async()=>{
+ const h=harness();h.value.ready=true;await h.flush();
+ await h.button('Prepare a Short draft').props.onPress();await h.flush();
+ h.alerts.at(-1)[2][0].onPress();await h.flush();
+ assert(!h.calls.some(x=>x.renderDraft));
+ assert(h.button('Prepare a Short draft'));
+});
+test('a changed review revision aborts rendering stale draft choices',async()=>{
+ const h=harness();h.value.ready=true;await h.flush();
+ await h.button('Prepare a Short draft').props.onPress();await h.flush();
+ // The server review changed between the choices screen and selection.
+ h.quick.plan.revision='b'.repeat(64);
+ // Single option already confirmed; cancel and switch to a multi-choice review.
+ h.alerts.at(-1)[2][0].onPress();await h.flush();
+ h.choices={needsReview:false,choices:[
+  {revision:'a'.repeat(64),candidate:1,duration_ms:5000,source_start_ms:0,source_end_ms:5000,title:'Option 1'},
+  {revision:'a'.repeat(64),candidate:2,duration_ms:5000,source_start_ms:6000,source_end_ms:11000,title:'Option 2'},
+ ]};
+ await h.button('Prepare a Short draft').props.onPress();await h.flush();
+ await h.button('Option 2').props.onPress();await h.flush();
+ assert(!h.calls.some(x=>x.renderDraft));
+ assert(!h.button('Option 2'));
 });
