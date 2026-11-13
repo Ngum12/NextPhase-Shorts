@@ -3,9 +3,8 @@ import {Alert,Pressable,ScrollView,Text,View} from 'react-native';
 import {router,useLocalSearchParams} from 'expo-router';
 import {useAuth} from '../../src/auth';
 import {ApiError} from '../../src/api';
-import {sceneContext} from '../../src/sceneAnalysis';
 import {ClipEvidenceTimeline} from '../../src/ClipEvidenceTimeline';
-import {quietMilliseconds} from '../../src/audioTiming';
+import {CutReviewPanel} from '../../src/CutReviewPanel';
 import {clipContext} from '../../src/clipSelection';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
 import {Body,Button,Loading,Page,Title,s} from '../../src/ui';
@@ -97,7 +96,6 @@ export default function EnglishReview() {
     .filter(({word})=>word.confidence!==null&&word.confidence<.45)||[];
   const chosen=data?.proposal.candidates[selected];
   const context=data?clipContext(data,selected):null;
-  const visual=data&&chosen?sceneContext(data.scene_analysis,chosen.source_start_ms,chosen.source_end_ms):null;
   return <Page><ScrollView contentContainerStyle={{paddingTop:20,paddingBottom:40,gap:18}}>
     <Title>Review English clips</Title>
     {!englishReviewVisible?<Body>The English review pilot is not enabled in this app.</Body>:<>
@@ -167,14 +165,7 @@ export default function EnglishReview() {
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
               <ClipEvidenceTimeline candidate={chosen} duration={data.transcript.source_duration_ms}
                 audio={data.audio_timing} scene={data.scene_analysis}/>
-              {visual&&<>
-                <Body>Possible visual changes inside this option: {visual.inside}.</Body>
-                {visual.nearStart!==null&&<Body>A possible visual change is near the start, around {(visual.nearStart/1000).toFixed(1)} seconds in the recording.</Body>}
-                {visual.nearEnd!==null&&<Body>A possible visual change is near the end, around {(visual.nearEnd/1000).toFixed(1)} seconds in the recording.</Body>}
-                {visual.partial&&<Body>The visual guide covers only part of this option. Check the remaining part in playback.</Body>}
-              </>}
-              {data.audio_timing&&chosen.source_end_ms>data.audio_timing.audio_duration_ms&&<Body>Audio timing covers only part of this option. Check the remaining part in playback.</Body>}
-              {data.audio_timing&&<Body>Detected quiet audio inside this option: {(quietMilliseconds(data.audio_timing,chosen.source_start_ms,chosen.source_end_ms)/1000).toFixed(1)} seconds.</Body>}
+              <CutReviewPanel analysis={data} index={selected}/>
               <Body>From {(chosen.source_start_ms/1000).toFixed(1)} to {(chosen.source_end_ms/1000).toFixed(1)} seconds in your recording.</Body>
               {context&&<>
                 <Text style={s.cardTitle}>Check the surrounding context</Text>

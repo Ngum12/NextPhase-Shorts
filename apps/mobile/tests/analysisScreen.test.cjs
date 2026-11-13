@@ -24,7 +24,7 @@ function harness(){
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
   '../../src/sceneAnalysis':visual,'../../src/audioTiming':timing,'../../src/clipSelection':detailExports,
-  '../../src/ClipEvidenceTimeline':{ClipEvidenceTimeline:'ClipEvidenceTimeline'},'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
+  '../../src/ClipEvidenceTimeline':{ClipEvidenceTimeline:'ClipEvidenceTimeline'},'../../src/CutReviewPanel':{CutReviewPanel:'CutReviewPanel'},'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
    getEnglishAnalysis:async(id,token)=>{h.calls.push({get:id,token});if(h.getError)throw h.getError;return h.delayedGet?h.delayedGet:structuredClone(h.value);},
@@ -189,10 +189,10 @@ test('audio guide shows bounded quiet passages and selected-range summary only w
  const h=harness();h.value.audio_timing={audio_duration_ms:12000,quiet_intervals:[{start_ms:0,end_ms:1000}]};
  h.value.proposal.candidates=[{first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360}];
  await h.flush();assert(h.text().includes('Audio timing guide'));
- assert(h.text().includes('low-volume estimates'));assert(h.text().includes('Detected quiet audio inside this option:'));
+ assert(h.text().includes('low-volume estimates'));assert(h.nodes().some(n=>n.type==='CutReviewPanel'));
  assert(!h.calls.some(c=>c.preview));
  h.value.audio_timing.audio_duration_ms=10000;await h.button('Refresh review').props.onPress();await h.flush();
- assert(h.text().includes('Audio timing covers only part of this option'));
+ assert(h.nodes().some(n=>n.type==='CutReviewPanel'));
  const old=harness();await old.flush();assert(!old.text().includes('Audio timing guide'));
 });
 
@@ -202,7 +202,9 @@ test('visual guidance shows source changes near selected start/end without chang
  h.value.scene_analysis={status:'available',sample_count:40,analyzed_duration_ms:20000,changes:[{at_ms:1500,delta_milli:800},{at_ms:6500,delta_milli:900}]};
  h.value.proposal.candidates=[{first_word:1,last_word:6,source_start_ms:1000,source_end_ms:7000,output_frames:180}];
  await h.flush();assert(h.text().includes('Visual change guide'));
- assert(h.text().includes('near the start')&&h.text().includes('near the end'));
+ const checkpoints=h.nodes().find(n=>n.type==='CutReviewPanel');
+ assert(checkpoints);assert.equal(checkpoints.props.index,0);
+ assert.equal(checkpoints.props.analysis.scene_analysis.changes.length,2);
  assert(h.text().includes('Flashes, movement and lighting'));
  assert.equal(h.value.proposal.candidates[0].source_start_ms,1000);assert(!h.calls.some(c=>c.preview));
 });
@@ -227,4 +229,21 @@ test('source-bound timeline appears only for selected saved candidates without c
  assert.equal(h.calls.filter(c=>c.preview).length,0);
  h.check('Word 2:').props.onPress();await h.flush();
  assert.equal(h.nodes().filter(n=>n.type==='ClipEvidenceTimeline').length,0);
+});
+
+test('changing selected option updates review checkpoints without requesting a render',async()=>{
+ const h=harness();
+ h.value.proposal.candidates=[
+  {first_word:0,last_word:1,source_start_ms:0,source_end_ms:12000,output_frames:360},
+  {first_word:1,last_word:1,source_start_ms:6000,source_end_ms:12000,output_frames:180}
+ ];
+ await h.flush();
+ const first=h.nodes().find(n=>n.type==='CutReviewPanel');
+ assert(first);assert.equal(first.props.index,0);
+ const second=h.nodes().find(n=>n.type==='Button'&&n.props.title.includes('Option 2'));
+ second.props.onPress();await h.flush();
+ assert.equal(h.nodes().find(n=>n.type==='CutReviewPanel').props.index,1);
+ assert.equal(h.calls.filter(c=>c.preview).length,0);
+ h.check('Word 2:').props.onPress();await h.flush();
+ assert.equal(h.nodes().filter(n=>n.type==='CutReviewPanel').length,0);
 });
