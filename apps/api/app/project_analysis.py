@@ -176,7 +176,11 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     if payload.caption_style != 'none':identity += ':'+payload.caption_style
     if payload.framing != 'fit':identity += ':framing-'+payload.framing
     if payload.polish is not None or payload.caption_edits is not None:
-        customization={'polish':(payload.polish or PolishSettings()).model_dump(mode='json'),
+        settings=payload.polish or PolishSettings()
+        # Preserve pre-upgrade request hashes for existing idempotency keys.
+        # Only an explicitly selected fade is a distinct render intent.
+        legacy=settings.model_dump(mode='json',exclude={'audio_edges'} if settings.audio_edges=='original' else set())
+        customization={'polish':legacy,
                        'caption_edits':[cue.model_dump(mode='json') for cue in payload.caption_edits] if payload.caption_edits is not None else None}
         identity += ':polish-'+hashlib.sha256(json.dumps(customization,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
     request_hash=hashlib.sha256(identity.encode()).hexdigest()
