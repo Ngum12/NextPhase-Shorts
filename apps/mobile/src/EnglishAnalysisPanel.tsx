@@ -40,12 +40,14 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
         return;
       }
       const plan=result.plan;
+      let confirmed=false;
       const details=plan.options.captions?'Clean phrase captions':'No captions';
       Alert.alert('Prepare a private Short draft?',
         `${plan.title}. ${details} · ${plan.options.framing} framing · ${plan.options.voice} voice. ${plan.notice||''} The top suggestion is ranked by technical signals, not story meaning. The draft stays private. Watch the finished clip before sharing.`,[
           {text:'Not now',onPress:release},
           {text:'Render draft',onPress:async()=>{
-            if(generation.current!==current)return;
+            if(confirmed||generation.current!==current)return;
+            confirmed=true;
             try{
               const job=await renderQuickDraft(id,token,plan);
               if(generation.current===current)
