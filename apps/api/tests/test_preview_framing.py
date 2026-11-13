@@ -70,6 +70,19 @@ def test_real_fit_and_center_crop_have_expected_pixels_and_unchanged_audio(bands
     assert power(880)>10*power(440)
 
 
+def test_manual_left_and_right_focus_reframes_wide_source_without_touching_original(bands,tmp_path):
+    source_hash=hashlib.sha256(bands.read_bytes()).hexdigest()
+    for position,channel,other in (('fill-left',0,2),('fill-right',2,0)):
+        output=tmp_path/(position+'.mp4')
+        info=render(bands,output,framing=position)
+        assert info['width']==1080 and info['height']==1920
+        assert info['duration']==pytest.approx(5,abs=.034)
+        assert output_frames(output)==150
+        values=pixel(frame(output),540,960)
+        assert values[channel]>150 and values[other]<100
+    assert hashlib.sha256(bands.read_bytes()).hexdigest()==source_hash
+
+
 @pytest.mark.parametrize('size,sar',[('160x640','1/1'),('320x180','2/1'),('1920x16','1/1')])
 def test_tall_anamorphic_and_very_wide_sources_stay_bounded_and_square_pixel(tmp_path,size,sar):
     source=tmp_path/'source.mp4';output=tmp_path/'output.mp4'
@@ -134,4 +147,8 @@ def test_arbitrary_framing_refused_before_output_creation(tmp_path):
     with pytest.raises(MediaError,match='framing'):
         render(tmp_path/'source.mp4',tmp_path/'output.mp4',framing='movie=https://example.invalid')
     assert list(tmp_path.iterdir())==[]
-    assert framing_filter('fill-center').index('crop=')<framing_filter('fill-center').index('scale=')
+    for anchor in ('fill-center','fill-left','fill-right'):
+        assert framing_filter(anchor).index('crop=')<framing_filter(anchor).index('scale=')
+    assert 'x=0:' in framing_filter('fill-left')
+    assert 'x=iw-ow:' in framing_filter('fill-right')
+    assert 'x=(iw-ow)/2:' in framing_filter('fill-center')
