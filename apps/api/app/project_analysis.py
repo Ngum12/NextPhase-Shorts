@@ -136,7 +136,8 @@ def document(row):
         'proposal': proposal.model_dump(mode='json'), 'render_enabled': False,
         'queued_preview_supported': True, 'clean_captions_supported': True,
         'portrait_framing_supported': True, 'polished_preview_supported': True,
-        'soft_audio_edges_supported': True}
+        'soft_audio_edges_supported': True,
+        'manual_crop_focus_supported': True}
 
 
 class PreviewRequest(ClosedModel):
