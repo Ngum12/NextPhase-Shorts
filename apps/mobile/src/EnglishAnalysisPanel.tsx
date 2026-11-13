@@ -4,6 +4,15 @@ import {router} from 'expo-router';
 import {englishCapability,englishState,startEnglish,cancelEnglish,EnglishState} from './englishAnalysis';
 import {prepareQuickDraft,renderQuickDraft} from './quickDraft';
 import {Body,Button,s} from './ui';
+
+const englishFailureHint:Record<string,string>={
+  ASR_PROCESS_FAILED:'The speech engine stopped before finishing.',
+  ASR_DEADLINE_EXCEEDED:'The speech engine exceeded its time limit.',
+  ASR_OUTPUT_INVALID:'The speech engine did not produce a valid result file.',
+  ASR_WORD_TIMING_REJECTED:'The estimated word timings did not pass safety checks.',
+  ASR_TRANSCRIPT_REJECTED:'The recognized text or metadata did not pass validation.',
+};
+
 export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:string;disabled?:boolean}) {
   const [state,setState]=useState<EnglishState|null>(null),[available,setAvailable]=useState(false);
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
@@ -82,7 +91,7 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       <Button title="Review English clips" disabled={disabled||busy} secondary
         onPress={()=>router.push({pathname:'/review/[id]',params:{id}})}/>
     </>:<>
-      <Body>{active?(state.task!.status==='queued'?'English analysis is queued. You may leave this screen.':'Analyzing your recording on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?'Transcription failed. Your video is preserved. You can retry.':state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
+      <Body>{active?(state.task!.status==='queued'?'English analysis is queued. You may leave this screen.':'Analyzing your recording on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?`Transcription failed. ${englishFailureHint[state.task.error_code||'']||'The precise cause is not yet available.'} Your video is preserved. You can retry.`:state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
       {(active||waiting)?<Button title={busy?'Please wait…':'Cancel English analysis'} disabled={disabled||busy} onPress={()=>action(true)} secondary/>:
         state.eligible&&<Button title={busy?'Please wait…':state.task?'Retry English analysis':'Find English clips'} disabled={disabled||busy} onPress={()=>{
           const current=generation.current;

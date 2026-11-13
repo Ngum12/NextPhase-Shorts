@@ -76,3 +76,18 @@ test('stale prepare response after switching sessions cannot open a draft confir
  release(h.quick);await pending;await h.flush();
  assert(!h.alerts.length);assert(!h.calls.some(x=>x.renderDraft));
 });
+
+test('owner sees a fixed failure category instead of user recording text',async()=>{
+ const h=harness();h.value.ready=false;h.value.task={
+   id:'failure',status:'failed',error_code:'ASR_WORD_TIMING_REJECTED',
+ };await h.flush();
+ const texts=h.nodes().flatMap(n=>n.children).filter(c=>typeof c==='string').join(' ');
+ assert.match(texts,/estimated word timings did not pass safety checks/);
+ assert.match(texts,/Your video is preserved/);
+ h.value.task.error_code='unexpected Private speech transcript';
+ h.pending=true;h.props={...h.props}; // Timer is stubbed; refresh by changing the identity.
+ h.props={id:'new-source',token:'session'};await h.flush();
+ const texts2=h.nodes().flatMap(n=>n.children).filter(c=>typeof c==='string').join(' ');
+ assert.match(texts2,/precise cause is not yet available/);
+ assert(!texts2.includes('Private speech transcript'));
+});

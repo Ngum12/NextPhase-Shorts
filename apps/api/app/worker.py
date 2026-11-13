@@ -14,6 +14,7 @@ from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
 from .media import MediaCancelled, MediaError, OutputLimitExceeded, render_baseline
+from .asr_failures import AsrFailure
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner,dead_letter
 from . import object_store
@@ -221,6 +222,10 @@ def _process(job,supervisor):
     except OutputLimitExceeded:
         emit('output_limit_exceeded',job_id=job['id'])
         mark_done(job['id'], token, error_code='OUTPUT_LIMIT_EXCEEDED', wall_seconds=time.monotonic()-began)
+    except AsrFailure as failure:
+        # Only fixed, non-content diagnostic codes leave the protected worker.
+        emit('render_failed',job_id=job['id'])
+        mark_done(job['id'], token, error_code=failure.code, wall_seconds=time.monotonic()-began)
     except MediaError:
         emit('render_failed',job_id=job['id'])
         mark_done(job['id'], token, error_code='ANALYSIS_FAILED' if job.get('operation')=='analysis' else 'RENDER_FAILED', wall_seconds=time.monotonic()-began)

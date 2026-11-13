@@ -67,3 +67,53 @@ def test_model_bootstrap_pins_model_and_preserves_existing_configuration(tmp_pat
     assert module.prepare(tmp_path,True)['model_sha256']==file_digest(source)
     target.chmod(0o600);target.write_bytes(b'wrong model')
     with pytest.raises(RuntimeError):module.prepare(tmp_path,True)
+
+
+def _engine_result(inference, result):
+    """Synthetic protocol only; never a transcription quality test."""
+    engine=inference['engine']
+    if result is None:
+        engine.write_text(f'#!{sys.executable}\nimport sys\nsys.exit(17)\n')
+    else:
+        payload=json.dumps(result)
+        engine.write_text(f'#!{sys.executable}\nimport sys\nfrom pathlib import Path\n'
+            f'Path(sys.argv[sys.argv.index("-of")+1]+".json").write_text({payload!r})\n')
+    engine.chmod(0o700)
+    inference['engine_digest']=file_digest(engine)
+
+
+@pytest.mark.parametrize('mode,code',[
+    ('exit','ASR_PROCESS_FAILED'),
+    ('malformed','ASR_OUTPUT_INVALID'),
+    ('protocol','ASR_TRANSCRIPT_REJECTED'),
+    ('timing','ASR_WORD_TIMING_REJECTED'),
+])
+def test_private_whisper_failure_category_is_closed_and_non_content(inference,mode,code):
+    from app.asr_failures import AsrFailure
+    data={'params':{'translate':False},'result':{'language':'en'},
+          'model':{'multilingual':True,'vocab':51865},
+          'transcription':[{'text':' Private text.', 'tokens':[
+              {'text':' Private','id':2425,'offsets':{'from':0,'to':400},'p':.9},
+              {'text':' text','id':1510,'offsets':{'from':400,'to':1000},'p':.9},
+              {'text':'.','id':13,'offsets':{'from':1000,'to':1000},'p':.95}]}]}
+    if mode=='exit':_engine_result(inference,None)
+    elif mode=='malformed':
+        # A true JSON syntax error, not a Whisper language/protocol error.
+        engine=inference['engine']
+        engine.write_text(f'#!{sys.executable}\nimport sys\nfrom pathlib import Path\n'
+            'Path(sys.argv[sys.argv.index("-of")+1]+".json").write_text("{bad")\n')
+        inference['engine_digest']=file_digest(engine)
+    else:
+        if mode=='protocol':data['result']['language']='fr'
+        else:data['transcription'][0]['tokens'][0]['offsets']['to']=2001
+        _engine_result(inference,data)
+    with pytest.raises(AsrFailure) as failed:transcribe(**inference)
+    assert failed.value.code==code
+    assert 'Private' not in str(failed.value)
+    assert not (inference['work']/'transcript.json').exists()
+
+
+def test_diagnostic_codes_reject_arbitrary_exception_data():
+    from app.asr_failures import AsrFailure
+    with pytest.raises(ValueError):
+        AsrFailure('Private transcript: hello')
