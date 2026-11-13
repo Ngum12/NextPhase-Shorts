@@ -260,14 +260,14 @@ test('long transcripts use one unverified draft and an optional word editor',asy
  assert(h.button('Edit individual word endings'));
  assert(!h.check('Word 89:'));
  h.button('Draft 8 sentence endings').props.onPress();await h.flush();
- assert(h.text().includes('8 sentence endings marked.'));
+ assert(h.nodes().some(n=>n.type==='Body'&&n.children.includes(8)&&n.children.includes(' sentence endings marked.')));
  assert.equal(h.ack().props.accessibilityState.checked,false);
  assert.equal(h.button('Save review and find clips').props.disabled,true);
  assert.equal(h.check('Confirm word 1:').props.accessibilityState.checked,false);
  h.button('Edit individual word endings').props.onPress();await h.flush();
  assert(h.check('Word 89:'));
  h.check('Word 89:').props.onPress();await h.flush();
- assert(h.text().includes('9 sentence endings marked.'));
+ assert(h.nodes().some(n=>n.type==='Body'&&n.children.includes(9)&&n.children.includes(' sentence endings marked.')));
  h.button('Read entire transcript').props.onPress();await h.flush();
  assert(h.button('Show shorter transcript'));
 });
