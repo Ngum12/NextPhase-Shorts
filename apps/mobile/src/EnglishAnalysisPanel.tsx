@@ -2,6 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {Alert,View,Text} from 'react-native';
 import {router} from 'expo-router';
 import {englishCapability,englishState,startEnglish,cancelEnglish,EnglishState} from './englishAnalysis';
+import {prepareQuickDraft,renderQuickDraft} from './quickDraft';
 import {Body,Button,s} from './ui';
 export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:string;disabled?:boolean}) {
   const [state,setState]=useState<EnglishState|null>(null),[available,setAvailable]=useState(false);
@@ -22,6 +23,45 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
     };
     refresh();return()=>{generation.current++;if(timer)clearTimeout(timer);};
   },[id,token,retry]);
+  const quickDraft=async()=>{
+    if(running.current||disabled||!state?.ready)return;
+    const current=generation.current;
+    running.current=true;setBusy(true);setError('');
+    const release=()=>{if(generation.current===current){running.current=false;setBusy(false);}};
+    try{
+      const result=await prepareQuickDraft(id,token);
+      if(generation.current!==current)return;
+      if(result.needsReview){
+        Alert.alert('Finish checking the recording',
+          'The suggestions need your saved transcript review before a draft can render. Review the original speech, then return here.',[
+          {text:'Not now',onPress:release},
+          {text:'Open review',onPress:()=>{release();router.push({pathname:'/review/[id]',params:{id}});}},
+        ],{cancelable:false});
+        return;
+      }
+      const plan=result.plan;
+      let confirmed=false;
+      const details=plan.options.captions?'Clean phrase captions':'No captions';
+      Alert.alert('Prepare a private Short draft?',
+        `${plan.title}. ${details} · ${plan.options.framing} framing · ${plan.options.voice} voice. ${plan.notice||''} The top suggestion is ranked by technical signals, not story meaning. The draft stays private. Watch the finished clip before sharing.`,[
+          {text:'Not now',onPress:release},
+          {text:'Render draft',onPress:async()=>{
+            if(confirmed||generation.current!==current)return;
+            confirmed=true;
+            try{
+              const job=await renderQuickDraft(id,token,plan);
+              if(generation.current===current)
+                router.push({pathname:'/project/[id]',params:{id:job.id}});
+            }catch(e:any){
+              if(generation.current===current)setError(e.message||'Could not queue the draft. Retry the same settings.');
+            }finally{release();}
+          }},
+        ],{cancelable:false});
+    }catch(e:any){
+      if(generation.current===current)setError(e.message||'Could not prepare the Short draft. Retry when connected.');
+      release();
+    }
+  };
   const action=async(cancel=false)=>{
     if(running.current||disabled||!state)return;
     const current=generation.current;running.current=true;setBusy(true);
@@ -36,8 +76,11 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
   return <View style={s.card}><Text style={s.cardTitle}>English clip suggestions</Text>
     {!!error&&<Body>{error}</Body>}
     {!state?<Body>Checking analysis…</Body>:state.ready?<>
-      <Body>Your transcript is ready. Check the words and sentence endings before choosing clips.</Body>
-      <Button title="Review English clips" disabled={disabled||busy} onPress={()=>router.push({pathname:'/review/[id]',params:{id}})}/>
+      <Body>Turn the top ranked, previously reviewed clip into a private edited draft with your saved polish choices. No publishing or automatic transcript approval.</Body>
+      <Button title={busy?'Preparing draft…':'Prepare a Short draft'} disabled={disabled||busy}
+        onPress={quickDraft}/>
+      <Button title="Review English clips" disabled={disabled||busy} secondary
+        onPress={()=>router.push({pathname:'/review/[id]',params:{id}})}/>
     </>:<>
       <Body>{active?(state.task!.status==='queued'?'English analysis is queued. You may leave this screen.':'Analyzing your recording on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?'Transcription failed. Your video is preserved. You can retry.':state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
       {(active||waiting)?<Button title={busy?'Please wait…':'Cancel English analysis'} disabled={disabled||busy} onPress={()=>action(true)} secondary/>:

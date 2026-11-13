@@ -10,7 +10,7 @@ test('lost start replies and explicit retries use stable server-recoverable keys
  await api.cancelEnglish('source','token');assert(calls[3].url.endsWith('/cancel'));assert.equal(calls[3].init.method,'POST');
 });
 function harness(){
- const h={slots:[],cursor:0,pending:true,effects:[],tree:null,props:{id:'source',token:'session'},calls:[],alerts:[],value:{ready:false,eligible:true,requested:false,task:null}};
+ const h={slots:[],cursor:0,pending:true,effects:[],tree:null,props:{id:'source',token:'session'},calls:[],alerts:[],quick:{needsReview:false,plan:{revision:'a'.repeat(64),candidate:1,duration_ms:15000,options:{framing:'fit',captions:true,voice:'original'},title:'Top clip',notice:null}},value:{ready:false,eligible:true,requested:false,task:null}};
  const react={createElement:(type,props,...children)=>({type,props:props||{},children:children.flat(Infinity)}),
   useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return[h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
   useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
@@ -18,8 +18,11 @@ function harness(){
  const actions={englishCapability:async()=>({available:true}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
  startEnglish:async(id,token,state)=>{h.calls.push({start:id,token,state});return {...h.value,task:{id:'attempt',status:'queued'}};},
  cancelEnglish:async(id,token)=>{h.calls.push({cancel:id,token});return {...h.value,task:{id:'attempt',status:'cancelled'}};}};
- const component=load('../src/EnglishAnalysisPanel.tsx',{react,'react-native':{View:'View',Text:'Text',Alert:{alert:(...args)=>h.alerts.push(args)}},
-  'expo-router':{router:{push:route=>h.calls.push({push:route})}},'./englishAnalysis':actions,'./ui':{Body:'Body',Button:'Button',s:{card:{},cardTitle:{}}}}, {setTimeout:()=>0,clearTimeout:()=>{}}).EnglishAnalysisPanel;
+ const quickDraft={prepareQuickDraft:async(id,token)=>{h.calls.push({prepare:id,token});return h.quickWait||h.quick;},
+  renderQuickDraft:async(id,token,plan)=>{h.calls.push({renderDraft:id,token,plan});
+    return h.renderWait||{id:'preview-2',status:'queued'};}};
+  const component=load('../src/EnglishAnalysisPanel.tsx',{react,'react-native':{View:'View',Text:'Text',Alert:{alert:(...args)=>h.alerts.push(args)}},
+  'expo-router':{router:{push:route=>h.calls.push({push:route})}},'./englishAnalysis':actions,'./quickDraft':quickDraft,'./ui':{Body:'Body',Button:'Button',s:{card:{},cardTitle:{}}}}, {setTimeout:()=>0,clearTimeout:()=>{}}).EnglishAnalysisPanel;
  h.render=()=>{h.cursor=0;h.pending=false;h.tree=component(h.props);};
  h.flush=async()=>{for(let i=0;i<12;i++){if(h.pending)h.render();while(h.effects.length)h.effects.shift()();await new Promise(r=>setImmediate(r));if(!h.pending&&!h.effects.length)break;}};
  h.nodes=()=>{const result=[];function visit(n){if(n&&typeof n==='object'){result.push(n);n.children?.forEach(visit);}}visit(h.tree);return result;};
@@ -41,4 +44,35 @@ test('old session reply and consent dialog cannot start work after account switc
  await consent.onPress();assert(!h.calls.some(c=>c.start));
  h.props={id:'third-source',token:'third-session'};h.delay=null;h.value.ready=false;h.pending=true;await h.flush();
  release({ready:true,eligible:true,requested:false,task:null});await h.flush();assert(!h.button('Review English clips'));assert(h.button('Find English clips'));
+});
+
+test('a ready review queues exactly one private draft only after confirmation',async()=>{
+ const h=harness();h.value.ready=true;await h.flush();
+ assert(h.button('Prepare a Short draft'));
+ const task=h.button('Prepare a Short draft').props.onPress();await task;await h.flush();
+ assert.equal(h.calls.filter(x=>x.prepare).length,1);
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+ assert.equal(h.alerts.at(-1)[0],'Prepare a private Short draft?');
+ assert(h.alerts.at(-1)[1].includes('not story meaning'));
+ const action=h.alerts.at(-1)[2][1].onPress;
+ const first=action();const second=action();
+ await Promise.all([first,second]);await h.flush();
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,1);
+ assert(h.calls.find(x=>x.push?.params.id==='preview-2'));
+});
+test('an unreviewed source directs the owner to review rather than silently rendering',async()=>{
+ const h=harness();h.value.ready=true;h.quick={needsReview:true};await h.flush();
+ await h.button('Prepare a Short draft').props.onPress();await h.flush();
+ assert.equal(h.alerts.at(-1)[0],'Finish checking the recording');
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+ h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert(h.calls.some(x=>x.push?.pathname==='/review/[id]'));
+});
+test('stale prepare response after switching sessions cannot open a draft confirmation',async()=>{
+ const h=harness();h.value.ready=true;
+ let release;h.quickWait=new Promise(r=>{release=r;});await h.flush();
+ const pending=h.button('Prepare a Short draft').props.onPress();
+ h.props={id:'another-project',token:'another-session'};h.quickWait=null;h.pending=true;await h.flush();
+ release(h.quick);await pending;await h.flush();
+ assert(!h.alerts.length);assert(!h.calls.some(x=>x.renderDraft));
 });
