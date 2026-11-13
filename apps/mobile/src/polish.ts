@@ -3,7 +3,7 @@ import {digestStringAsync,CryptoDigestAlgorithm,randomUUID} from 'expo-crypto';
 import {api,authenticatedFetch,BASE,extract,Job,ApiError} from './api';
 
 export type Cue={text:string;start_ms:number;end_ms:number};
-export type PolishOptions={framing:'fit'|'fill-center';captions:boolean;
+export type PolishOptions={framing:'fit'|'fill-center'|'fill-left'|'fill-right';captions:boolean;
   caption_size:'standard'|'large';caption_color:'white'|'yellow';
   caption_position:'lower'|'middle';voice:'original'|'level';audio_edges:'original'|'soft'};
 export const defaultPolish:PolishOptions={framing:'fit',captions:true,caption_size:'standard',
@@ -20,7 +20,7 @@ export function validateOptions(value:any):PolishOptions{
   const current=Object.keys(defaultPolish).sort().join(',');
   const legacy=Object.keys(defaultPolish).filter(key=>key!=='audio_edges').sort().join(',');
   if(!value||(keys!==current&&keys!==legacy)||
-    !['fit','fill-center'].includes(value.framing)||typeof value.captions!=='boolean'||
+    !['fit','fill-center','fill-left','fill-right'].includes(value.framing)||typeof value.captions!=='boolean'||
     !['standard','large'].includes(value.caption_size)||!['white','yellow'].includes(value.caption_color)||
     !['lower','middle'].includes(value.caption_position)||!['original','level'].includes(value.voice)||
     !['original','soft'].includes(value.audio_edges??'original'))

@@ -31,6 +31,9 @@ test('presets are per-account enums only and reject poisoned settings',async()=>
  const raw=[...f.storage.values()][0];assert(raw.length<512&&!raw.includes('text'));
  await assert.rejects(f.actions.savePolishPreset(owner,{...f.options,fontfile:'/etc/passwd'}));
  await assert.rejects(f.actions.savePolishPreset(owner,{...f.options,audio_edges:'movie=evil'}));
+ await assert.rejects(f.actions.savePolishPreset(owner,{...f.options,framing:'crop=movie=evil'}));
+ await f.actions.savePolishPreset(owner,{...f.options,framing:'fill-right'});
+ assert.equal((await f.actions.loadPolishPreset(owner)).framing,'fill-right');
  const legacy={...f.options};delete legacy.audio_edges;
  f.storage.set(`nextphase.polish.preset.${owner}`,JSON.stringify(legacy));
  assert.equal((await f.actions.loadPolishPreset(owner)).audio_edges,'original');
@@ -53,6 +56,16 @@ test('changed settings create distinct keys and duplicate in-flight requests sha
  await new Promise(r=>setImmediate(r));assert.equal(f.calls.length,1);release();await Promise.all([one,two]);
  await f.actions.requestPolishedPreview(parent,'token',revision,1,{...f.options,voice:'level'},null,5000,false);
  assert.notEqual(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
+});
+test('left, center and right crop are distinct idempotent render intents',async()=>{
+ const f=fixture();
+ for(const framing of ['fill-left','fill-center','fill-right'])
+   await f.actions.requestPolishedPreview(parent,'token',revision,1,{...f.options,framing},null,5000,false);
+ const requests=f.calls.map(call=>call.body);
+ assert.deepEqual(requests.map(body=>body.framing),['fill-left','fill-center','fill-right']);
+ assert.equal(new Set(requests.map(body=>body.idempotency_key)).size,3);
+ await f.reload().requestPolishedPreview(parent,'token',revision,1,{...f.options,framing:'fill-right'},null,5000,false);
+ assert.equal(f.calls.at(-1).body.idempotency_key,requests[2].idempotency_key);
 });
 test('soft audio fades are explicit; default requests keep backward-compatible payloads',async()=>{
  const f=fixture();await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false);
