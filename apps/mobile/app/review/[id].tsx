@@ -4,6 +4,7 @@ import {router,useLocalSearchParams} from 'expo-router';
 import {useAuth} from '../../src/auth';
 import {ApiError} from '../../src/api';
 import {sceneContext} from '../../src/sceneAnalysis';
+import {ClipEvidenceTimeline} from '../../src/ClipEvidenceTimeline';
 import {quietMilliseconds} from '../../src/audioTiming';
 import {clipContext} from '../../src/clipSelection';
 import {EnglishAnalysis,englishReviewVisible,getEnglishAnalysis,saveEnglishReview} from '../../src/analysis';
@@ -164,6 +165,8 @@ export default function EnglishReview() {
             </View>)}
             {chosen&&<>
               <Body>{data.transcript.words.slice(chosen.first_word,chosen.last_word+1).map(w=>w.text).join(' ')}</Body>
+              <ClipEvidenceTimeline candidate={chosen} duration={data.transcript.source_duration_ms}
+                audio={data.audio_timing} scene={data.scene_analysis}/>
               {visual&&<>
                 <Body>Possible visual changes inside this option: {visual.inside}.</Body>
                 {visual.nearStart!==null&&<Body>A possible visual change is near the start, around {(visual.nearStart/1000).toFixed(1)} seconds in the recording.</Body>}

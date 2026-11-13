@@ -23,7 +23,8 @@ function harness(){
     h.calls.push({preview:id,token,revision,candidate,captionStyle,framing});if(h.previewError)throw h.previewError;
     if(h.delayedPreview)return h.delayedPreview;
     return {id:'preview-job',preview_parent_id:id,status:'queued'};}},
-  '../../src/sceneAnalysis':visual,'../../src/audioTiming':timing,'../../src/clipSelection':detailExports,'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
+  '../../src/sceneAnalysis':visual,'../../src/audioTiming':timing,'../../src/clipSelection':detailExports,
+  '../../src/ClipEvidenceTimeline':{ClipEvidenceTimeline:'ClipEvidenceTimeline'},'../../src/auth':{useAuth:()=>({token:h.token})},'../../src/api':{ApiError},
   '../../src/ui':Object.fromEntries(['Body','Button','Loading','Page','Title'].map(name=>[name,name]).concat([['s',{card:{},cardTitle:{}}]])),
   '../../src/theme':{colors:{}},'../../src/analysis':{englishReviewVisible:true,
    getEnglishAnalysis:async(id,token)=>{h.calls.push({get:id,token});if(h.getError)throw h.getError;return h.delayedGet?h.delayedGet:structuredClone(h.value);},
@@ -210,4 +211,20 @@ test('unavailable visual guide preserves words and does not assert zero changes'
  await h.flush();assert(h.text().includes('Visual guidance could not be prepared'));
  assert(h.text().includes('Original'));assert(!h.text().includes('No large visual changes'));
  const old=harness();await old.flush();assert(!old.text().includes('Visual change guide'));
+});
+
+test('source-bound timeline appears only for selected saved candidates without changing rendering',async()=>{
+ const h=harness();enablePreviews(h);
+ h.value.transcript.source_duration_ms=20000;
+ h.value.audio_timing={source_duration_ms:20000,audio_duration_ms:15000,quiet_intervals:[]};
+ h.value.scene_analysis={source_duration_ms:20000,status:'unavailable'};
+ await h.flush();
+ const timeline=h.nodes().find(n=>n.type==='ClipEvidenceTimeline');
+ assert(timeline);assert.equal(timeline.props.candidate.source_start_ms,0);
+ assert.equal(timeline.props.duration,20000);
+ assert.equal(timeline.props.audio.audio_duration_ms,15000);
+ assert.equal(timeline.props.scene.status,'unavailable');
+ assert.equal(h.calls.filter(c=>c.preview).length,0);
+ h.check('Word 2:').props.onPress();await h.flush();
+ assert.equal(h.nodes().filter(n=>n.type==='ClipEvidenceTimeline').length,0);
 });
