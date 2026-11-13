@@ -27,6 +27,7 @@ export default function PolishClip(){
   const [edits,setEdits]=useState<Editable[]>([]),[index,setIndex]=useState(0),[editing,setEditing]=useState(false);
   const [options,setOptions]=useState<PolishOptions>({...defaultPolish});
   const [softEdgesSupported,setSoftEdgesSupported]=useState(false);
+  const [manualCropSupported,setManualCropSupported]=useState(false);
   const [ack,setAck]=useState(false),[dirty,setDirty]=useState(false),[captionNotice,setCaptionNotice]=useState('');
   const load=async()=>{
     if(!token||working.current)return;
@@ -38,6 +39,7 @@ export default function PolishClip(){
         throw Error('The saved review changed. Return to review and select the clip again.');
       if(request!==generation.current)return;
       setSoftEdgesSupported(analysis.soft_audio_edges_supported===true);
+      setManualCropSupported(analysis.manual_crop_focus_supported===true);
       const identity=`${me.id}:${id}:${candidate}:${revision}`;
       // An access-token refresh must not erase a draft. Revalidate ownership
       // before revealing it; a different owner/review gets a fresh workspace.
@@ -72,7 +74,10 @@ export default function PolishClip(){
       if(save){await savePolishPreset(owner,options);if(request===generation.current)Alert.alert('Preset saved','Appearance, framing and voice choices are saved for this account on this device. Caption words and times are not stored in the preset.');}
       else{const value=await loadPolishPreset(owner);if(request===generation.current){
         if(!value)Alert.alert('No saved preset','Choose your settings, then save your preset.');
-        else{setOptions({...value,audio_edges:softEdgesSupported?value.audio_edges:'original',
+        else{setOptions({...value,
+          framing:manualCropSupported?value.framing:
+            (value.framing==='fill-left'||value.framing==='fill-right'?'fill-center':value.framing),
+          audio_edges:softEdgesSupported?value.audio_edges:'original',
           captions:base.length>0&&value.captions});setDirty(true);}}}
     }catch(e:any){if(request===generation.current)setError(e.message||'Preset storage is unavailable.');}
     finally{if(request===generation.current){working.current=false;setBusy(false);}}
@@ -85,9 +90,12 @@ export default function PolishClip(){
       if(JSON.stringify(cues)!==JSON.stringify(base))changed=cues;
       if(changed&&!ack)throw Error('Compare your caption corrections with the recording, then confirm below.');
     }}catch(e:any){setError(e.message);return;}
-    const effective={...options,audio_edges:softEdgesSupported?options.audio_edges:'original'};
+    const effective={...options,
+      framing:manualCropSupported?options.framing:
+        (options.framing==='fill-left'||options.framing==='fill-right'?'fill-center':options.framing),
+      audio_edges:softEdgesSupported?options.audio_edges:'original'};
     Alert.alert('Render this polished preview?',
-      'Watch the result before sharing. '+(options.framing==='fill-center'?'Center cropping removes outer details. ':'')+
+      'Watch the result before sharing. '+(options.framing!=='fit'?'Portrait cropping removes outer details. Check that the subject remains visible. ':'')+
       (options.voice==='level'?'Voice leveling can also raise background noise. ':'')+
       (options.audio_edges==='soft'?'Short fades soften only the first and last 80 ms of audio. ':'')+
       (options.captions?'Check caption wording and timing against the speech.':''),[
@@ -117,9 +125,12 @@ export default function PolishClip(){
       <Body>Option {candidate} · {(duration/1000).toFixed(1)} seconds. Your original recording stays unchanged.</Body>
       <View style={s.card}>
         <Choice label="Framing" value={options.framing} disabled={busy}
-          choices={[["fit","Fit full video"],["fill-center","Fill portrait (center)"]]}
+          choices={[["fit","Fit full video"],["fill-center","Fill portrait (center)"],
+            ...(manualCropSupported?[["fill-left","Fill portrait (left)"],["fill-right","Fill portrait (right)"]] as [string,string][]:[])]}
           change={value=>choose('framing',value as PolishOptions['framing'])}/>
-        <Body>{options.framing==='fit'?'Keeps the full picture, with bars where needed.':'Crops around the center; it does not follow faces. Check the edges in the preview.'}</Body>
+        <Body>{options.framing==='fit'?'Keeps the full picture, with bars where needed.':
+          options.framing==='fill-center'?'Crops around the center; it does not follow faces. Check the edges in the preview.':
+          'Crops from the selected horizontal side of the original video. Best for wide footage; tall footage may look unchanged. No face tracking. Watch the preview.'}</Body>
       </View>
       <View style={s.card}>
         <Choice label="Captions" value={options.captions?'on':'off'} disabled={busy||!base.length}
