@@ -85,6 +85,7 @@ export default function PolishClip(){
       if(JSON.stringify(cues)!==JSON.stringify(base))changed=cues;
       if(changed&&!ack)throw Error('Compare your caption corrections with the recording, then confirm below.');
     }}catch(e:any){setError(e.message);return;}
+    const effective={...options,audio_edges:softEdgesSupported?options.audio_edges:'original'};
     Alert.alert('Render this polished preview?',
       'Watch the result before sharing. '+(options.framing==='fill-center'?'Center cropping removes outer details. ':'')+
       (options.voice==='level'?'Voice leveling can also raise background noise. ':'')+
@@ -94,7 +95,7 @@ export default function PolishClip(){
       {text:'Render preview',onPress:async()=>{
         if(working.current||loaded.current!==scope)return;
         working.current=true;setBusy(true);setError('');const request=++generation.current;
-        try{const job=await requestPolishedPreview(id,token,revision,candidate,options,changed,duration,ack);
+        try{const job=await requestPolishedPreview(id,token,revision,candidate,effective,changed,duration,ack);
           if(request===generation.current){setDirty(false);disablePrevention();router.push({pathname:'/project/[id]',params:{id:job.id}});}}
         catch(e:any){if(request===generation.current)setError(e.message||'Could not confirm the render. Retry the same settings.');}
         finally{if(request===generation.current){working.current=false;setBusy(false);}}
