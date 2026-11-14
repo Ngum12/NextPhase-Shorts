@@ -16,7 +16,9 @@ FIELDS={'GEMINI_API_KEY','GEMINI_API_KEY_FILE','GEMINI_PLANNING_ENABLED','GEMINI
 
 
 def configure(root,key):
-    if not re.fullmatch(r'[A-Za-z0-9_-]{16,256}',key):raise ValueError('API key format is invalid')
+    # Google auth keys may contain dots; do not assume a legacy key prefix.
+    # Keep the dotenv value bounded and free of whitespace/interpolation syntax.
+    if not re.fullmatch(r'[A-Za-z0-9_.-]{16,256}',key):raise ValueError('API key format is invalid')
     directory=Path(root)/'.data'/'vps-trial';target=directory/'server.env'
     if any(p.is_symlink() for p in (target,*target.parents)):
         raise ValueError('Private configuration must not use symbolic links')

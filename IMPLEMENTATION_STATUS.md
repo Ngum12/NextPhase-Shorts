@@ -1,5 +1,17 @@
 # Implementation Status — 2026-11-10
 
+## Gemini auth-key format correction — 2026-11-14
+
+The VPS setup helper incorrectly rejected dots in newer Google auth keys before
+any provider request. It now accepts dots alongside existing safe key characters,
+without assuming an `AIza` prefix. Length bounds, no whitespace/interpolation,
+private-file checks and every runtime/sandbox/free-tier control remain unchanged.
+Regression tests use authored synthetic credentials only; the exposed screenshot
+credential was not copied, stored or used. Replace that credential before setup.
+Targeted helper/provider tests pass; no live API request or VPS deployment was
+performed for this correction.
+
+
 ## Optional Gemini content-aware selection — 2026-11-14
 
 Implemented **Create with Gemini** alongside the existing automatic selector.
