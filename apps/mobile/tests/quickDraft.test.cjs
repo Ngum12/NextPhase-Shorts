@@ -4,7 +4,7 @@ const id='11111111-1111-4111-8111-111111111111',revision='a'.repeat(64);
 function harness(){
   class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
   const state={review:{},supported:true,layout:true,clean:true,soft:true,manual:true,portrait:true,
-    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null};
+    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null,words:[]};
   const defaults={framing:'fit',captions:true,caption_size:'standard',caption_color:'white',
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
@@ -13,7 +13,7 @@ function harness(){
       job_id:p,revision,review:state.review,polished_preview_supported:state.supported,
       clean_captions_supported:state.clean,portrait_framing_supported:state.portrait,
       soft_audio_edges_supported:state.soft,manual_crop_focus_supported:state.manual,
-      proposal:{candidates:state.candidates},
+      proposal:{candidates:state.candidates},transcript:{words:state.words},
     };}},
     './polish':{defaultPolish:defaults,loadPolishPreset:async()=>state.save,
       getCaptionDraft:async(p,t,rev,n)=>{state.captionCalls++;assert.equal(p,id);assert.equal(rev,revision);assert.equal(n,state.captionCandidate);
@@ -114,4 +114,60 @@ test('missing review offers human review without render or preflight',async()=>{
  const h=harness();h.state.review=null;
  assert.equal((await h.actions.listQuickDrafts(id,'token')).needsReview,true);
  assert.equal(h.state.captionCalls,0);assert(!h.state.calls.some(x=>x.render));
+});
+
+
+test('shows private, bounded spoken openings/endings and warns about dependent openings',async()=>{
+ const h=harness();
+ h.state.words=['But,','what','we','discovered','is','that','shorts','need','a','clear','opening','and','a','natural','ending',
+   'Next','we','should','choose','the','right','story','segment','instead','of','using','the','very','first','seconds'].map(text=>({text}));
+ h.state.candidates=[
+   {first_word:0,last_word:14,source_start_ms:0,source_end_ms:15000,output_frames:450},
+   {first_word:15,last_word:28,source_start_ms:15000,source_end_ms:30000,output_frames:450},
+ ];
+ const result=await h.actions.listQuickDrafts(id,'token');
+ assert.equal(result.needsReview,false);assert.equal(result.choices.length,2);
+ assert.match(result.choices[0].opening,/^But, what we discovered/);
+ assert.match(result.choices[0].ending,/natural ending/);
+ assert.match(result.choices[0].context_warning,/depend on earlier speech/);
+ assert.equal(result.choices[1].context_warning,null);
+ assert.match(result.choices[1].opening,/^Next we should choose/);
+ assert.equal(h.state.calls.filter(x=>x.render).length,0);
+ assert.equal(h.state.captionCalls,0);
+ assert.equal(h.state.calls.filter(x=>x.me).length,0);
+});
+test('snippets are capped to 96 Unicode codepoints and do not include controls',async()=>{
+ const h=harness();
+ h.state.words=[{text:'I'},...Array.from({length:20},(_,i)=>({text:i===0?'🙂'.repeat(50):'clear'}))];
+ h.state.candidates=[{first_word:0,last_word:20,source_start_ms:0,source_end_ms:20000,output_frames:600}];
+ const result=await h.actions.listQuickDrafts(id,'token');
+ const choice=result.choices[0];
+ assert(Array.from(choice.opening).length<=96);
+ assert(choice.opening.endsWith('…'));
+ assert(!/[\x00-\x1f\x7f]/.test(choice.opening));
+ assert(!choice.opening.includes('\ufffd'));
+});
+test('missing or invalid word ranges never fabricate spoken hooks',async()=>{
+ const h=harness();
+ h.state.words=[{text:'Known'}];h.state.candidates=[
+   {first_word:0,last_word:9,source_start_ms:0,source_end_ms:12000,output_frames:360},
+ ];
+ const choice=(await h.actions.listQuickDrafts(id,'token')).choices[0];
+ assert.equal(choice.opening,null);
+ assert.equal(choice.ending,null);
+ assert.equal(choice.context_warning,null);
+ assert(!h.state.calls.some(x=>x.render));
+});
+test('preview preparation uses newly fetched candidate words and preserves single explicit render',async()=>{
+ const h=harness();
+ h.state.words=['This','is','a','sample','for','our','next','private','Short'].map(text=>({text}));
+ h.state.candidates=[{first_word:0,last_word:8,source_start_ms:2000,source_end_ms:11000,output_frames:270}];
+ const first=await h.actions.listQuickDrafts(id,'token');
+ assert.match(first.choices[0].opening,/^This is/);
+ const prepared=await h.actions.prepareQuickDraft(id,'token',1);
+ assert.match(prepared.plan.opening,/^This is/);
+ assert.equal(prepared.plan.candidate,1);
+ assert(!h.state.calls.some(x=>x.render));
+ await h.actions.renderQuickDraft(id,'token',prepared.plan);
+ assert.equal(h.state.calls.filter(x=>x.render).length,1);
 });
