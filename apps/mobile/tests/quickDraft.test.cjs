@@ -138,7 +138,7 @@ test('shows private, bounded spoken openings/endings and warns about dependent o
 });
 test('snippets are capped to 96 Unicode codepoints and do not include controls',async()=>{
  const h=harness();
- h.state.words=[{text:'I'},...Array.from({length:20},(_,i)=>({text:i===0?'🙂'.repeat(50):'clear'}))];
+ h.state.words=[{text:'I'},...Array.from({length:20},(_,i)=>({text:i===0?'🙂'.repeat(70):'clear'}))];
  h.state.candidates=[{first_word:0,last_word:20,source_start_ms:0,source_end_ms:20000,output_frames:600}];
  const result=await h.actions.listQuickDrafts(id,'token');
  const choice=result.choices[0];
