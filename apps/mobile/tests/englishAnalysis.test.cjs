@@ -86,6 +86,12 @@ test('owner sees a fixed failure category instead of user recording text',async(
  };await h.flush();
  const texts=h.nodes().flatMap(n=>n.children).filter(c=>typeof c==='string').join(' ');
  assert.match(texts,/estimated word timings did not pass safety checks/);
+ assert.match(texts,/limitation of our speech-timing pipeline/);
+ assert.match(texts,/Retrying the same video may produce the same error/);
+ assert.match(texts,/save or share it from this project/);
+ assert(h.button('Retry timing analysis (experimental)'));
+ assert(!h.calls.some(x=>x.start)); // A failed transcript must never auto-retry.
+
  assert.match(texts,/Your video is preserved/);
  h.value.task.error_code='unexpected Private speech transcript';
  h.pending=true;h.props={...h.props}; // Timer is stubbed; refresh by changing the identity.
