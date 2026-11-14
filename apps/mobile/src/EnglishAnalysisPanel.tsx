@@ -124,6 +124,7 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
            {choice.opening&&<Body>Opens: “{choice.opening}”</Body>}
            {choice.ending&&<Body>Ends: “{choice.ending}”</Body>}
            {choice.context_warning&&<Body>{choice.context_warning}</Body>}
+           {(choice.boundary_cues||[]).map((cue,i)=><Body key={i}>{cue}</Body>)}
            <Button title={choice.title} secondary disabled={disabled||busy}
              onPress={()=>confirmChoice(choice)}/>
          </View>)}
