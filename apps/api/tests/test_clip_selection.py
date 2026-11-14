@@ -2,7 +2,8 @@
 import pytest
 from app.analysis_plan import Candidate,Transcript,Word,propose
 from app.analysis_annotations import TranscriptReview,fingerprint
-from app.clip_selection import diverse,overlap,ALGORITHM
+from app.clip_selection import diverse,overlap,ALGORITHM as LEGACY_ALGORITHM
+from app.editorial_rank import ALGORITHM
 
 
 def candidate(start,end,score):
