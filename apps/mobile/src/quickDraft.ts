@@ -5,11 +5,12 @@
  * to conserve mobile requests, storage and cloud compute.
  */
 import {ApiError,api,Job} from './api';
-import {getEnglishAnalysis,getAutomaticClips,type EnglishAnalysis} from './analysis';
+import {getEnglishAnalysis,getAutomaticClips,requestGeminiSelection,type EnglishAnalysis} from './analysis';
 import {defaultPolish,getCaptionDraft,loadPolishPreset,PolishOptions,requestPolishedPreview} from './polish';
 
 export type QuickDraftChoice={
   automatic?:boolean;
+  gemini?:boolean;
   revision:string;
   candidate:number;
   duration_ms:number;
@@ -29,8 +30,9 @@ export type QuickDraftPlan=QuickDraftChoice & {
 export type QuickDraftChoices={needsReview:true;automatic?:boolean}|{needsReview:false;choices:QuickDraftChoice[]};
 export type QuickDraftResult={needsReview:true;automatic?:boolean}|{needsReview:false;plan:QuickDraftPlan};
 
-async function draftAnalysis(id:string,token:string){
+async function draftAnalysis(id:string,token:string,gemini=false,request=false){
   const analysis=await getEnglishAnalysis(id,token);
+  if(gemini)return request?requestGeminiSelection(id,token,analysis):getAutomaticClips(id,token,analysis,true);
   return analysis.automatic_clips_supported===true?getAutomaticClips(id,token,analysis):analysis;
 }
 
@@ -78,6 +80,7 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
     'it','they','he','she','because'].includes(firstWord);
   return {
     ...(analysis.automatic_draft?{automatic:true}:{}),
+    ...(analysis.gemini_draft?{gemini:true}:{}),
     revision:analysis.revision,candidate:index+1,
     duration_ms:Math.floor(best.output_frames*1000/30),
     source_start_ms:best.source_start_ms,source_end_ms:best.source_end_ms,
@@ -86,7 +89,10 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
     ending:complete&&last-first>=8?phrase(words,Math.max(first+8,last-7),last+1):null,
     context_warning:contextWarning?
       'The opening may depend on earlier speech. Listen to the source before choosing.':null,
-    ranking_note:analysis.automatic_draft?
+    ranking_note:analysis.gemini_status==='selected'&&index===0?
+      'Gemini selected this excerpt for its meaning and context. Watch the result and check captions before sharing.':analysis.gemini_status==='selected'?
+      'Alternative automatic excerpt. Gemini chose option 1; this alternative keeps the standard ranking. Watch before sharing.':analysis.gemini_status==='fallback'?
+      'Gemini was unavailable or declined these choices. Using the standard automatic selection.':analysis.automatic_draft?
       'Selected automatically from speech boundaries, confidence and opening/ending cues. Watch the finished clip before sharing.':analysis.proposal.algorithm==='sentence-window-v5-discourse-reviewed'?
       'Technical scoring plus simple English opening and ending cues; not verified story meaning or quality.':
       'Ranked by technical signals, not story meaning.',
@@ -95,8 +101,8 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
 }
 
 /** This is an option list, not a request for 3 render jobs. */
-export async function listQuickDrafts(id:string,token:string):Promise<QuickDraftChoices>{
-  const analysis=await draftAnalysis(id,token);
+export async function listQuickDrafts(id:string,token:string,gemini=false):Promise<QuickDraftChoices>{
+  const analysis=await draftAnalysis(id,token,gemini,true);
   if(analysis.polished_preview_supported!==true)
     throw Error('The server does not support polished previews. Use Review English clips instead.');
   if((!analysis.review&&!analysis.automatic_draft)||!analysis.proposal.candidates.length)
@@ -106,10 +112,10 @@ export async function listQuickDrafts(id:string,token:string):Promise<QuickDraft
 }
 
 /** Runs only after the owner selects one option. */
-export async function prepareQuickDraft(id:string,token:string,candidate=1):Promise<QuickDraftResult>{
+export async function prepareQuickDraft(id:string,token:string,candidate=1,gemini=false):Promise<QuickDraftResult>{
   if(!Number.isInteger(candidate)||candidate<1||candidate>3)
     throw Error('Choose one of the offered Short drafts.');
-  const analysis=await draftAnalysis(id,token);
+  const analysis=await draftAnalysis(id,token,gemini);
   if(analysis.polished_preview_supported!==true)
     throw Error('The server does not support polished previews. Use Review English clips instead.');
   if((!analysis.review&&!analysis.automatic_draft)||!analysis.proposal.candidates.length)
@@ -134,7 +140,7 @@ export async function prepareQuickDraft(id:string,token:string,candidate=1):Prom
     notice=[notice,'This server cannot add clean captions to the draft.'].filter(Boolean).join(' ');
   }else if(options.captions){
     // Only preflight the chosen clip, never spend capacity rendering alternatives.
-    try{await getCaptionDraft(id,token,analysis.revision,candidate,!!analysis.automatic_draft);}
+    try{await getCaptionDraft(id,token,analysis.revision,candidate,!!analysis.automatic_draft,!!analysis.gemini_draft);}
     catch(e){
       if(!(e instanceof ApiError&&e.status===422))throw e;
       options.captions=false;
@@ -147,5 +153,5 @@ export async function prepareQuickDraft(id:string,token:string,candidate=1):Prom
 export async function renderQuickDraft(id:string,token:string,plan:QuickDraftPlan):Promise<Job>{
   // The existing API still checks review revision and idempotency; no batch jobs.
   return requestPolishedPreview(id,token,plan.revision,plan.candidate,
-    plan.options,null,plan.duration_ms,false,!!plan.automatic);
+    plan.options,null,plan.duration_ms,false,!!plan.automatic,!!plan.gemini);
 }

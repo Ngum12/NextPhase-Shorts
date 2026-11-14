@@ -1,5 +1,49 @@
 # Implementation Status — 2026-11-10
 
+## Optional Gemini content-aware selection — 2026-11-14
+
+Implemented **Create with Gemini** alongside the existing automatic selector.
+After explicit Google transcript-sharing consent, the server asks the fixed
+`gemini-3.1-flash-lite` model to choose one of at most five already validated
+ranges. It can decline; malformed output, unavailable credentials/provider,
+quota or application limits fall back to the normal shortlist. It cannot invent
+words, cuts, execution instructions or media assets. No mandatory transcript
+marking was reintroduced. Meaning/coherence still need playback evaluation;
+this is not multi-scene creative editing or completed style engines.
+
+The feature is disabled by default and requires the existing private owner
+allowlist, server-only key and free-tier confirmation. Fixed SQL-serialized
+limits are 5 calls/owner/day and 20 calls/server/day, including failed requests;
+no retries, model upgrades or paid fallback. Cache reuses successes/failures for
+unchanged analysis, including caption preflight and rendering. Requests release
+SQL locks before provider I/O, and stale/deleted analysis discards late results.
+Migration 0026 preserves historical analyses and adds nullable closed metadata,
+without storing provider output or duplicate transcript text. Bounded token/time
+usage is retained for successful calls; failed-call token usage is unknown.
+Original render/ASR timing limits, sandbox, reservations and publication fences
+are unchanged. The existing emergency budget switch also blocks new calls.
+
+A real free-tier provider call using authored synthetic text selected a known
+candidate successfully. No private recording, transcript or raw ASR output was
+sent or logged. This is connectivity evidence, not a semantic-quality benchmark.
+The Codex key is not automatically deployed to the VPS. Owner setup, hidden-key
+helper, app acceptance steps and all limits are in
+[docs/GEMINI_CLIP_SELECTION.md](docs/GEMINI_CLIP_SELECTION.md). Provider free-tier
+text-use terms are disclosed before consent. No billing or VPS change was made
+by this implementation.
+
+Local validation: complete backend suites **813 passed on SQLite and 813 on
+isolated PostgreSQL**. The final Gemini suite (**23 passed on each backend**)
+adds two concurrency/emergency-pause regressions beyond those full runs. Mobile
+full suite **247 passed**, plus the final quick-draft suite **20 passed** with
+one additional alternative-attribution regression. TypeScript, offline Android
+export and real HTTP/FFmpeg smoke passed. Live authored-text generation succeeded
+in **0.75s**, selecting a known candidate (262 input / 8 output tokens); an earlier
+fresh call returned `PROVIDER_UNAVAILABLE`, which remains a supported fallback.
+No phone acceptance or VPS deployment was performed by this change. GitHub
+Actions is account-billing blocked; local evidence is the validation basis.
+
+
 ## Automatic English clip selection and direct draft creation
 
 Owner explicitly prioritized automatic suggestions over manual-editing convenience.

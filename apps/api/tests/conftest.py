@@ -5,6 +5,9 @@ from pathlib import Path
 
 ROOT = Path(tempfile.mkdtemp(prefix="nextphase-test-"))
 os.environ["APP_ENV"] = "test"
+os.environ["GEMINI_PLANNING_ENABLED"]="false"
+os.environ["GEMINI_API_KEY"]=""
+os.environ["GEMINI_API_KEY_FILE"]=""
 os.environ["BUDGET_STATE_FILE"] = ""
 os.environ["RESTORE_JOURNAL_DIR"] = ""
 os.environ["RESTORE_JOURNAL_KEY"] = ""

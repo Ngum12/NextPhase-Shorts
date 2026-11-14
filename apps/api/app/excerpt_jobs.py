@@ -32,6 +32,8 @@ class ExcerptSpec(ClosedModel):
     transcript_sha256: Digest
     review_revision: Digest
     candidate_number: Annotated[int,Field(strict=True,ge=1,le=5)]
+    gemini_model: Literal['gemini-3.1-flash-lite'] | None=None
+    gemini_status: Literal['selected','fallback'] | None=None
     caption_style: Literal['none','clean-1']='none'
     captions: tuple[CaptionCue,...] = Field(default=(), max_length=80)
     framing: Framing='fit'
@@ -40,6 +42,9 @@ class ExcerptSpec(ClosedModel):
 
     @model_validator(mode='after')
     def valid(self):
+        if ((self.gemini_model is None)!=(self.gemini_status is None) or
+                (self.gemini_model is not None and self.schema_version!='excerpt-auto-1')):
+            raise ValueError("Gemini provenance requires an automatic excerpt")
         if (self.schema_version=='excerpt-1') != (self.review_sha256 is not None):
             raise ValueError('Excerpt review provenance differs')
         validate_cues(self.captions, self.output_frames)

@@ -1,4 +1,4 @@
-"""Private English review and selected-excerpt queue admission; inference is offline."""
+"""Private English review and selected-excerpt queue admission; Gemini ranking is explicit and consent-gated."""
 import hashlib
 import json
 import math
@@ -19,6 +19,7 @@ from .queue import lock_owner
 from .preview_framing import Framing
 from .caption_plan import CaptionCue, captions_for, validate_cues
 from .polish import PolishSettings
+from .gemini_selection import Request as GeminiRequest
 
 router = APIRouter(prefix='/api/v1/jobs', tags=['English review pilot'])
 MAX_TRANSCRIPT_BYTES = 262144
@@ -148,6 +149,7 @@ class PreviewRequest(ClosedModel):
     idempotency_key: UUID4
     acknowledged_preview: bool = Field(strict=True)
     automatic_draft: bool=Field(default=False,strict=True)
+    gemini_draft: bool=Field(default=False,strict=True)
     caption_style: Literal['none','clean-1']='none'
     framing: Framing='fit'
     polish: PolishSettings | None=None
@@ -156,6 +158,7 @@ class PreviewRequest(ClosedModel):
 
     @model_validator(mode='after')
     def edits_acknowledged(self):
+        if self.gemini_draft and not self.automatic_draft:raise ValueError("Gemini requires automatic draft mode")
         if self.caption_edits is not None and (self.caption_style!='clean-1' or not self.acknowledged_caption_edits):
             raise ValueError('Caption corrections require captions and explicit recording comparison')
         return self
@@ -178,6 +181,7 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     key='excerpt_'+str(payload.idempotency_key)
     identity=f'{parent.id}:{payload.revision}:{payload.candidate_number}'
     if payload.automatic_draft:identity+=':automatic-draft'
+    if payload.gemini_draft:identity+=':gemini'
     if payload.caption_style != 'none':identity += ':'+payload.caption_style
     if payload.framing != 'fit':identity += ':framing-'+payload.framing
     if payload.polish is not None or payload.caption_edits is not None:
@@ -198,10 +202,14 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     row=db.get(ProjectAnalysis,job_id)
     if row is None:raise HTTPException(404,'No English transcript is ready for this project',headers=PRIVATE)
     data=document(row)
+    selection=None
     if payload.automatic_draft:
         from .automatic_clips import for_project
         plan=for_project(row,parent)
         current_revision=fingerprint(plan)
+        if payload.gemini_draft:
+            from .gemini_selection import effective
+            plan,current_revision,selection=effective(row,parent)
     else:
         plan=Proposal.model_validate_json(row.proposal_json)
         current_revision=row.revision
@@ -229,6 +237,8 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
         output_frames=candidate.output_frames,requested_seconds=parent.desired_seconds,
         review_sha256=plan.review_sha256,transcript_sha256=plan.transcript_sha256,
         review_revision=current_revision,candidate_number=payload.candidate_number,
+        gemini_model=selection.model if selection is not None else None,
+        gemini_status=selection.status if selection is not None else None,
         caption_style=payload.caption_style,captions=captions,framing=payload.framing,
         polish=payload.polish or PolishSettings(),caption_edits_applied=payload.caption_edits is not None)
     settings=get_settings()
@@ -256,16 +266,20 @@ class SaveReview(ClosedModel):
 @router.get('/{job_id}/analysis/captions')
 def get_caption_draft(job_id:str,revision:Digest,response:Response,
                       candidate_number:int=Query(ge=1,le=5),
-                      automatic:bool=False,
+                      automatic:bool=False,gemini:bool=False,
                       user:User=Depends(current_user),db:Session=Depends(session_dep)):
     response.headers['Cache-Control']='private, no-store'
     parent=owned_project(db,user.id,job_id)
     row=db.get(ProjectAnalysis,job_id)
     if row is None:raise HTTPException(404,'No English review is ready',headers=PRIVATE)
     data=document(row)
+    if gemini and not automatic:raise HTTPException(422,'Gemini requires automatic mode',headers=PRIVATE)
     if automatic:
         from .automatic_clips import for_project
         plan=for_project(row,parent);current_revision=fingerprint(plan)
+        if gemini:
+            from .gemini_selection import effective
+            plan,current_revision,_=effective(row,parent)
     else:
         plan=Proposal.model_validate_json(row.proposal_json);current_revision=row.revision
     if current_revision!=revision:raise HTTPException(409,'Review changed. Refresh before editing captions.',headers=PRIVATE)
@@ -283,7 +297,7 @@ def get_caption_draft(job_id:str,revision:Digest,response:Response,
 
 
 @router.get('/{job_id}/analysis/automatic-clips')
-def automatic_clips(job_id:str,response:Response,user:User=Depends(current_user),db:Session=Depends(session_dep)):
+def automatic_clips(job_id:str,response:Response,gemini:bool=False,user:User=Depends(current_user),db:Session=Depends(session_dep)):
     from .automatic_clips import for_project
     parent=owned_project(db,user.id,job_id)
     row=db.get(ProjectAnalysis,job_id)
@@ -291,7 +305,30 @@ def automatic_clips(job_id:str,response:Response,user:User=Depends(current_user)
     document(row)
     plan=for_project(row,parent)
     result={**plan.model_dump(mode='json'),'revision':fingerprint(plan),'job_id':parent.id}
+    if gemini:
+        from .gemini_selection import result as gemini_result
+        result=gemini_result(row,parent)
+        if result['gemini_status']=='pending':raise HTTPException(409,'Gemini selection is pending',headers=PRIVATE)
     response.headers.update(PRIVATE);db.commit();return result
+
+
+@router.get('/{job_id}/analysis/gemini-selection')
+def get_gemini(job_id:str,response:Response,user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    from .gemini_selection import result
+    parent=owned_project(db,user.id,job_id);row=db.get(ProjectAnalysis,job_id)
+    if row is None:raise HTTPException(404,'No English transcript is ready',headers=PRIVATE)
+    document(row);output=result(row,parent);db.commit();response.headers.update(PRIVATE)
+    return output
+
+
+@router.post('/{job_id}/analysis/gemini-selection')
+def select_gemini(job_id:str,payload:GeminiRequest,response:Response,
+                  user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    from .gemini_selection import start
+    response.headers.update(PRIVATE)
+    output=start(db,user.id,job_id,payload)
+    if output['gemini_status']=='pending':response.status_code=202
+    return output
 
 
 @router.get('/{job_id}/analysis')

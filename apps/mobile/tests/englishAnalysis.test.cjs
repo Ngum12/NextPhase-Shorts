@@ -16,12 +16,12 @@ function harness(){
   useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return[h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
   useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
   useEffect(effect,deps){const i=h.cursor++,old=h.slots[i];if(!old||deps.some((v,n)=>v!==old.deps[n]))h.effects.push(()=>{old?.cleanup?.();h.slots[i]={deps,cleanup:effect()};});}};react.default=react;
- const actions={englishCapability:async()=>({available:true,automatic_clips:!!h.automatic}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
+ const actions={englishCapability:async()=>({available:true,automatic_clips:!!h.automatic,gemini_planning_available:!!h.gemini}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
  startEnglish:async(id,token,state)=>{h.calls.push({start:id,token,state});return {...h.value,task:{id:'attempt',status:'queued'}};},
  cancelEnglish:async(id,token)=>{h.calls.push({cancel:id,token});return {...h.value,task:{id:'attempt',status:'cancelled'}};}};
  const quickDraft={
-  listQuickDrafts:async(id,token)=>{h.calls.push({list:id,token});return h.choiceWait||h.choices;},
-  prepareQuickDraft:async(id,token,candidate)=>{h.calls.push({prepare:id,token,candidate});return h.quickWait||{...h.quick,plan:h.quick.plan&&{...h.quick.plan,candidate}};},
+  listQuickDrafts:async(id,token,gemini)=>{h.calls.push({list:id,token,gemini});return h.choiceWait||h.choices;},
+  prepareQuickDraft:async(id,token,candidate,gemini)=>{h.calls.push({prepare:id,token,candidate,gemini});return h.quickWait||{...h.quick,plan:h.quick.plan&&{...h.quick.plan,candidate}};},
   renderQuickDraft:async(id,token,plan)=>{h.calls.push({renderDraft:id,token,plan});
     return h.renderWait||{id:'preview-2',status:'queued'};}};
   const component=load('../src/EnglishAnalysisPanel.tsx',{react,'react-native':{View:'View',Text:'Text',Alert:{alert:(...args)=>h.alerts.push(args)}},
@@ -227,4 +227,23 @@ test('proposed Short cards show spoken boundaries and technical evidence without
  h.button('Hide draft choices').props.onPress();await h.flush();
  assert(!h.button('Option 1 · 10.0s'));
  assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+});
+
+test('Gemini action requires sharing consent and keeps standard creation available',async()=>{
+ const h=harness();h.automatic=true;h.gemini=true;h.value.ready=true;
+ h.choices.choices=[{automatic:true,gemini:true,candidate:1,revision:'a'.repeat(64),title:'Gemini clip'}];
+ h.quick.plan.automatic=true;h.quick.plan.gemini=true;
+ await h.flush();assert(h.button('Create suggested Short'));
+ h.button('Create with Gemini').props.onPress();assert(!h.calls.some(c=>c.list));
+ assert.match(h.alerts.at(-1)[1],/No video or audio is sent/);assert.match(h.alerts.at(-1)[1],/free-tier terms/);
+ h.alerts.at(-1)[2][0].onPress?.();await h.flush();assert(!h.calls.some(c=>c.list));
+ h.button('Create with Gemini').props.onPress();await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.find(c=>c.list).gemini,true);assert.equal(h.calls.find(c=>c.prepare).gemini,true);
+ assert(!h.calls.some(c=>c.renderDraft));
+});
+test('unconfigured server hides Gemini and stale consent cannot send requests',async()=>{
+ const h=harness();h.automatic=true;h.value.ready=true;await h.flush();assert(!h.button('Create with Gemini'));
+ h.gemini=true;h.pending=true;h.props={id:'source2',token:'session'};await h.flush();h.button('Create with Gemini').props.onPress();
+ const accept=h.alerts.at(-1)[2][1].onPress;h.pending=true;h.props={id:'source3',token:'other-session'};await h.flush();accept();await h.flush();
+ assert(!h.calls.some(c=>c.list));
 });

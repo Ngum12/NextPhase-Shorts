@@ -26,16 +26,16 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
   const [state,setState]=useState<EnglishState|null>(null),[available,setAvailable]=useState(false);
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
   const [choices,setChoices]=useState<QuickDraftChoice[]>([]);
-  const [automatic,setAutomatic]=useState(false);
+  const [automatic,setAutomatic]=useState(false),[gemini,setGemini]=useState(false);
   const generation=useRef(0),running=useRef(false);
   useEffect(()=>{
     const current=++generation.current;let timer:ReturnType<typeof setTimeout>|undefined;
-    setState(null);setAvailable(false);setAutomatic(false);setError('');setBusy(false);setChoices([]);running.current=false;
+    setState(null);setAvailable(false);setAutomatic(false);setGemini(false);setError('');setBusy(false);setChoices([]);running.current=false;
     const refresh=async()=>{
       try{
         const capability=await englishCapability(token);
         if(generation.current!==current)return;
-        setAvailable(capability.available);setAutomatic(capability.automatic_clips===true);if(!capability.available)return;
+        setAvailable(capability.available);setAutomatic(capability.automatic_clips===true);setGemini(capability.gemini_planning_available===true);if(!capability.available)return;
         const next=await englishState(id,token);
         if(generation.current===current){setState(next);setError('');}
       }catch(e:any){if(generation.current===current)setError(e.message||'Could not check English analysis.');}
@@ -59,7 +59,7 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
     running.current=true;setBusy(true);setError('');
     const release=()=>{if(generation.current===current){running.current=false;setBusy(false);}};
     try{
-      const result=await prepareQuickDraft(id,token,choice.candidate);
+      const result=await prepareQuickDraft(id,token,choice.candidate,!!choice.gemini);
       if(generation.current!==current)return;
       if(result.needsReview){reviewPrompt(release,result.automatic);return;}
       const plan=result.plan;
@@ -92,13 +92,13 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       release();
     }
   };
-  const quickDraft=async(best=true)=>{
+  const quickDraft=async(best=true,useGemini=false)=>{
     if(running.current||disabled||!state?.ready)return;
     const current=generation.current;
     running.current=true;setBusy(true);setError('');
     const release=()=>{if(generation.current===current){running.current=false;setBusy(false);}};
     try{
-      const result=await listQuickDrafts(id,token);
+      const result=await listQuickDrafts(id,token,useGemini);
       if(generation.current!==current)return;
       if(result.needsReview){reviewPrompt(release,result.automatic);return;}
       setChoices(result.choices);
@@ -129,6 +129,14 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       <Body>{automatic?'Create a suggested Short directly from your recording. The server picks the clip; sentence marking is optional. Watch the result and check captions before sharing.':'Choose from up to three different reviewed clip options. Checking choices does not render anything: only the draft you confirm is rendered. No automatic transcript approval or publishing.'}</Body>
       <Button title={busy?'Preparing draft…':automatic?'Create suggested Short':'Prepare a Short draft'} disabled={disabled||busy}
         onPress={()=>quickDraft()}/>
+      {automatic&&gemini&&<Button title="Create with Gemini" disabled={disabled||busy} onPress={()=>{
+        const current=generation.current;
+        Alert.alert('Share transcript with Google?',
+          'Gemini will receive the recognized transcript and proposed excerpts to choose a coherent clip. No video or audio is sent. Google’s free-tier terms may allow this text to be used to improve its products. Use only recordings you have permission to share and avoid sensitive content. The server limits requests; if Gemini cannot choose, the standard selector is used. This does not publish your video.',[
+          {text:'Not now',style:'cancel'},
+          {text:'Agree and create',onPress:()=>{if(current===generation.current)quickDraft(true,true);}},
+        ]);
+      }}/> }
       {automatic&&<Button title="Other clip suggestions" secondary disabled={disabled||busy} onPress={()=>quickDraft(false)}/>}
       {choices.length>1&&<View style={s.card}>
          <Text style={s.cardTitle}>Choose one Short draft</Text>

@@ -87,6 +87,7 @@ class ProjectAnalysis(Base):
     transcript_json: Mapped[str] = mapped_column(Text)
     audio_timing_json: Mapped[str | None] = mapped_column(Text,nullable=True)
     scene_analysis_json: Mapped[str | None] = mapped_column(Text,nullable=True)
+    gemini_selection_json: Mapped[str | None] = mapped_column(Text,nullable=True)
     review_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     proposal_json: Mapped[str] = mapped_column(Text)
     revision: Mapped[str] = mapped_column(String(64))

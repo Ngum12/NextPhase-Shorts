@@ -342,3 +342,9 @@ Visual changes: [SCENE_CHANGE_GUIDE.md](docs/SCENE_CHANGE_GUIDE.md) describes op
 server-side sampled visual-transition guidance for new private English analyses.
 It helps review boundaries without changing source ranges, word timing or voice;
 it is not semantic scene understanding or automatic cutting.
+
+
+Optional private **Create with Gemini** chooses among the automatic English clip
+ranges after explicit transcript-sharing consent. It is disabled by default,
+server-key only, limited to free-tier development evaluation, and falls back to
+the standard selector. See [VPS setup and app test steps](docs/GEMINI_CLIP_SELECTION.md).

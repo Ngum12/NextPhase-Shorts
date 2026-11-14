@@ -9,6 +9,12 @@ load_dotenv()
 class Settings:
     def __init__(self):
         self.env = os.getenv("APP_ENV", "development")
+        self.gemini_planning_enabled=os.getenv('GEMINI_PLANNING_ENABLED','false').lower()=='true'
+        self.gemini_free_tier_confirmed=os.getenv('GEMINI_FREE_TIER_CONFIRMED','false').lower()=='true'
+        self.gemini_api_key=read_secret('GEMINI_API_KEY','')
+        self.gemini_model='gemini-3.1-flash-lite'
+        self.gemini_daily_limit=20
+        self.gemini_owner_daily_limit=5
         self.english_review_enabled=os.getenv('ENGLISH_REVIEW_ENABLED','false').lower()=='true'
         self.english_review_user_ids=tuple(filter(None,(p.strip() for p in os.getenv('ENGLISH_REVIEW_USER_IDS','').split(','))))
         self.english_analysis_enabled=os.getenv('ENGLISH_ANALYSIS_ENABLED','false').lower()=='true'
