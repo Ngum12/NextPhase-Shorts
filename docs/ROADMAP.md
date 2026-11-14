@@ -1,26 +1,30 @@
 # Engineering work queue
 
-Current review milestone: [experimental local transcript/planning pilot](ANALYSIS_PILOT.md).
-It has no production/API/mobile activation. Actual private-server evidence and
-remaining Phase 2 conditions are consolidated in the
-[11 November ledger](PHASE_2_ACCEPTANCE_2026-11-11.md).
+Current development milestone: the private English upload → contained server
+analysis → human transcript review → clip selection → polished render → phone
+Save workflow. After the merged terminal-timing fix (PR #70, `7b7bb00`), the owner
+reported successful recovery and confirmed that workflow works on the phone.
+See [implementation evidence](../IMPLEMENTATION_STATUS.md) and the
+[English analysis runbook](AUTOMATIC_ENGLISH_ANALYSIS.md).
 
-The master contract in `prompt.md` owns phase order. Do not enable later paid
-features or present planned styles as implemented.
+This is a working owner-restricted prototype. Human word/timing/meaning review
+remains required; it does not establish semantic editing, a representative ASR
+quality benchmark, French readiness or public production approval. The master
+contract in `prompt.md` owns phase order and later paid-feature gates.
 
-**Current remaining Phase 2 scope:** [fixed six-package checklist](PHASE_2_CHECKLIST.md).
-It consolidates the historical notes below. Finish packages in order without
-dropping acceptance gates. Package 1 is implemented for review; see
-[session refresh](SESSION_REFRESH.md).
+Next development focus: make the reviewed English editing workflow easier to
+resume and use, then improve source-bound clip selection and editing quality in
+small tested increments. Keep existing recordings/reviews, source integrity,
+server-side processing, 60-second/9:16 output and strict containment intact.
 
-Package 2 Resend/outbox/policy implementation is locally verified for review;
-real provider/inbox/Pixel acceptance stays open. See [delivery runbook](EMAIL_DELIVERY.md).
-No later package is declared complete or skipped by this preparation.
+[The Phase 2 checklist](PHASE_2_CHECKLIST.md) and
+[private-server acceptance ledger](PHASE_2_ACCEPTANCE_2026-11-11.md) retain their
+specific operational/external gates. Billing, public rollout and provider/legal
+approval are separate. Automatic backup retention is separately pending.
 
-Package 3 uses Valkey/Arq dispatch with PostgreSQL job authority, fenced renewable
-claims, transient retries/dead letters and required Linux decoder isolation. Local
-functional verification does not close its strict processing-host gate: this
-managed host lacks enforced worker cgroups and Landlock. See QUEUE_RELIABILITY.md.
+The historical queue below describes staged work and remaining release gates;
+use the dated implementation evidence above to distinguish completed increments
+from the original plan.
 
 | Priority | Work | Acceptance / dependency |
 |---|---|---|
@@ -31,7 +35,7 @@ managed host lacks enforced worker cgroups and Landlock. See QUEUE_RELIABILITY.m
 | P1, Phase 2 | DB session revocation, password change and shared auth limits implemented; verified recovery/email, refresh and upload resource controls remain | Owner-reported Pixel auth acceptance passed; delivery channel, edge limits, quotas and sandbox tests |
 | P1, Phase 2 | Durable private-volume resumable sessions implemented; project deletion/private-volume cleanup implemented; opt-in S3 originals/results and signed GET links implemented; opt-in signed chunks/sealing implemented; account erasure and full retention remain | Ownership, interrupted uploads, deletion and retention tests |
 | P1, Phase 2 | Attempt timings and aggregate P50/P95/optional cost calculation implemented; full observability/cost baseline remains | Realistic consented dataset, resource measurements, traces and bounded concurrency |
-| Later, Phase 3+ | ASR/EDL/highlights then style engines | Follow master phase gates; provider consent, budgets and licensing first |
+| Current, Phase 3 / later Phase 4+ | Private English ASR/review/clip previews work; improve recovery/usability and reviewed selection, then editing/style engines | Preserve tested workflow; human review, source-bound fixtures and playback acceptance; provider consent/budgets/licensing before new integrations |
 | Later, Phase 9+ | Billing and subscriptions | Explicit owner authorization, legal/store review and verified payment tests |
 
 Save/Share separation and conservative per-account retained-media admission
