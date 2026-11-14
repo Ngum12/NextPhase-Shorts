@@ -249,6 +249,32 @@ def test_zero_width_native_words_preserved_with_disclosed_bounded_timing(interva
     assert not proposal.semantic_quality_verified
 
 
+@pytest.mark.parametrize('intervals,expected',[
+    ([(0,500),(495,900)],[(0,500),(500,900)]),
+    ([(0,500),(495,495),(500,1000)],[(0,500),(500,501),(501,1000)]),
+    ([(0,1000),(995,1000)],[(0,999),(999,1000)]),
+    ([(0,200),(190,210),(205,300)],[(0,200),(200,210),(210,300)]),
+])
+def test_tiny_positive_whisper_overlaps_are_adjusted_and_disclosed(intervals,expected):
+    transcript=zero_words(intervals,duration=1000)
+    assert [(word.start_ms,word.end_ms) for word in transcript.words]==expected
+    assert [word.text for word in transcript.words]==['word'+str(i) for i in range(len(intervals))]
+    assert [word.confidence for word in transcript.words]==[.8]*len(intervals)
+    assert transcript.timestamp_quality=='model_token_estimate_adjusted'
+    assert transcript.provider=='whisper_cpp'
+    assert 'adjusted_word_timestamps' in propose(transcript,15).warnings
+
+
+@pytest.mark.parametrize('intervals,duration',[
+    ([(0,500),(479,900)],1000),  # Excessive positive overlap is not an estimate repair.
+    ([(0,200),(190,210),(180,300)],1000),  # Backward model word order.
+    ([(0,300),(295,305),(300,310),(305,400)],1000),  # Accumulated shift over 20 ms.
+    ([(0,1000),(950,1000)],1000),  # Cannot borrow more than two timestamp ticks.
+])
+def test_excessive_or_ambiguous_positive_word_overlap_is_rejected(intervals,duration):
+    with pytest.raises(AnalysisUnavailable):zero_words(intervals,duration=duration)
+
+
 def test_normal_native_fingerprint_is_unchanged_by_zero_word_support():
     from app.analysis_annotations import fingerprint
     assert fingerprint(parse(whisper_data()))=='08be3d447a1aba15d0f636595c1ebba961ba2fc8bcd64abac4145d35b0c02107'
