@@ -268,7 +268,7 @@ def test_tiny_positive_whisper_overlaps_are_adjusted_and_disclosed(intervals,exp
 @pytest.mark.parametrize('intervals,duration',[
     ([(0,500),(479,900)],1000),  # Excessive positive overlap is not an estimate repair.
     ([(0,200),(190,210),(180,300)],1000),  # Backward model word order.
-    ([(0,300),(295,305),(300,310),(305,400)],1000),  # Accumulated shift over 20 ms.
+    ([(0,200)]+[(195,201)]*23,1000),  # Accumulated shift over 20 ms.
     ([(0,1000),(950,1000)],1000),  # Cannot borrow more than two timestamp ticks.
 ])
 def test_excessive_or_ambiguous_positive_word_overlap_is_rejected(intervals,duration):
