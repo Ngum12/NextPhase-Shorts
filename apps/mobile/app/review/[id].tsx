@@ -152,6 +152,7 @@ export default function EnglishReview() {
           {dirty?<Body>Save your changes to update suggestions.</Body>:<>
             {!data.proposal.candidates.length&&<Body>No complete clip fits yet. Check your sentence endings and flagged words above.</Body>}
             {data.proposal.algorithm==='sentence-window-v4-diverse-reviewed'&&<Body>Options compare word confidence, estimated speech coverage and duration, then reduce near-duplicate ranges. These rules do not judge meaning or predict popularity. Fewer than five options is normal.</Body>}
+             {data.proposal.algorithm==='sentence-window-v5-discourse-reviewed'&&<Body>Options still compare confidence, speech coverage and duration, but now also consider simple English opening words and potential resolution phrases. A mid-thought opening may rank lower. These are heuristics, not real story understanding or popularity predictions. Always check the recording before rendering.</Body>}
             {data.proposal.candidates.map((candidate,i)=><View key={i} style={{gap:5}}><Button key={i}
               title={`Option ${i+1} · ${(candidate.output_frames/30).toFixed(1)} seconds${selected===i?' · selected':''}`}
               secondary={selected!==i} onPress={()=>setSelected(i)} disabled={blocked}/>
