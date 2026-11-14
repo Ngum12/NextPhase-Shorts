@@ -79,7 +79,7 @@ class Candidate(ClosedModel):
 
 class Proposal(ClosedModel):
     schema_version: Literal['1'] = '1'
-    algorithm: Literal['sentence-window-v1','sentence-window-v2','sentence-window-v3-reviewed','sentence-window-v4-diverse-reviewed'] = 'sentence-window-v2'
+    algorithm: Literal['sentence-window-v1','sentence-window-v2','sentence-window-v3-reviewed','sentence-window-v4-diverse-reviewed','sentence-window-v5-discourse-reviewed'] = 'sentence-window-v2'
     source_sha256: Digest
     source_duration_ms: Annotated[int, Field(strict=True, ge=1, le=600000)]
     language: Literal['en', 'fr']
@@ -98,7 +98,7 @@ class Proposal(ClosedModel):
 
     @model_validator(mode='after')
     def valid(self):
-        if (self.algorithm in ('sentence-window-v3-reviewed','sentence-window-v4-diverse-reviewed')) != (self.review_sha256 is not None):
+        if (self.algorithm in ('sentence-window-v3-reviewed','sentence-window-v4-diverse-reviewed','sentence-window-v5-discourse-reviewed')) != (self.review_sha256 is not None):
             raise ValueError('Reviewed proposals must disclose review identity')
         if (self.review_sha256 is None) != (self.transcript_sha256 is None):
             raise ValueError('Review and transcript identities must be paired')
@@ -139,7 +139,8 @@ def propose(transcript: Transcript, requested_seconds: int, *, review=None) -> P
         review = validate_review(transcript, review)
         confirmed = set(review.confirmed_low_confidence_words)
         sentence_ends = review.sentence_end_words
-        identities = {'algorithm': 'sentence-window-v4-diverse-reviewed',
+        from .editorial_rank import ALGORITHM
+        identities = {'algorithm': ALGORITHM,
                       'transcript_sha256': review.transcript_sha256,
                       'review_sha256': fingerprint(review)}
         if sentence_ends:
@@ -195,8 +196,8 @@ def propose(transcript: Transcript, requested_seconds: int, *, review=None) -> P
                 confidence=round(confidence,4) if confidence is not None else None,
                 speech_density=round(density,4),score=round(score,4))
     if review is not None:
-        from .clip_selection import diverse
-        ranked=diverse(candidates.values())
+        from .editorial_rank import rank_reviewed
+        ranked=rank_reviewed(candidates.values(), words, transcript.language)
     else:
         ranked = sorted(candidates.values(),key=lambda c:(-c.score,c.source_start_ms,c.source_end_ms))[:5]
     if not ranked:
