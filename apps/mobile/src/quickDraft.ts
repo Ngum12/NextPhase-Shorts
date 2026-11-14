@@ -32,7 +32,7 @@ export type QuickDraftResult={needsReview:true}|{needsReview:false;plan:QuickDra
 function phrase(words:EnglishAnalysis['transcript']['words'],first:number,last:number):string|null{
   if(!Number.isInteger(first)||!Number.isInteger(last)||first<0||last<first||last>words.length)
     return null;
-  const plain=words.slice(first,last).map(w=>w.text.replace(/[\\x00-\\x1f\\x7f]/g,' ').trim()).filter(Boolean).join(' ');
+  const plain=words.slice(first,last).map(w=>w.text.replace(/[\x00-\x1f\x7f]/g,' ').trim()).filter(Boolean).join(' ');
   if(!plain)return null;
   const characters=Array.from(plain);
   return characters.length>96?characters.slice(0,95).join('')+'…':plain;
