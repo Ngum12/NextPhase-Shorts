@@ -58,8 +58,8 @@ def transcribe(audio,model,work,*,source_sha256,source_duration_ms,model_sha256,
         try:
             return parse_whisper(raw,source_sha256=source_sha256,source_duration_ms=source_duration_ms,
                 language='en',model_sha256=model_sha256,engine_sha256=engine_digest)
-        except WordTimingUnavailable:
-            raise AsrFailure('ASR_WORD_TIMING_REJECTED') from None
+        except WordTimingUnavailable as failure:
+            raise AsrFailure(failure.code) from None
         except (ValueError,RuntimeError,TypeError,KeyError):
             raise AsrFailure('ASR_TRANSCRIPT_REJECTED') from None
     finally:

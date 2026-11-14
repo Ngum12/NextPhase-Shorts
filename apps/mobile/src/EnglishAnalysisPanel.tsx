@@ -9,8 +9,17 @@ const englishFailureHint:Record<string,string>={
   ASR_PROCESS_FAILED:'The speech engine stopped before finishing.',
   ASR_DEADLINE_EXCEEDED:'The speech engine exceeded its time limit.',
   ASR_OUTPUT_INVALID:'The speech engine did not produce a valid result file.',
-  ASR_WORD_TIMING_REJECTED:'The estimated word timings did not pass safety checks.',
   ASR_TRANSCRIPT_REJECTED:'The recognized text or metadata did not pass validation.',
+};
+
+const timingFailureHint:Record<string,string>={
+  ASR_WORD_TIMING_REJECTED:'The estimated word timings did not pass safety checks.',
+  ASR_OFFSETS_MISSING:'The speech engine left out some word timing offsets.',
+  ASR_OFFSETS_INVALID:'The speech engine produced invalid word timing offsets.',
+  ASR_OFFSETS_OUT_OF_SOURCE:'Some estimated word timings fall outside the recording.',
+  ASR_WORD_ORDER_BACKWARD:'The estimated word timings move backward in the recording.',
+  ASR_WORD_OVERLAP_EXCESSIVE:'The estimated word timings overlap too much to adjust safely.',
+  ASR_TIMING_REPAIR_EXCEEDED:'The estimated word timings need more adjustment than the allowed 20 milliseconds per boundary.',
 };
 
 export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:string;disabled?:boolean}) {
@@ -109,6 +118,8 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
   };
   if(!available)return error?<View style={s.card}><Body>{error}</Body><Button title="Retry English connection" onPress={()=>setRetry(n=>n+1)} secondary/></View>:<Button title="Review English clips" disabled={disabled} onPress={()=>router.push({pathname:'/review/[id]',params:{id}})} secondary/>;
   const active=state?.task&&['queued','processing'].includes(state.task.status);
+  const failureCode=state?.task?.error_code||'';
+  const timingHint=Object.hasOwn(timingFailureHint,failureCode)?timingFailureHint[failureCode]:null;
   const waiting=!!state?.requested&&!state.task&&!state.ready&&state.eligible;
   return <View style={s.card}><Text style={s.cardTitle}>English clip suggestions</Text>
     {!!error&&<Body>{error}</Body>}
@@ -134,9 +145,9 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
        <Button title="Review English clips" disabled={disabled||busy} secondary
         onPress={()=>router.push({pathname:'/review/[id]',params:{id}})}/>
     </>:<>
-      <Body>{active?(state.task!.status==='queued'?'English analysis is queued. You may leave this screen.':'Analyzing your recording on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?(state.task.error_code==='ASR_WORD_TIMING_REJECTED'?'Automatic clip suggestions are unavailable: the estimated word timings did not pass safety checks. This is a limitation of our speech-timing pipeline, not a judgement about your recording. Retrying the same video may produce the same error. Your video is preserved. If your basic Short finished rendering, you can still save or share it from this project.':'Transcription failed. '+(englishFailureHint[state.task.error_code||'']||'The precise cause is not yet available.')+' Your video is preserved. You can retry.'):state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
+      <Body>{active?(state.task!.status==='queued'?'English analysis is queued. You may leave this screen.':'Analyzing your recording on the server. Your original voice stays unchanged.'):waiting?'Waiting for queue space. Your uploaded video is safe.':!state.eligible?'This English pilot supports original local recordings up to three minutes.':state.task?.status==='failed'?(timingHint?'Automatic clip suggestions are unavailable. '+timingHint+' This is a limitation of our speech-timing pipeline, not a judgement about your recording. Retrying the same video may produce the same error. Your video is preserved. If your basic Short finished rendering, you can still save or share it from this project.':'Transcription failed. '+((Object.hasOwn(englishFailureHint,failureCode)?englishFailureHint[failureCode]:null)||'The precise cause is not yet available.')+' Your video is preserved. You can retry.'):state.task?.status==='cancelled'?'English analysis was cancelled.':'Find clip suggestions from your English speech, then review the transcript.'}</Body>
       {(active||waiting)?<Button title={busy?'Please wait…':'Cancel English analysis'} disabled={disabled||busy} onPress={()=>action(true)} secondary/>:
-        state.eligible&&<Button title={busy?'Please wait…':state.task?(state.task.status==='failed'&&state.task.error_code==='ASR_WORD_TIMING_REJECTED'?'Retry timing analysis (experimental)':'Retry English analysis'):'Find English clips'} disabled={disabled||busy} onPress={()=>{
+        state.eligible&&<Button title={busy?'Please wait…':state.task?(state.task.status==='failed'&&!!timingHint?'Retry timing analysis (experimental)':'Retry English analysis'):'Find English clips'} disabled={disabled||busy} onPress={()=>{
           const current=generation.current;
           Alert.alert('Analyze your English recording?','The server will transcribe this video and check visual changes using temporary samples. Check the transcript, sentence endings and suggested clips before rendering. This does not publish your video.',[
             {text:'Not now',style:'cancel'},{text:'Analyze recording',onPress:()=>{if(current===generation.current)action();}},
