@@ -18,6 +18,7 @@ export type QuickDraftChoice={
   opening:string|null;
   ending:string|null;
   context_warning:string|null;
+  boundary_cues:string[];
 };
 export type QuickDraftPlan=QuickDraftChoice & {
   options:PolishOptions;
@@ -37,6 +38,29 @@ function phrase(words:EnglishAnalysis['transcript']['words'],first:number,last:n
   const characters=Array.from(plain);
   return characters.length>96?characters.slice(0,95).join('')+'…':plain;
 }
+
+function technicalBoundaryCues(analysis:EnglishAnalysis,start:number,end:number):string[]{
+  const cues:string[]=[];
+  const audio=analysis.audio_timing;
+  if(audio){
+    // PCM energy is a hint, not a verified silence or a transcript cut.
+    const nearQuiet=(at:number)=>audio.quiet_intervals.some(interval=>
+      interval.start_ms<=at+250&&interval.end_ms>=at-250);
+    if(nearQuiet(start))cues.push('Low-volume audio near opening cut — verify playback.');
+    if(nearQuiet(end))cues.push('Low-volume audio near ending cut — verify playback.');
+  }
+  const visual=analysis.scene_analysis;
+  if(visual?.status==='available'){
+    const nearChange=(at:number)=>visual.changes.some(change=>
+      Math.abs(change.at_ms-at)<=750);
+    if(nearChange(start))cues.push('Possible visual change near opening cut.');
+    if(nearChange(end))cues.push('Possible visual change near ending cut.');
+    if(end>visual.analyzed_duration_ms)
+      cues.push('Visual samples do not cover this clip’s full ending.');
+  }
+  return cues.slice(0,4); // fixed-size, local-only evidence
+}
+
 function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
   const best=analysis.proposal.candidates[index];
   const words=analysis.transcript?.words||[];
@@ -54,6 +78,7 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
     ending:complete&&last-first>=8?phrase(words,Math.max(first+8,last-7),last+1):null,
     context_warning:contextWarning?
       'The opening may depend on earlier speech. Listen to the source before choosing.':null,
+    boundary_cues:technicalBoundaryCues(analysis,best.source_start_ms,best.source_end_ms),
   };
 }
 
