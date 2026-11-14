@@ -119,7 +119,7 @@ export default function EnglishReview() {
       {!!error&&<Text accessibilityRole="alert" style={{color:c.warning}}>{error}</Text>}
       {loading&&!data&&<Loading/>}
       {data&&loadedScope.current===scope&&<>
-        {data.proposal.warnings.includes('adjusted_word_timestamps')&&<Body>Some estimated word times were adjusted slightly because the speech engine gave them no duration. Check the clip cuts and captions against your recording.</Body>}
+        {data.proposal.warnings.includes('adjusted_word_timestamps')&&<Body>Some estimated word times were adjusted to stay within the recording and avoid invalid intervals. Check the word timings, clip cuts and captions against playback of your recording.</Body>}
         {data.audio_timing&&<View style={s.card}><Text style={s.cardTitle}>Audio timing guide</Text>
           <Body>Audio checked: {(data.audio_timing.audio_duration_ms/1000).toFixed(1)} seconds.</Body>
           <Body>{data.audio_timing.quiet_intervals.length?`${data.audio_timing.quiet_intervals.length} quiet passage(s) found. These can help you check clip boundaries.`:'No quiet passages of half a second or longer were detected.'}</Body>

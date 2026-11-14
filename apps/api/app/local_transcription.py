@@ -18,6 +18,10 @@ from .media import run_render, teardown_decoder
 from .media_policy import input_args
 from .asr_failures import TIMING_CODES
 
+# Only the last word may have small token-end overruns. Sum the original
+# reductions across its pieces so repeated caps cannot multiply this budget.
+TERMINAL_OVERRUN_MS = 200
+
 
 class AnalysisUnavailable(RuntimeError):
     pass
@@ -151,6 +155,9 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
     if not isinstance(segments,list) or len(segments)>5000:
         raise AnalysisUnavailable('Invalid ASR segment inventory')
     words=[]
+    terminal_word=None
+    terminal_reduction_ms=0
+    source_end_starts=set()
     tokens_seen=0
     for segment in segments:
         pending=None
@@ -183,7 +190,9 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             start,end=offsets['from'],offsets['to']
             if type(start) is not int or type(end) is not int or start>end:
                 raise WordTimingUnavailable('ASR_OFFSETS_INVALID')
-            if start<0 or end>source_duration_ms:
+            overrun=max(0,end-source_duration_ms)
+            if start<0 or (overrun and (start>=source_duration_ms or
+                    terminal_reduction_ms+overrun>TERMINAL_OVERRUN_MS)):
                 raise WordTimingUnavailable('ASR_OFFSETS_OUT_OF_SOURCE')
             piece=text.strip()
             if any(c.isspace() for c in piece):
@@ -195,6 +204,16 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             if starts_word:
                 words.append(pending)
                 pending=None
+            word_index=len(words)
+            # An overrun on any earlier word is not a terminal estimate.
+            # Control/blank tokens do not create or remove spoken words.
+            if terminal_word is not None and terminal_word!=word_index:
+                raise WordTimingUnavailable('ASR_OFFSETS_OUT_OF_SOURCE')
+            if start>=source_duration_ms:
+                source_end_starts.add(word_index)
+            if overrun:
+                terminal_word=word_index
+                terminal_reduction_ms+=overrun
             if pending is None:
                 pending={'text':piece,'start_ms':start,'end_ms':end,'confidence':probability}
             else:
@@ -206,10 +225,18 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             words.append(pending)
         if ' '.join(''.join(text_pieces).split()) != ' '.join(segment.get('text','').split()):
             raise AnalysisUnavailable('ASR text and token inventory disagree')
+    if terminal_word is not None:
+        # Keep raw offsets through word assembly/order checks. Cap exactly one
+        # final word end, without dropping pieces, shifting starts or relaxing
+        # the separate 20-ms model_word_intervals repair below. In-bounds
+        # zero-width words keep their existing policy when no cap is needed.
+        if terminal_word!=len(words)-1 or terminal_word in source_end_starts:
+            raise WordTimingUnavailable('ASR_OFFSETS_OUT_OF_SOURCE')
+        words[-1]['end_ms']=source_duration_ms
     words,adjusted=model_word_intervals(words,source_duration_ms)
     return Transcript(source_sha256=source_sha256,source_duration_ms=source_duration_ms,
         language=language,provider='whisper_cpp',model_sha256=model_sha256,engine_sha256=engine_sha256,
-        timestamp_quality='model_token_estimate_adjusted' if adjusted else 'model_token_estimate',
+        timestamp_quality='model_token_estimate_adjusted' if adjusted or terminal_word is not None else 'model_token_estimate',
         words=tuple(Word(**word) for word in words))
 
 

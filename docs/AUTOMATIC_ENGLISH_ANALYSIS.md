@@ -122,7 +122,7 @@ A protected VPS run decoded the recording and ran the native engine successfully
 but failed when a recognized word had equal start/end model timestamps. The
 adapter now preserves every recognized word and its score, and can make minimal
 positive intervals for that specific case. A forward/backward boundary pass keeps
-all words inside the source and nonoverlapping; no endpoint may move by more than
+all words inside the source and nonoverlapping; this interval repair moves no endpoint by more than
 20 ms (two Whisper timestamp ticks). Adjacent positive-length intervals may
 overlap by at most 20 ms, provided every repaired boundary stays within the same
 20-ms allowance and words remain ordered. Backward order, excessive adjustment, invalid metadata,
@@ -142,14 +142,15 @@ Timing failures now persist one fixed, content-free owner-visible code:
 | --- | --- |
 | `ASR_OFFSETS_MISSING` | A spoken token has no offsets object or lacks an endpoint. |
 | `ASR_OFFSETS_INVALID` | Offsets are malformed, endpoints are not integers, or end precedes start. |
-| `ASR_OFFSETS_OUT_OF_SOURCE` | An otherwise valid interval extends outside the recording. |
+| `ASR_OFFSETS_OUT_OF_SOURCE` | Source offsets cannot satisfy the bounds or the terminal correction policy below. |
 | `ASR_WORD_ORDER_BACKWARD` | Word starts move backward, or a merged token precedes its word start. |
 | `ASR_WORD_OVERLAP_EXCESSIVE` | A positive word overlaps the preceding extent by more than 20 ms. |
 | `ASR_TIMING_REPAIR_EXCEEDED` | The bounded repair cannot produce valid intervals within the recording and the existing 20-ms endpoint allowance. |
 
-Classification follows validation order: missing/invalid/source bounds are
-checked before word assembly, backward starts before excessive overlap, and
-repair feasibility last. These codes report the first rejection, not all defects
+Classification follows validation order: missing/invalid offsets and unsupported
+source bounds are checked before word assembly; final-word eligibility is checked
+through assembly, backward starts before excessive overlap, and interval-repair
+feasibility last. These codes report the first rejection, not all defects
 or the cause of speech-engine estimation errors. Legacy
 `ASR_WORD_TIMING_REJECTED` statuses retain their generic explanation; saved
 failures are not reclassified. Mobile explains each category, preserves the
@@ -158,8 +159,79 @@ No transcript text, raw ASR output, offset values or exception details enter
 diagnostic statuses or logs. Existing decoder isolation, deadlines, file bounds,
 source duration and final strict transcript validation remain unchanged.
 
-After merge, use the usual backup-first updater with `--apply` (no new model,
-credentials or database migration). Pull the phone checkout for the additional
-review warning. Then tap **Retry English analysis** on the existing source
-project; no re-upload or transcript export is needed. Recognition against the
-owner's recording remains a live acceptance check after the update.
+## Small terminal word-end overrun correction — 2026-11-14
+
+Owner diagnostics identified a token estimated at 29,880–30,040 ms in a
+29,905-ms recording. Strict token validation rejected its 135-ms end overrun
+before word assembly. The remaining 29,880–29,905 interval is 25 ms long and
+passes the existing positive-duration Word contract; the recording need not be
+extended or its speech discarded. This is an estimate correction, not proof of
+the true spoken boundary or measured alignment.
+
+The parser now permits only the **final assembled word** to have small token-end
+overruns. Each affected token must start strictly inside the real recording;
+negative starts, invalid/reversed offsets and starts at/after the source end
+remain rejected. Sum all original token-end overruns across the final word's
+pieces: the total must be **at most 200 ms**, not 200 ms per piece. This fixed
+per-transcript budget cannot be replenished by starting another word or segment.
+An overrun followed by another spoken word is rejected. A token starting exactly
+at the source end cannot participate in a corrected word, even if zero-width.
+In-bounds zero-width words otherwise retain their existing bounded repair.
+
+Only that final word's end is capped to the actual source duration, after token
+assembly and existing token-order checks. Original text/order/confidence and
+source identity/duration remain unchanged. The separate 20-ms per-endpoint
+overlap/zero-width repair then runs unchanged, followed by the strict canonical
+Word/Transcript validators. No words are dropped or fabricated. Unrepairable
+source offsets retain `ASR_OFFSETS_OUT_OF_SOURCE`; backward/overlap/20-ms repair
+failures retain their existing specific codes. The 200-ms budget does not permit
+shifting all timestamps, repairing earlier words or accepting new overlaps.
+
+Corrected transcripts reuse `model_token_estimate_adjusted` and proposals carry
+`adjusted_word_timestamps`. The review screen explicitly asks the owner to compare
+word timings, cuts and captions with playback. No automatic review approval is
+added. Valid, unadjusted transcript serialization/fingerprints remain unchanged;
+saved successful analyses/reviews are not rewritten. No sandbox, decoder cap,
+deadline, source-integrity, owner, cancellation, claim/lease/deletion fence or
+private logging rule is changed. No dependency, model or schema change is needed.
+
+### Owner deployment and recovery of an existing failed project
+
+After this change is merged, close the phone app and let active jobs finish.
+In the VPS SSH terminal, use the existing backup-first updater:
+
+```bash
+cd ~/NextPhase-Shorts
+git switch main
+git pull --ff-only origin main
+sudo -v
+.venv/bin/python scripts/update_private_vps.py --apply
+```
+
+Continue only after it reports `ok: true`. It retains the current model/settings,
+checks the fresh backup and host, rebuilds matching images and restarts services.
+Do not hot-patch the worker or delete a project/volume. The agent does not execute
+this deployment.
+
+Pull merged `main` in the existing Windows mobile checkout and reload its usual
+Expo Go/USB workflow for the generalized playback-review warning. Keep the
+existing HTTPS API URL, SDK-compatible client and English-review setting; no
+new dependency installation/native rebuild is required by this change.
+
+Open the **original source project** whose English analysis failed. Its basic
+Short may still show SUCCEEDED. Tap **Retry timing analysis (experimental)**
+(or **Retry English analysis** on an older client) and confirm. The supported
+retry uses the retained completed upload and creates a new analysis task with a
+stable retry key; it does not re-upload, delete the project or rewrite the old
+failure. A lost reply recovers the same new task. The source recording must still
+exist and the English pilot must remain enabled/allowlisted, with queue/storage
+capacity available. If the original upload has been removed, this fix cannot
+recreate it. Do not use **Save & finish (delete project)** for recovery.
+
+On success, open **Review English clips** and compare the final word, captions
+and proposed cut boundaries against the recording before saving a review or
+rendering a selected clip. Existing successful analyses and saved reviews are
+preserved and are not silently re-transcribed by a retry. Other invalid offsets
+or conflicting word estimates can still fail safely. Real protected-VPS inference
+on the owner's recording and physical-phone acceptance remain owner checks;
+synthetic executable fixtures are not speech-recognition quality evidence.

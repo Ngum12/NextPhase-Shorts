@@ -65,10 +65,20 @@ CLEAN_CAPTION_PREVIEWS.md for timing, cleanup and exported-copy limits.
 
 Zero-duration Whisper word estimates may be repaired only within 20 ms per
 endpoint, preserving words/scores and strict final source/order/interval bounds.
-Existing positive timing must already be nonoverlapping. Adjusted provenance and
+Positive overlaps are allowed only within that same bounded repair. Adjusted provenance and
 a review warning disclose this approximation; excessive/backward/invalid timing
 is still refused. Manual transcripts and already valid transcript hashes are
 unchanged. This does not approve caption timing, cuts or meaning automatically.
+
+Small terminal ASR overruns have a separate conservative 200-ms total budget
+across the final word's token-end reductions. Only tokens starting strictly
+inside the real source may participate; no earlier word, negative start,
+out-of-source start, reversed offset or excessive total is accepted. Only the
+last word end is capped to the real duration; the existing 20-ms interval-repair
+and final strict validators still apply. Adjusted provenance and human playback
+review remain required. Source media/duration, text/confidence, containment,
+resource limits, cancellation/publication fences and private logging are unchanged.
+See AUTOMATIC_ENGLISH_ANALYSIS.md for the exact policy and failed-project retry.
 
 ## Experimental local analysis boundary — 2026-11-11
 
