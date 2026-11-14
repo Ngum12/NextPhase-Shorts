@@ -16,8 +16,13 @@ from test_analysis_plan import whisper_data, parse, zero_words
     ({'from':0.5,'to':200},'ASR_OFFSETS_INVALID'),
     ({'from':0,'to':'private-offset-payload'},'ASR_OFFSETS_INVALID'),
     ({'from':201,'to':200},'ASR_OFFSETS_INVALID'),
-    ({'from':-1,'to':200},'ASR_OFFSETS_OUT_OF_SOURCE'),
-    ({'from':0,'to':2001},'ASR_OFFSETS_OUT_OF_SOURCE'),
+    ({'from':-1,'to':200},'ASR_OFFSETS_BEFORE_SOURCE'),
+    ({'from':0,'to':2001},'ASR_OFFSETS_AFTER_SOURCE'),
+    ({'from':-1,'to':2001},'ASR_OFFSETS_BEYOND_BOTH_BOUNDS'),
+    ({'from':-2,'to':-1},'ASR_OFFSETS_BEFORE_SOURCE'),
+    ({'from':2001,'to':2002},'ASR_OFFSETS_AFTER_SOURCE'),
+    ({'from':-1,'to':-2},'ASR_OFFSETS_INVALID'),
+    ({'from':10**100,'to':10**100+1},'ASR_OFFSETS_AFTER_SOURCE'),
 ])
 def test_offset_diagnosis_is_fixed_without_content(offsets,code,caplog,capsys):
     data=whisper_data()
@@ -76,3 +81,9 @@ def test_exact_accumulated_allowance_at_source_end_still_passes():
 
 def test_timing_exception_rejects_content_as_code():
     with pytest.raises(ValueError):WordTimingUnavailable('private transcript payload')
+
+
+def test_exact_source_boundaries_remain_valid():
+    transcript=zero_words([(0,2000)],duration=2000)
+    assert transcript.words[0].start_ms==0 and transcript.words[0].end_ms==2000
+    assert transcript.timestamp_quality=='model_token_estimate'

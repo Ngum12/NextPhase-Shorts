@@ -183,8 +183,12 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             start,end=offsets['from'],offsets['to']
             if type(start) is not int or type(end) is not int or start>end:
                 raise WordTimingUnavailable('ASR_OFFSETS_INVALID')
-            if start<0 or end>source_duration_ms:
-                raise WordTimingUnavailable('ASR_OFFSETS_OUT_OF_SOURCE')
+            if start<0 and end>source_duration_ms:
+                raise WordTimingUnavailable('ASR_OFFSETS_BEYOND_BOTH_BOUNDS')
+            if start<0:
+                raise WordTimingUnavailable('ASR_OFFSETS_BEFORE_SOURCE')
+            if end>source_duration_ms:
+                raise WordTimingUnavailable('ASR_OFFSETS_AFTER_SOURCE')
             piece=text.strip()
             if any(c.isspace() for c in piece):
                 raise AnalysisUnavailable('A token spans multiple words; timing is ambiguous')

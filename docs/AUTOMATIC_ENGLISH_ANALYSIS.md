@@ -142,7 +142,10 @@ Timing failures now persist one fixed, content-free owner-visible code:
 | --- | --- |
 | `ASR_OFFSETS_MISSING` | A spoken token has no offsets object or lacks an endpoint. |
 | `ASR_OFFSETS_INVALID` | Offsets are malformed, endpoints are not integers, or end precedes start. |
-| `ASR_OFFSETS_OUT_OF_SOURCE` | An otherwise valid interval extends outside the recording. |
+| `ASR_OFFSETS_OUT_OF_SOURCE` | Legacy failure: an otherwise valid interval extends outside the recording. |
+| `ASR_OFFSETS_BEFORE_SOURCE` | An otherwise valid interval begins before zero. |
+| `ASR_OFFSETS_AFTER_SOURCE` | An otherwise valid interval ends after the source duration. |
+| `ASR_OFFSETS_BEYOND_BOTH_BOUNDS` | The same interval begins before zero and ends after the source duration. |
 | `ASR_WORD_ORDER_BACKWARD` | Word starts move backward, or a merged token precedes its word start. |
 | `ASR_WORD_OVERLAP_EXCESSIVE` | A positive word overlaps the preceding extent by more than 20 ms. |
 | `ASR_TIMING_REPAIR_EXCEEDED` | The bounded repair cannot produce valid intervals within the recording and the existing 20-ms endpoint allowance. |
@@ -151,12 +154,20 @@ Classification follows validation order: missing/invalid/source bounds are
 checked before word assembly, backward starts before excessive overlap, and
 repair feasibility last. These codes report the first rejection, not all defects
 or the cause of speech-engine estimation errors. Legacy
-`ASR_WORD_TIMING_REJECTED` statuses retain their generic explanation; saved
+`ASR_WORD_TIMING_REJECTED` and `ASR_OFFSETS_OUT_OF_SOURCE` statuses retain their generic explanation; saved
 failures are not reclassified. Mobile explains each category, preserves the
 original-video/save/share guidance, and requires explicit confirmation to retry.
 No transcript text, raw ASR output, offset values or exception details enter
 diagnostic statuses or logs. Existing decoder isolation, deadlines, file bounds,
 source duration and final strict transcript validation remain unchanged.
+
+Boundary diagnostics distinguish only the rejected interval's direction. They
+do not expose numeric offsets, word positions, counts, transcript text or raw
+engine output, and do not establish why the engine generated that estimate.
+Invalid endpoint types/reversed intervals are still rejected before boundary
+classification. No offset is clamped or silently discarded, including a 1-ms
+overrun. Exact zero/source-duration endpoints remain valid. A new explicit retry
+is needed to diagnose a historical generic failure; it may still fail safely.
 
 After merge, use the usual backup-first updater with `--apply` (no new model,
 credentials or database migration). Pull the phone checkout for the additional
