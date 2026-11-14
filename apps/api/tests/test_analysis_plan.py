@@ -293,5 +293,8 @@ def test_ambiguous_or_excessive_zero_word_repair_remains_refused(intervals,durat
 def test_manual_zero_width_words_still_refused():
     with pytest.raises(ValidationError):
         Word(text='spoken',start_ms=500,end_ms=500,confidence=.8)
-    with pytest.raises(ValidationError):
+    # The Whisper adapter now catches unsafe model overlap before the
+    # canonical Transcript validator. Both paths must reject it; the public
+    # review contract still refuses invalid word intervals.
+    with pytest.raises(AnalysisUnavailable):
         zero_words([(0,600),(500,1000)],duration=1000)
