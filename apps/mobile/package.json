@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test:uploads": "node tests/uploads.test.cjs",
     "test:auth": "node tests/auth.test.cjs",
-    "test:exports": "node --test tests/videoExports.test.cjs tests/saveAndFinish.test.cjs",
+    "test:exports": "node --test tests/videoExports.test.cjs tests/saveAndFinish.test.cjs tests/mediaRetentionNotice.test.cjs",
     "test:account": "node tests/accountDeletion.test.cjs",
     "test:recovery": "node tests/emailActions.test.cjs",
     "test:refresh": "node tests/refreshSession.test.cjs",
