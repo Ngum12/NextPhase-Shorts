@@ -81,22 +81,28 @@ def extract_audio(source, destination, *, timeout=120,should_cancel=lambda:False
 
 
 def model_word_intervals(words, duration_ms):
-    """Repair zero-width model estimates only, with at most two 10-ms ticks.
+    """Bounded repair of Whisper's 10-ms timestamp estimation artifacts.
 
-    Preserve words/scores/order. Positive intervals must already be nonoverlapping;
-    unrelated bad timing is not repaired. Small neighboring endpoints may move by
-    <=20 ms to leave each recognized word a positive interval inside the source.
-    These remain disclosed estimates, never acoustic alignment or verified cuts.
+    The original Whisper.cpp estimates can yield zero-width words or a tiny
+    adjacent positive-word overlap (often due to quantization). Preserve each
+    word, its score, the original order and the source duration. A boundary
+    may move at most 20 ms; never re-time significant overlap, reverse order
+    or claim this is acoustic alignment. All repaired word times require human
+    listening/review before a final cut.
     """
-    if not any(word['start_ms']==word['end_ms'] for word in words):
+    if not words:
+        return words,False
+    if all(word['start_ms']<word['end_ms'] and
+           (i==0 or word['start_ms']>=words[i-1]['end_ms'])
+           for i,word in enumerate(words)):
         return words,False
     cursor=0;previous_start=0
     for word in words:
         start,end=word['start_ms'],word['end_ms']
-        if start<previous_start or (end>start and start<cursor):
+        if start<previous_start or (end>start and start<cursor and cursor-start>20):
             raise WordTimingUnavailable('ASR word timing is not safely ordered')
         previous_start=start
-        if end>start:cursor=end
+        cursor=max(cursor,end)
     repaired=[dict(word) for word in words]
     cursor=0
     for word in repaired:
@@ -111,9 +117,10 @@ def model_word_intervals(words, duration_ms):
         word['start_ms']=min(word['start_ms'],word['end_ms']-1)
         cursor=word['start_ms']
     for before,after in zip(words,repaired):
-        if (after['start_ms']<0 or after['end_ms']>duration_ms
+        if (after['start_ms']<0 or after['start_ms']>=after['end_ms']
+                or after['end_ms']>duration_ms
                 or max(abs(before[key]-after[key]) for key in ('start_ms','end_ms'))>20):
-            raise WordTimingUnavailable('ASR zero-width timing exceeds repair bound')
+            raise WordTimingUnavailable('ASR word timing exceeds bounded repair policy')
     return repaired,True
 
 
