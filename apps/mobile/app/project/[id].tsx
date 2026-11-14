@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import { api, ApiError, cancelJob, deleteJob, Job } from '../../src/api';
 import { exportVideo } from '../../src/videoExports';
+import {saveAndFinish, SavedButCleanupPending} from '../../src/saveAndFinish';
 import {englishReviewVisible} from '../../src/analysis';
 import {EnglishAnalysisPanel} from '../../src/EnglishAnalysisPanel';
 import {ClipPlayer} from '../../src/ClipPlayer';
@@ -59,6 +60,24 @@ export default function Project() {
         finally{setDeleting(false);}
       }},
     ]);
+  const finish=()=>Alert.alert('Save and finish this project?',
+    'We will save the finished Short to your phone first. Only after your phone confirms the save will we request deletion of this original project and all of its server-side previews. Server cleanup is scheduled and may take time. This cannot be undone.',[
+      {text:'Keep editing',style:'cancel'},
+      {text:'Save and finish',onPress:async()=>{
+        if(!token||!job||exportBusy.current||deleting)return;
+        exportBusy.current=true;setDownloading(true);revision.current++;
+        try{
+          await saveAndFinish(job.id,job.preview_parent_id||job.id,token);
+          revision.current++;router.replace('/(tabs)/projects');
+          Alert.alert('Short saved','Saved to your phone. Server access was revoked and project-media cleanup is scheduled. Historical backups, if any, have separate retention rules.');
+        }catch(e:any){
+          if(e instanceof SavedButCleanupPending){
+            Alert.alert('Saved; cleanup not confirmed',e.message);
+          }else Alert.alert('Could not save and finish',e.message||'Your project was kept. Check the video and retry.');
+          await refresh();
+        }finally{exportBusy.current=false;setDownloading(false);}
+      }},
+    ]);
   const download=async(action:'save'|'share')=>{
     if(!token||!job||exportBusy.current)return;
     exportBusy.current=true;setDownloading(true);
@@ -84,7 +103,8 @@ export default function Project() {
       {job.preview_parent_id&&<Button title="Back to source review" onPress={()=>router.push({pathname:'/review/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling} secondary/>}
       {job.status==='succeeded'&&job.operation!=='analysis'&&<>
         {job.preview_parent_id&&token&&<ClipPlayer key={`${job.id}:${token}`} id={job.id} token={token}/>}
-        <Button title={downloading?'Please wait…':'Save video to phone'} onPress={()=>download('save')} disabled={downloading||deleting||cancelling}/>
+        <Button title={downloading?'Please wait…':'Save & finish (delete project)'} onPress={finish} disabled={downloading||deleting||cancelling}/>
+        <Button title="Save without deleting" onPress={()=>download('save')} disabled={downloading||deleting||cancelling} secondary/>
         <Button title="Share video" onPress={()=>download('share')} disabled={downloading||deleting||cancelling} secondary/>
       </>}
       <Button title={deleting?'Deleting…':'Delete project'} onPress={remove} disabled={deleting||downloading||cancelling} secondary/>
