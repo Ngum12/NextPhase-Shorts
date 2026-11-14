@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.db import SessionLocal
 from app.models import RenderJob,RenderAttempt,UploadSession,ProjectAnalysis,utcnow
 from app.automatic_analysis import publish,reconcile_requested
+from app.asr_failures import TIMING_CODES
 from test_project_analysis import prepared,imported
 from test_migrations import migration_engine
 
@@ -215,7 +216,8 @@ def test_pending_cancel_between_inventory_and_owner_lock_cannot_enqueue(client,a
         assert db.scalar(select(RenderJob.id).where(RenderJob.preview_parent_id==item['jid'],RenderJob.operation=='analysis')) is None
 
 
-def test_failed_asr_category_is_durable_and_owner_only(client,automatic,monkeypatch):
+@pytest.mark.parametrize('code',sorted(TIMING_CODES))
+def test_failed_asr_category_is_durable_and_owner_only(client,automatic,monkeypatch,code):
     from app import worker
     from app.asr_failures import AsrFailure
     child=start(client,automatic).json()['task']['id']
@@ -225,15 +227,15 @@ def test_failed_asr_category_is_durable_and_owner_only(client,automatic,monkeypa
     assert job['id']==child
 
     def simulated_failure(*args,**kwargs):
-        raise AsrFailure('ASR_WORD_TIMING_REJECTED')
+        raise AsrFailure(code)
 
     monkeypatch.setattr('app.analysis_work.process_analysis',simulated_failure)
     worker.process(job)
     state=client.get(automatic['auto'],headers=automatic['owner'])
     assert state.status_code==200
-    assert state.json()['task']['error_code']=='ASR_WORD_TIMING_REJECTED'
+    assert state.json()['task']['error_code']==code
     assert state.json()['task']['status']=='failed'
     assert client.get(automatic['auto'],headers=automatic['other']).status_code==404
     with SessionLocal() as db:
         saved=db.get(RenderJob,child)
-        assert saved.error_code=='ASR_WORD_TIMING_REJECTED'
+        assert saved.error_code==code

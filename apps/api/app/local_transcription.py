@@ -16,6 +16,7 @@ import wave
 from .analysis_plan import Transcript, Word
 from .media import run_render, teardown_decoder
 from .media_policy import input_args
+from .asr_failures import TIMING_CODES
 
 
 class AnalysisUnavailable(RuntimeError):
@@ -24,7 +25,12 @@ class AnalysisUnavailable(RuntimeError):
 
 class WordTimingUnavailable(AnalysisUnavailable):
     """Invalid model word boundaries, never repaired beyond the bounded policy."""
-    pass
+
+    def __init__(self, code):
+        if code not in TIMING_CODES:
+            raise ValueError('Unsupported word timing failure code')
+        self.code = code
+        super().__init__('ASR word timing rejected')
 
 
 def regular_file(path, *, maximum):
@@ -99,8 +105,10 @@ def model_word_intervals(words, duration_ms):
     cursor=0;previous_start=0
     for word in words:
         start,end=word['start_ms'],word['end_ms']
-        if start<previous_start or (end>start and start<cursor and cursor-start>20):
-            raise WordTimingUnavailable('ASR word timing is not safely ordered')
+        if start<previous_start:
+            raise WordTimingUnavailable('ASR_WORD_ORDER_BACKWARD')
+        if end>start and start<cursor and cursor-start>20:
+            raise WordTimingUnavailable('ASR_WORD_OVERLAP_EXCESSIVE')
         previous_start=start
         cursor=max(cursor,end)
     repaired=[dict(word) for word in words]
@@ -120,7 +128,7 @@ def model_word_intervals(words, duration_ms):
         if (after['start_ms']<0 or after['start_ms']>=after['end_ms']
                 or after['end_ms']>duration_ms
                 or max(abs(before[key]-after[key]) for key in ('start_ms','end_ms'))>20):
-            raise WordTimingUnavailable('ASR word timing exceeds bounded repair policy')
+            raise WordTimingUnavailable('ASR_TIMING_REPAIR_EXCEEDED')
     return repaired,True
 
 
@@ -165,10 +173,18 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
             text_pieces.append(text)
             if not text.strip():
                 continue
-            offsets=token.get('offsets',{})
-            start,end=offsets.get('from'),offsets.get('to')
-            if type(start) is not int or type(end) is not int or not 0<=start<=end<=source_duration_ms:
-                raise WordTimingUnavailable('Missing or invalid ASR timestamps')
+            if 'offsets' not in token:
+                raise WordTimingUnavailable('ASR_OFFSETS_MISSING')
+            offsets=token['offsets']
+            if not isinstance(offsets,dict):
+                raise WordTimingUnavailable('ASR_OFFSETS_INVALID')
+            if 'from' not in offsets or 'to' not in offsets:
+                raise WordTimingUnavailable('ASR_OFFSETS_MISSING')
+            start,end=offsets['from'],offsets['to']
+            if type(start) is not int or type(end) is not int or start>end:
+                raise WordTimingUnavailable('ASR_OFFSETS_INVALID')
+            if start<0 or end>source_duration_ms:
+                raise WordTimingUnavailable('ASR_OFFSETS_OUT_OF_SOURCE')
             piece=text.strip()
             if any(c.isspace() for c in piece):
                 raise AnalysisUnavailable('A token spans multiple words; timing is ambiguous')
@@ -183,7 +199,7 @@ def parse_whisper(data, *, source_sha256, source_duration_ms, language, model_sh
                 pending={'text':piece,'start_ms':start,'end_ms':end,'confidence':probability}
             else:
                 if start < pending['start_ms']:
-                    raise AnalysisUnavailable('ASR token order changed')
+                    raise WordTimingUnavailable('ASR_WORD_ORDER_BACKWARD')
                 pending.update(text=pending['text']+piece,end_ms=max(end,pending['end_ms']),
                                confidence=min(probability,pending['confidence']))
         if pending is not None:

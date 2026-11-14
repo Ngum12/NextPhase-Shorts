@@ -123,8 +123,9 @@ but failed when a recognized word had equal start/end model timestamps. The
 adapter now preserves every recognized word and its score, and can make minimal
 positive intervals for that specific case. A forward/backward boundary pass keeps
 all words inside the source and nonoverlapping; no endpoint may move by more than
-20 ms (two Whisper timestamp ticks). Positive-length intervals must already be
-ordered/nonoverlapping. Backward order, excessive adjustment, invalid metadata,
+20 ms (two Whisper timestamp ticks). Adjacent positive-length intervals may
+overlap by at most 20 ms, provided every repaired boundary stays within the same
+20-ms allowance and words remain ordered. Backward order, excessive adjustment, invalid metadata,
 text/control errors or insufficient source time still fail closed. Strict Word
 and Transcript contracts continue rejecting zero-length or overlapping intervals.
 
@@ -134,6 +135,28 @@ warning to check cuts/captions. This is bounded estimate repair, not forced
 alignment, measured word timing or verified meaning. Existing valid transcripts
 retain identical serialization/hashes; existing human review is not rewritten.
 No speech/audio is edited by this repair.
+
+Timing failures now persist one fixed, content-free owner-visible code:
+
+| Code | Meaning |
+| --- | --- |
+| `ASR_OFFSETS_MISSING` | A spoken token has no offsets object or lacks an endpoint. |
+| `ASR_OFFSETS_INVALID` | Offsets are malformed, endpoints are not integers, or end precedes start. |
+| `ASR_OFFSETS_OUT_OF_SOURCE` | An otherwise valid interval extends outside the recording. |
+| `ASR_WORD_ORDER_BACKWARD` | Word starts move backward, or a merged token precedes its word start. |
+| `ASR_WORD_OVERLAP_EXCESSIVE` | A positive word overlaps the preceding extent by more than 20 ms. |
+| `ASR_TIMING_REPAIR_EXCEEDED` | The bounded repair cannot produce valid intervals within the recording and the existing 20-ms endpoint allowance. |
+
+Classification follows validation order: missing/invalid/source bounds are
+checked before word assembly, backward starts before excessive overlap, and
+repair feasibility last. These codes report the first rejection, not all defects
+or the cause of speech-engine estimation errors. Legacy
+`ASR_WORD_TIMING_REJECTED` statuses retain their generic explanation; saved
+failures are not reclassified. Mobile explains each category, preserves the
+original-video/save/share guidance, and requires explicit confirmation to retry.
+No transcript text, raw ASR output, offset values or exception details enter
+diagnostic statuses or logs. Existing decoder isolation, deadlines, file bounds,
+source duration and final strict transcript validation remain unchanged.
 
 After merge, use the usual backup-first updater with `--apply` (no new model,
 credentials or database migration). Pull the phone checkout for the additional

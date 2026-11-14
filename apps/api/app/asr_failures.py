@@ -5,11 +5,20 @@ or raw exception detail in a durable job status or mobile error message.
 """
 from .media import MediaError
 
-CODES = frozenset({
+TIMING_CODES = frozenset({
+    'ASR_WORD_TIMING_REJECTED',  # Legacy statuses remain readable.
+    'ASR_OFFSETS_MISSING',
+    'ASR_OFFSETS_INVALID',
+    'ASR_OFFSETS_OUT_OF_SOURCE',
+    'ASR_WORD_ORDER_BACKWARD',
+    'ASR_WORD_OVERLAP_EXCESSIVE',
+    'ASR_TIMING_REPAIR_EXCEEDED',
+})
+
+CODES = TIMING_CODES | frozenset({
     'ASR_PROCESS_FAILED',
     'ASR_DEADLINE_EXCEEDED',
     'ASR_OUTPUT_INVALID',
-    'ASR_WORD_TIMING_REJECTED',
     'ASR_TRANSCRIPT_REJECTED',
 })
 

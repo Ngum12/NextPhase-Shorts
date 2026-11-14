@@ -101,6 +101,39 @@ test('owner sees a fixed failure category instead of user recording text',async(
  assert(!texts2.includes('Private speech transcript'));
 });
 
+for(const [code,explanation] of [
+ ['ASR_OFFSETS_MISSING',/left out some word timing offsets/],
+ ['ASR_OFFSETS_INVALID',/invalid word timing offsets/],
+ ['ASR_OFFSETS_OUT_OF_SOURCE',/outside the recording/],
+ ['ASR_WORD_ORDER_BACKWARD',/move backward/],
+ ['ASR_WORD_OVERLAP_EXCESSIVE',/overlap too much/],
+ ['ASR_TIMING_REPAIR_EXCEEDED',/allowed 20 milliseconds per boundary/],
+])test(`timing failure ${code} explains the category without automatic retry`,async()=>{
+ const h=harness();h.value.task={id:'failure',status:'failed',error_code:code};await h.flush();
+ const text=h.nodes().flatMap(n=>n.children).filter(c=>typeof c==='string').join(' ');
+ assert.match(text,explanation);
+ assert.match(text,/limitation of our speech-timing pipeline/);
+ assert.match(text,/Retrying the same video may produce the same error/);
+ assert.match(text,/Your video is preserved/);
+ assert.match(text,/save or share it from this project/);
+ assert(h.button('Retry timing analysis (experimental)'));
+ assert(!h.calls.some(x=>x.start));
+ h.button('Retry timing analysis (experimental)').props.onPress();
+ assert(!h.calls.some(x=>x.start));
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.filter(x=>x.start).length,1);
+});
+
+for(const code of ['__proto__','constructor','toString','ASR_OFFSETS_INVALID private transcript'])
+test(`unknown failure codes use a fixed fallback (${code.split(' ')[0]})`,async()=>{
+ const h=harness();h.value.task={id:'failure',status:'failed',error_code:code};await h.flush();
+ const text=h.nodes().flatMap(n=>n.children).filter(c=>typeof c==='string').join(' ');
+ assert.match(text,/precise cause is not yet available/);
+ assert(!text.includes('private transcript'));
+ assert(h.button('Retry English analysis'));
+ assert(!h.calls.some(x=>x.start));
+});
+
 
 test('three alternatives are shown without automatically queuing three preview jobs',async()=>{
  const h=harness();h.value.ready=true;

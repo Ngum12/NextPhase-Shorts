@@ -77,6 +77,7 @@ def _engine_result(inference, result):
     else:
         payload=json.dumps(result)
         engine.write_text(f'#!{sys.executable}\nimport sys\nfrom pathlib import Path\n'
+            'print("Private raw ASR stdout")\nprint("Private raw ASR stderr",file=sys.stderr)\n'
             f'Path(sys.argv[sys.argv.index("-of")+1]+".json").write_text({payload!r})\n')
     engine.chmod(0o700)
     inference['engine_digest']=file_digest(engine)
@@ -86,9 +87,14 @@ def _engine_result(inference, result):
     ('exit','ASR_PROCESS_FAILED'),
     ('malformed','ASR_OUTPUT_INVALID'),
     ('protocol','ASR_TRANSCRIPT_REJECTED'),
-    ('timing','ASR_WORD_TIMING_REJECTED'),
+    ('timing','ASR_OFFSETS_OUT_OF_SOURCE'),
+    ('missing','ASR_OFFSETS_MISSING'),
+    ('invalid','ASR_OFFSETS_INVALID'),
+    ('backward','ASR_WORD_ORDER_BACKWARD'),
+    ('overlap','ASR_WORD_OVERLAP_EXCESSIVE'),
+    ('repair','ASR_TIMING_REPAIR_EXCEEDED'),
 ])
-def test_private_whisper_failure_category_is_closed_and_non_content(inference,mode,code):
+def test_private_whisper_failure_category_is_closed_and_non_content(inference,mode,code,caplog,capsys):
     from app.asr_failures import AsrFailure
     data={'params':{'translate':False},'result':{'language':'en'},
           'model':{'multilingual':True,'vocab':51865},
@@ -104,13 +110,26 @@ def test_private_whisper_failure_category_is_closed_and_non_content(inference,mo
             'Path(sys.argv[sys.argv.index("-of")+1]+".json").write_text("{bad")\n')
         inference['engine_digest']=file_digest(engine)
     else:
+        tokens=data['transcription'][0]['tokens']
         if mode=='protocol':data['result']['language']='fr'
-        else:data['transcription'][0]['tokens'][0]['offsets']['to']=2001
+        elif mode=='timing':tokens[0]['offsets']['to']=2001
+        elif mode=='missing':del tokens[0]['offsets']
+        elif mode=='invalid':tokens[0]['offsets']=['Private raw ASR output']
+        elif mode=='backward':
+            tokens[0]['offsets']={'from':100,'to':400}
+            tokens[1]['offsets']={'from':99,'to':1000}
+        elif mode=='overlap':tokens[1]['offsets']['from']=379
+        elif mode=='repair':
+            tokens[:]=[{'text':' Private','id':2425,'offsets':{'from':0,'to':200},'p':.9}]+[
+                {'text':' text','id':1510,'offsets':{'from':195,'to':201},'p':.9} for _ in range(23)]
+            data['transcription'][0]['text']=''.join(token['text'] for token in tokens)
         _engine_result(inference,data)
     with pytest.raises(AsrFailure) as failed:transcribe(**inference)
     assert failed.value.code==code
     assert 'Private' not in str(failed.value)
     assert not (inference['work']/'transcript.json').exists()
+    captured=capsys.readouterr()
+    assert 'Private' not in captured.out+captured.err+caplog.text
 
 
 def test_diagnostic_codes_reject_arbitrary_exception_data():

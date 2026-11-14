@@ -1,5 +1,35 @@
 # Implementation Status — 2026-11-10
 
+## Private ASR timing diagnostics — 2026-11-14
+
+Checked fetched `main` at `4de6001`; the checkout had no tracked/untracked source
+changes or stashed diagnostics. Its existing generic timing failure and bounded
+positive-overlap repair are retained. New fixed codes distinguish missing,
+malformed and out-of-source token offsets, backward starts, excessive positive
+overlap and repair exceeding the existing allowance. Codes propagate through
+the protected adapter and worker to the owner-only failed job status. Existing
+generic statuses remain readable; no migration or historical reclassification.
+
+Mobile explains each timing category with preserved-video/basic Save/Share
+guidance and warns that retry may fail again. Retry still requires confirmation;
+unknown codes use fixed fallback copy. No diagnostic logs/statuses include
+transcript text, raw ASR output, numeric offsets or exception details.
+
+The 20-ms per-endpoint repair limit, source bounds, ordering/nonoverlap checks,
+word text/scores, canonical transcript validation and decoder sandbox/deadline/
+resource controls remain unchanged. This is diagnosis of rejected estimates,
+not a repair-policy expansion or proof of real speech quality.
+
+Validation: the full SQLite backend suite passed 712 tests; the final
+parser/adapter/worker checks passed 59 tests after adding the exact accumulated
+allowance case and synthetic stdout/stderr privacy assertions. The diagnostic
+file has 24 passing cases, including exact 20-ms boundaries
+and rejection beyond them. All 227 mobile tests, TypeScript and Android export
+(1,403 modules) passed. Native fixture tests cover fixed categories, private-output
+cleanup, cancellation and required-sandbox rejection. Actual protected-VPS ASR
+and physical-phone acceptance remain operator checks; no model inference or
+customer recordings were used.
+
 ## Visual scan timeout allowance — 2026-11-13
 
 Owner protected-VPS evidence showed the new visual stage exiting after 60.3
