@@ -56,9 +56,9 @@ function technicalBoundaryCues(analysis:EnglishAnalysis,start:number,end:number)
     if(nearChange(start))cues.push('Possible visual change near opening cut.');
     if(nearChange(end))cues.push('Possible visual change near ending cut.');
     if(end>visual.analyzed_duration_ms)
-      cues.push('Visual samples do not cover this clip’s full ending.');
+      cues.unshift('Visual samples do not cover this clip’s full ending.');
   }
-  return cues.slice(0,4); // fixed-size, local-only evidence
+  return cues.slice(0,4); // prioritize partial-coverage warning; bounded local-only evidence
 }
 
 function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
