@@ -58,8 +58,9 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       }
       let confirmed=false;
       const details=plan.options.captions?'Clean phrase captions':'No captions';
+      const excerpt=plan.opening?`Opening words: “${plan.opening}”. `:'';
       Alert.alert('Prepare a private Short draft?',
-        `${plan.title}. ${details} · ${plan.options.framing} framing · ${plan.options.voice} voice. ${plan.notice||''} The suggestion is ranked by technical signals, not story meaning. Only this one choice will be rendered and occupy storage. Watch the finished clip before sharing.`,[
+        `${plan.title}. ${excerpt}${details} · ${plan.options.framing} framing · ${plan.options.voice} voice. ${plan.notice||''} The suggestion is ranked by technical signals, not story meaning. Only this one choice will be rendered and occupy storage. Watch the finished clip before sharing.`,[
           {text:'Not now',onPress:release},
           {text:'Render draft',onPress:async()=>{
             if(confirmed||generation.current!==current)return;
@@ -118,8 +119,15 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       {choices.length>1&&<View style={s.card}>
          <Text style={s.cardTitle}>Choose one Short draft</Text>
          <Body>Technically ranked excerpts, not story-quality predictions. Each preview reserves server storage; no batch rendering.</Body>
-         {choices.map(choice=><Button key={choice.candidate} title={choice.title}
-           secondary disabled={disabled||busy} onPress={()=>confirmChoice(choice)}/>)}
+         {choices.map(choice=><View key={choice.candidate} style={s.card}>
+           <Text style={s.cardTitle}>Option {choice.candidate}</Text>
+           {choice.opening&&<Body>Opens: “{choice.opening}”</Body>}
+           {choice.ending&&<Body>Ends: “{choice.ending}”</Body>}
+           {choice.context_warning&&<Body>{choice.context_warning}</Body>}
+           {(choice.boundary_cues||[]).map((cue,i)=><Body key={i}>{cue}</Body>)}
+           <Button title={choice.title} secondary disabled={disabled||busy}
+             onPress={()=>confirmChoice(choice)}/>
+         </View>)}
          <Button title="Hide draft choices" secondary disabled={disabled||busy} onPress={()=>setChoices([])}/>
        </View>}
        <Button title="Review English clips" disabled={disabled||busy} secondary
