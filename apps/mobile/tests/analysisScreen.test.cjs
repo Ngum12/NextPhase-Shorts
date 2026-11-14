@@ -288,3 +288,14 @@ test('saved clip choices appear before the detailed word editor',async()=>{
  const output=h.text();
  assert(output.indexOf('Clip suggestions')<output.indexOf('1. Mark sentence endings'));
 });
+
+
+test('v5 reviewed plan describes language heuristics without promising story understanding',async()=>{
+ const h=harness();h.value.proposal.algorithm='sentence-window-v5-discourse-reviewed';
+ await h.flush();
+ const screen=h.text();
+ assert(screen.includes('simple English opening words'));
+ assert(screen.includes('not real story understanding or popularity predictions'));
+ assert(!screen.includes('then reduce near-duplicate ranges'));
+ assert.equal(h.calls.filter(c=>c.preview).length,0);
+});
