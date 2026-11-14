@@ -17,8 +17,11 @@
 
 The private English review pilot can render selected reviewed excerpts and optional
 [clean phrase captions](docs/CLEAN_CAPTION_PREVIEWS.md). New opt-in uploads can use the [automatic English analysis pilot](docs/AUTOMATIC_ENGLISH_ANALYSIS.md).
-Human transcript and timing review is still required before selected rendering;
-this remains an owner-restricted prototype, not a public release.
+The [automatic Short draft flow](docs/AUTOMATIC_CLIP_DRAFTS.md) can now choose and
+render a private excerpt without mandatory sentence marks or individual word
+confirmations. Detailed transcript review remains optional; watch the finished
+clip before sharing. Selection is heuristic, not verified story understanding.
+This remains an owner-restricted prototype, not a public release.
 
 Reviewed previews also offer optional [centered portrait framing](docs/PORTRAIT_FRAMING.md).
 Fit remains the default; fill crops outer details and requires watching the result.

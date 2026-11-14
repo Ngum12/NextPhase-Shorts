@@ -9,11 +9,11 @@ function harness(){
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
     './api':{ApiError,api:async(p,t)=>{assert.equal(p,'/api/v1/me');state.calls.push({me:t});return {id:'22222222-2222-4222-8222-222222222222'};}},
-    './analysis':{getEnglishAnalysis:async(p,t)=>{state.calls.push({analysis:p,token:t});return {
-      job_id:p,revision,review:state.review,polished_preview_supported:state.supported,
+    './analysis':{getAutomaticClips:async(p,t,analysis)=>({...analysis,automatic_draft:true,review:null}),getEnglishAnalysis:async(p,t)=>{state.calls.push({analysis:p,token:t});return {
+      job_id:p,revision,review:state.review,polished_preview_supported:state.supported,automatic_clips_supported:state.automatic,
       clean_captions_supported:state.clean,portrait_framing_supported:state.portrait,
       soft_audio_edges_supported:state.soft,manual_crop_focus_supported:state.manual,
-      proposal:{candidates:state.candidates,algorithm:state.algorithm},transcript:{words:state.words},audio_timing:state.audioTiming,scene_analysis:state.sceneAnalysis,
+      proposal:{candidates:state.candidates,algorithm:state.algorithm,warnings:state.warnings||[]},transcript:{words:state.words},audio_timing:state.audioTiming,scene_analysis:state.sceneAnalysis,
     };}},
     './polish':{defaultPolish:defaults,loadPolishPreset:async()=>state.save,
       getCaptionDraft:async(p,t,rev,n)=>{state.captionCalls++;assert.equal(p,id);assert.equal(rev,revision);assert.equal(n,state.captionCandidate);
@@ -27,6 +27,20 @@ function harness(){
   vm.runInNewContext(compiled,{exports,require:name=>{assert(deps[name],name);return deps[name];}});
   return {state,defaults,actions:exports,ApiError};
 }
+test('automatic draft bypasses manual marks and carries explicit mode to the render API',async()=>{
+ const h=harness();h.state.review=null;h.state.automatic=true;
+ h.state.warnings=['uncertain_words','word_boundary_fallback'];
+ const listed=await h.actions.listQuickDrafts(id,'token');
+ assert.equal(listed.needsReview,false);assert.equal(listed.choices[0].automatic,true);
+ assert(!h.state.calls.some(x=>x.render));
+ const result=await h.actions.prepareQuickDraft(id,'token');
+ assert.equal(result.needsReview,false);assert.equal(result.plan.automatic,true);
+ assert.match(result.plan.notice,/recognized words may be inaccurate/);
+ assert.match(result.plan.notice,/starts and ends cleanly/);
+ await h.actions.renderQuickDraft(id,'token',result.plan);
+ assert.equal(h.state.calls.find(x=>x.render).render[8],true);
+});
+
 test('does not render or load settings if review is absent or has no candidate',async()=>{
  const h=harness();h.state.review=null;
  assert.equal((await h.actions.prepareQuickDraft(id,'token')).needsReview,true);

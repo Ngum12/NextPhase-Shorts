@@ -12,10 +12,14 @@ remains required; it does not establish semantic editing, a representative ASR
 quality benchmark, French readiness or public production approval. The master
 contract in `prompt.md` owns phase order and later paid-feature gates.
 
-Next development focus: make the reviewed English editing workflow easier to
-resume and use, then improve source-bound clip selection and editing quality in
-small tested increments. Keep existing recordings/reviews, source integrity,
-server-side processing, 60-second/9:16 output and strict containment intact.
+Next development focus: automatic clip selection and draft generation, followed
+by stronger source-grounded story planning and editing quality. The
+[automatic draft flow](AUTOMATIC_CLIP_DRAFTS.md) removes mandatory sentence marks
+and individual word confirmations for a private suggested Short; detailed review
+is optional. Semantic story understanding and noncontiguous highlight composition
+remain future work, not completed by heuristic selection. Preserve existing
+recordings/reviews, source integrity, server-side processing, 60-second/9:16 output
+and strict containment. Unfinished-review persistence is not the current priority.
 
 [The Phase 2 checklist](PHASE_2_CHECKLIST.md) and
 [private-server acceptance ledger](PHASE_2_ACCEPTANCE_2026-11-11.md) retain their

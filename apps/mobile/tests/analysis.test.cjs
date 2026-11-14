@@ -13,7 +13,7 @@ function review(){return {schema_version:'transcript-review-1',source_sha256:'c'
  sentence_end_words:[2],confirmed_low_confidence_words:[1]};}
 function fixture(){
  const calls=[],state={value:document(),error:null};
- const api={BASE:'https://example.invalid',api:async(route,token)=>{calls.push({route,token});if(state.error)throw state.error;return structuredClone(state.value);},
+  const api={BASE:'https://example.invalid',api:async(route,token)=>{calls.push({route,token});if(state.error)throw state.error;return structuredClone(route.endsWith('/automatic-clips')?state.automatic:state.value);},
   authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});if(state.error)throw state.error;return structuredClone(state.value);},extract:async response=>response};
  const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/analysis.ts'),'utf8'),
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
@@ -22,6 +22,34 @@ function fixture(){
  const exports={};vm.runInNewContext(code,{exports,require:name=>name==='./sceneAnalysis'?visual:name==='./audioTiming'?timing:api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
  return {actions:exports,state,calls};
 }
+
+function autoPlan(value){return {
+ job_id:value.job_id,revision:'d'.repeat(64),base_revision:value.revision,automatic:true,
+ algorithm:'automatic-speech-clips-v1',source_sha256:value.transcript.source_sha256,
+ source_duration_ms:value.transcript.source_duration_ms,transcript_sha256:value.transcript_sha256,
+ review_sha256:null,requested_seconds:value.proposal.requested_seconds,
+ human_review_required:true,semantic_quality_verified:false,
+ candidates:structuredClone(value.proposal.candidates),warnings:['estimated_boundaries'],
+};}
+test('automatic choices are source/transcript/revision bound without manufacturing human review',async()=>{
+ const f=fixture();f.state.automatic=autoPlan(f.state.value);
+ const result=await f.actions.getAutomaticClips('project-1','token',f.state.value);
+ assert.equal(result.automatic_draft,true);assert.equal(result.review,null);
+ assert.equal(result.revision,'d'.repeat(64));assert.equal(f.calls.length,1);
+});
+for(const [name,mutate] of Object.entries({
+ 'other project':p=>p.job_id='other',
+ 'stale review':p=>p.base_revision='e'.repeat(64),
+ 'other source':p=>p.source_sha256='e'.repeat(64),
+ 'other transcript':p=>p.transcript_sha256='e'.repeat(64),
+ 'claimed human review':p=>p.review_sha256='e'.repeat(64),
+ 'claimed semantic verification':p=>p.semantic_quality_verified=true,
+ 'invalid candidate':p=>p.candidates[0].source_end_ms=999999,
+ 'unknown algorithm':p=>p.algorithm='untrusted',
+}))test('automatic choices refuse '+name,async()=>{
+ const f=fixture();f.state.automatic=autoPlan(f.state.value);mutate(f.state.automatic);
+ await assert.rejects(f.actions.getAutomaticClips('project-1','token',f.state.value));
+});
 test('review reads the authenticated project route without altering source data',async()=>{
  const f=fixture(),before=structuredClone(f.state.value);const value=await f.actions.getEnglishAnalysis('project-1','private-session');
  assert.equal(f.actions.englishReviewVisible,true);assert.deepEqual(value,before);

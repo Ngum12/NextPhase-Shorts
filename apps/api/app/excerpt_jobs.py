@@ -19,7 +19,7 @@ from .polish import PolishSettings
 
 
 class ExcerptSpec(ClosedModel):
-    schema_version: Literal['excerpt-1']='excerpt-1'
+    schema_version: Literal['excerpt-1','excerpt-auto-1']='excerpt-1'
     source_sha256: Digest
     source_bytes: Annotated[int,Field(strict=True,ge=1,le=314572800)]
     source_duration_ms: Annotated[int,Field(strict=True,ge=1,le=600000)]
@@ -28,7 +28,7 @@ class ExcerptSpec(ClosedModel):
     source_end_ms: Milliseconds
     output_frames: Annotated[int,Field(strict=True,ge=150,le=1800)]
     requested_seconds: Annotated[int,Field(strict=True,ge=5,le=60)]
-    review_sha256: Digest
+    review_sha256: Digest | None
     transcript_sha256: Digest
     review_revision: Digest
     candidate_number: Annotated[int,Field(strict=True,ge=1,le=5)]
@@ -40,6 +40,8 @@ class ExcerptSpec(ClosedModel):
 
     @model_validator(mode='after')
     def valid(self):
+        if (self.schema_version=='excerpt-1') != (self.review_sha256 is not None):
+            raise ValueError('Excerpt review provenance differs')
         validate_cues(self.captions, self.output_frames)
         if (self.caption_style == 'clean-1') != bool(self.captions):
             raise ValueError('Caption style and cues disagree')

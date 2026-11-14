@@ -1,5 +1,62 @@
 # Implementation Status — 2026-11-10
 
+## Automatic English clip selection and direct draft creation
+
+Owner explicitly prioritized automatic suggestions over manual-editing convenience.
+The previous preparation flow blocked every draft on saved sentence marks and
+individual weak-word confirmations. That was a development-review gate, not the
+automatic product promised by `prompt.md`; unfinished-review persistence is not
+the current priority.
+
+Added **Create suggested Short** after analysis: the server ranks original source
+ranges automatically and prepares the first option after one private-render
+confirmation. **Other clip suggestions** and detailed transcript review/polish
+remain optional. Existing analyzed originals work without another upload or ASR
+run. No review marks or human confirmations are fabricated or saved by this flow.
+
+The bounded English selector evaluates utterance starts, punctuation/pause ends,
+clause/short-pause starts and a half-duration grid for sparse punctuation. It
+compares confidence, speech coverage, duration, opening/ending cues and overlap;
+it prefers a question with its follow-up over a question-only ending and penalizes
+dependent openings. Low-confidence words remain unchanged and disclosed, while
+broadly unreliable spans are withheld. Fallbacks use original word endpoints,
+never invent text or pad a source to fit. Ranges stay inside actual source and
+requested duration, 5–60 seconds / 150–1,800 frames, 1080×1920/30 fps; long gaps
+are not crossed. This is heuristic automatic selection, not semantic story
+understanding, a creativity model, noncontiguous highlight composition or finished
+style engines. Those remain substantive Phase 3/4 work.
+
+Read-only plans bind transcript/source identity, current analysis revision,
+algorithm, requested duration and full candidates in a digest. The server
+recomputes that identity for captions/render admission. Immutable `excerpt-auto-1`
+specs explicitly have no human-review digest; old `excerpt-1` still requires its
+review provenance. Existing reviews/transcripts/outputs are untouched. Only the
+confirmed option queues a job. Legacy clients/servers retain reviewed behavior.
+No schema migration, dependency, model download, paid provider, secret or native
+guard change. Ownership, admission, source copy/hash/probe checks, cancellation,
+claim/lease/deletion/restore fences, caption bounds and private logging are reused.
+
+Focused tests prove unpunctuated proposals, question/follow-up selection, source/
+frame limits, confidence handling, private owner-only reads without DB writes,
+explicit auto provenance, caption/render admission without review, immutable
+retry, stale-revision fencing and preservation of saved reviews. A real synthetic
+MP4 renders a captioned five-second excerpt beginning at source second 1.010
+without sentence marks; source integrity/private download/deletion are verified.
+Cancellation, expired claims and source deletion still refuse publication. Mobile
+tests cover direct first-option preparation, optional alternatives, no batch
+renders, source/revision verification and separate durable automatic intents.
+
+Validation: 761 tests passed on SQLite (217.79 s) and 761 on disposable
+PostgreSQL 16 (244.59 s), with one existing Starlette/httpx deprecation warning
+on each. All 240 mobile tests and TypeScript passed; Android export passed
+(1,403 modules). The real HTTP/API-worker upload/render/download/restart/
+delete/monitoring smoke passed. Local logs are retained under ignored
+`.data/automatic-clip-drafts/`.
+Actual VPS/phone playback quality remains owner acceptance after merge, using
+the one existing backup-first updater and one direct-draft check in
+AUTOMATIC_CLIP_DRAFTS.md. No live deployment or real speech-model execution was
+performed; protocol fixtures are not semantic or recognition-quality proof.
+
 ## Owner acceptance of English workflow and timing recovery — 2026-11-14
 
 Owner supplied a successful backup-first VPS update report for merged main

@@ -1,14 +1,15 @@
-/** Owner-confirmed preview from one of up to three already-reviewed ranked clips.
+/** Owner-confirmed private preview from automatic or legacy reviewed clips.
  *
- * Candidate order is technically scored, with simple lexical hints on v5 reviewed plans, never verified semantic quality. Listing options never queues
+ * Candidate order uses bounded speech/editorial cues, not verified semantic quality. Listing options never queues
  * renders or stores transcript text. Preflight only the user's selected option
  * to conserve mobile requests, storage and cloud compute.
  */
 import {ApiError,api,Job} from './api';
-import {getEnglishAnalysis,type EnglishAnalysis} from './analysis';
+import {getEnglishAnalysis,getAutomaticClips,type EnglishAnalysis} from './analysis';
 import {defaultPolish,getCaptionDraft,loadPolishPreset,PolishOptions,requestPolishedPreview} from './polish';
 
 export type QuickDraftChoice={
+  automatic?:boolean;
   revision:string;
   candidate:number;
   duration_ms:number;
@@ -25,8 +26,13 @@ export type QuickDraftPlan=QuickDraftChoice & {
   options:PolishOptions;
   notice:string|null;
 };
-export type QuickDraftChoices={needsReview:true}|{needsReview:false;choices:QuickDraftChoice[]};
-export type QuickDraftResult={needsReview:true}|{needsReview:false;plan:QuickDraftPlan};
+export type QuickDraftChoices={needsReview:true;automatic?:boolean}|{needsReview:false;choices:QuickDraftChoice[]};
+export type QuickDraftResult={needsReview:true;automatic?:boolean}|{needsReview:false;plan:QuickDraftPlan};
+
+async function draftAnalysis(id:string,token:string){
+  const analysis=await getEnglishAnalysis(id,token);
+  return analysis.automatic_clips_supported===true?getAutomaticClips(id,token,analysis):analysis;
+}
 
 
 // Read-only, bounded snippets from the owner's verified transcript. Never write
@@ -71,6 +77,7 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
   const contextWarning=['but','however','therefore','so','this','that','these','those',
     'it','they','he','she','because'].includes(firstWord);
   return {
+    ...(analysis.automatic_draft?{automatic:true}:{}),
     revision:analysis.revision,candidate:index+1,
     duration_ms:Math.floor(best.output_frames*1000/30),
     source_start_ms:best.source_start_ms,source_end_ms:best.source_end_ms,
@@ -79,7 +86,8 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
     ending:complete&&last-first>=8?phrase(words,Math.max(first+8,last-7),last+1):null,
     context_warning:contextWarning?
       'The opening may depend on earlier speech. Listen to the source before choosing.':null,
-    ranking_note:analysis.proposal.algorithm==='sentence-window-v5-discourse-reviewed'?
+    ranking_note:analysis.automatic_draft?
+      'Selected automatically from speech boundaries, confidence and opening/ending cues. Watch the finished clip before sharing.':analysis.proposal.algorithm==='sentence-window-v5-discourse-reviewed'?
       'Technical scoring plus simple English opening and ending cues; not verified story meaning or quality.':
       'Ranked by technical signals, not story meaning.',
     boundary_cues:technicalBoundaryCues(analysis,best.source_start_ms,best.source_end_ms),
@@ -88,10 +96,11 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
 
 /** This is an option list, not a request for 3 render jobs. */
 export async function listQuickDrafts(id:string,token:string):Promise<QuickDraftChoices>{
-  const analysis=await getEnglishAnalysis(id,token); // already owner- and source-validated
+  const analysis=await draftAnalysis(id,token);
   if(analysis.polished_preview_supported!==true)
     throw Error('The server does not support polished previews. Use Review English clips instead.');
-  if(!analysis.review||!analysis.proposal.candidates.length)return {needsReview:true};
+  if((!analysis.review&&!analysis.automatic_draft)||!analysis.proposal.candidates.length)
+    return {needsReview:true,...(analysis.automatic_draft?{automatic:true}:{})};
   const choices=analysis.proposal.candidates.slice(0,3).map((_,index)=>choiceFrom(analysis,index));
   return {needsReview:false,choices};
 }
@@ -100,10 +109,11 @@ export async function listQuickDrafts(id:string,token:string):Promise<QuickDraft
 export async function prepareQuickDraft(id:string,token:string,candidate=1):Promise<QuickDraftResult>{
   if(!Number.isInteger(candidate)||candidate<1||candidate>3)
     throw Error('Choose one of the offered Short drafts.');
-  const analysis=await getEnglishAnalysis(id,token);
+  const analysis=await draftAnalysis(id,token);
   if(analysis.polished_preview_supported!==true)
     throw Error('The server does not support polished previews. Use Review English clips instead.');
-  if(!analysis.review||!analysis.proposal.candidates.length)return {needsReview:true};
+  if((!analysis.review&&!analysis.automatic_draft)||!analysis.proposal.candidates.length)
+    return {needsReview:true,...(analysis.automatic_draft?{automatic:true}:{})};
   const best=analysis.proposal.candidates[candidate-1];
   if(!best)throw Error('That clip is no longer available. Refresh your Short choices.');
   const person=await api<{id:string}>('/api/v1/me',token);
@@ -113,17 +123,22 @@ export async function prepareQuickDraft(id:string,token:string,candidate=1):Prom
   else if(analysis.manual_crop_focus_supported!==true&&
     ['fill-left','fill-right'].includes(options.framing))options.framing='fill-center';
   if(analysis.soft_audio_edges_supported!==true)options.audio_edges='original';
-  let notice:string|null=null;
+  const notices:string[]=[];
+  if(analysis.automatic_draft&&analysis.proposal.warnings?.includes('word_boundary_fallback'))
+    notices.push('Check that the suggested clip starts and ends cleanly in playback.');
+  if(analysis.automatic_draft&&analysis.proposal.warnings?.includes('uncertain_words'))
+    notices.push('Some recognized words may be inaccurate. Check captions in playback.');
+  let notice:string|null=notices.join(' ')||null;
   if(analysis.clean_captions_supported!==true){
     options.captions=false;
-    notice='This server cannot add clean captions to the draft.';
+    notice=[notice,'This server cannot add clean captions to the draft.'].filter(Boolean).join(' ');
   }else if(options.captions){
     // Only preflight the chosen clip, never spend capacity rendering alternatives.
-    try{await getCaptionDraft(id,token,analysis.revision,candidate);}
+    try{await getCaptionDraft(id,token,analysis.revision,candidate,!!analysis.automatic_draft);}
     catch(e){
       if(!(e instanceof ApiError&&e.status===422))throw e;
       options.captions=false;
-      notice='Captions do not fit this clip layout. The draft will use original video without captions.';
+      notice=[notice,'Captions do not fit this clip layout. The draft will use original video without captions.'].filter(Boolean).join(' ');
     }
   }
   return {needsReview:false,plan:{...choiceFrom(analysis,candidate-1),options,notice}};
@@ -132,5 +147,5 @@ export async function prepareQuickDraft(id:string,token:string,candidate=1):Prom
 export async function renderQuickDraft(id:string,token:string,plan:QuickDraftPlan):Promise<Job>{
   // The existing API still checks review revision and idempotency; no batch jobs.
   return requestPolishedPreview(id,token,plan.revision,plan.candidate,
-    plan.options,null,plan.duration_ms,false);
+    plan.options,null,plan.duration_ms,false,!!plan.automatic);
 }

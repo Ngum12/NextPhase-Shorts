@@ -14,6 +14,8 @@ export type ClipCandidate = {
   output_frames:number;
 };
 export type EnglishAnalysis = {
+  automatic_clips_supported?:boolean;
+  automatic_draft?:boolean;
   job_id:string; revision:string; transcript_sha256:string; render_enabled:false;
   queued_preview_supported?:boolean;
   clean_captions_supported?:boolean;
@@ -37,6 +39,7 @@ function validated(value:any):EnglishAnalysis {
       !Number.isInteger(duration) || duration<1 || duration>600000 ||
       !Number.isInteger(cap) || cap<5 || cap>60 ||
       value?.render_enabled!==false || !Array.isArray(words) || !words.length || words.length>1000 ||
+      (value.automatic_clips_supported!==undefined && typeof value.automatic_clips_supported!=='boolean') ||
       (value.queued_preview_supported!==undefined && typeof value.queued_preview_supported!=='boolean') ||
       (value.clean_captions_supported!==undefined && typeof value.clean_captions_supported!=='boolean') ||
       (value.portrait_framing_supported!==undefined && typeof value.portrait_framing_supported!=='boolean') ||
@@ -76,6 +79,20 @@ function validated(value:any):EnglishAnalysis {
     }
   }
   return value as EnglishAnalysis;
+}
+
+export async function getAutomaticClips(id:string,token:string,analysis:EnglishAnalysis):Promise<EnglishAnalysis>{
+  const plan=await api<any>(`/api/v1/jobs/${encodeURIComponent(id)}/analysis/automatic-clips`,token);
+  const hash=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{64}$/.test(v);
+  if(plan.job_id!==id||plan.algorithm!=='automatic-speech-clips-v1'||plan.automatic!==true||
+    plan.base_revision!==analysis.revision||!hash(plan.revision)||
+    plan.transcript_sha256!==analysis.transcript_sha256||plan.review_sha256!==null||
+    plan.source_sha256!==analysis.transcript.source_sha256||
+    plan.source_duration_ms!==analysis.transcript.source_duration_ms||
+    plan.requested_seconds!==analysis.proposal.requested_seconds||
+    plan.human_review_required!==true||plan.semantic_quality_verified!==false)
+    throw Error('Automatic clip choices changed. Refresh and try again.');
+  return validated({...analysis,revision:plan.revision,review:null,automatic_draft:true,proposal:plan});
 }
 
 export async function getEnglishAnalysis(id:string,token:string):Promise<EnglishAnalysis> {

@@ -1,5 +1,15 @@
 # Security / privacy — gating checklist, not completed certification
 
+Automatic private Short drafts explicitly use `excerpt-auto-1` with canonical
+transcript identity and no human-review digest. This removes the annotation gate
+for that mode without fabricating human confirmations or approving publication.
+Server-computed plan digests bind the source, transcript, analysis revision,
+duration and complete candidate list; new requests recheck that identity. Legacy
+reviewed previews retain their review requirement. Owner access, source checks,
+admission, native guards and cancellation/lease/deletion/restore fences are reused.
+Estimated words/captions and heuristic cuts need finished-output playback before
+sharing; semantic correctness is not certified. See AUTOMATIC_CLIP_DRAFTS.md.
+
 The optional visual-change decoder uses exact private input/output grants, a
 1-GiB address bound, 120-second wall deadline and 3-MiB kernel file bound. Required
 containment is never disabled for fallback. Temporary sampled pixels are cleaned
