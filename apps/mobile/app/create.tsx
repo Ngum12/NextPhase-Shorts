@@ -8,7 +8,7 @@ import { api } from '../src/api';
 import {englishCapability} from '../src/englishAnalysis';
 import {englishReviewVisible} from '../src/analysis';
 import { confirmUploadRights, discardUpload, loadPending, PendingUpload, prepareUpload, resumeUpload } from '../src/uploads';
-import {RIGHTS_TEXT,RIGHTS_VERSION} from '../src/uploadRights';
+import {RIGHTS_TEXT,RIGHTS_VERSION,MEDIA_RETENTION_NOTICE} from '../src/uploadRights';
 import { useAuth } from '../src/auth';
 import { colors as c } from '../src/theme';
 import { Body, Button, Page, Title, s } from '../src/ui';
@@ -97,6 +97,7 @@ export default function Create() {
   return <Page><ScrollView contentContainerStyle={{gap:16,paddingBottom:50}}>
     <Title>Create a Short</Title>
     <Body>Rendering runs on the server. Use only consented test footage in this development preview.</Body>
+    <View style={s.card}><Text style={s.cardTitle}>Video storage and deletion</Text><Body>{MEDIA_RETENTION_NOTICE}</Body></View>
     {verificationNeeded&&<View style={s.card}><Body>Confirm your email before starting or resuming uploads. Your saved upload is preserved.</Body>
       <Button title="Confirm email" onPress={()=>router.push({pathname:'/recover',params:{mode:'verify'}})} secondary/></View>}
     {!!message&&<Body>{message}</Body>}
