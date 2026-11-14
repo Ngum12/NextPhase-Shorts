@@ -129,6 +129,7 @@ def document(row):
         if visual.source_sha256!=transcript.source_sha256 or visual.source_duration_ms!=transcript.source_duration_ms:
             raise RuntimeError('Stored visual analysis identity differs')
     return {'job_id': row.job_id, 'revision': row.revision,
+        'automatic_clips_supported':True,
         'audio_timing':timing.model_dump(mode='json') if timing is not None else None,
         'scene_analysis':visual.model_dump(mode='json') if visual is not None else None,
         'transcript_sha256': fingerprint(transcript),
@@ -146,6 +147,7 @@ class PreviewRequest(ClosedModel):
     candidate_number: int = Field(strict=True,ge=1,le=5)
     idempotency_key: UUID4
     acknowledged_preview: bool = Field(strict=True)
+    automatic_draft: bool=Field(default=False,strict=True)
     caption_style: Literal['none','clean-1']='none'
     framing: Framing='fit'
     polish: PolishSettings | None=None
@@ -175,6 +177,7 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
         raise HTTPException(409,'Preview requires an original local project',headers=PRIVATE)
     key='excerpt_'+str(payload.idempotency_key)
     identity=f'{parent.id}:{payload.revision}:{payload.candidate_number}'
+    if payload.automatic_draft:identity+=':automatic-draft'
     if payload.caption_style != 'none':identity += ':'+payload.caption_style
     if payload.framing != 'fit':identity += ':framing-'+payload.framing
     if payload.polish is not None or payload.caption_edits is not None:
@@ -195,10 +198,17 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     row=db.get(ProjectAnalysis,job_id)
     if row is None:raise HTTPException(404,'No English transcript is ready for this project',headers=PRIVATE)
     data=document(row)
-    if row.revision!=payload.revision:
+    if payload.automatic_draft:
+        from .automatic_clips import for_project
+        plan=for_project(row,parent)
+        current_revision=fingerprint(plan)
+    else:
+        plan=Proposal.model_validate_json(row.proposal_json)
+        current_revision=row.revision
+    if current_revision!=payload.revision:
         raise HTTPException(409,'This review changed. Refresh before rendering.',headers=PRIVATE)
-    if data['review'] is None:raise HTTPException(409,'Save your transcript review before rendering',headers=PRIVATE)
-    plan=Proposal.model_validate_json(row.proposal_json)
+    if data['review'] is None and not payload.automatic_draft:
+        raise HTTPException(409,'Save your transcript review before rendering',headers=PRIVATE)
     if payload.candidate_number>len(plan.candidates):raise HTTPException(422,'Choose an available clip suggestion',headers=PRIVATE)
     candidate=plan.candidates[payload.candidate_number-1]
     try:
@@ -213,11 +223,12 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
     if accepted is None or accepted.source_sha256!=plan.source_sha256:
         raise HTTPException(409,'Accepted source identity is unavailable',headers=PRIVATE)
     spec=ExcerptSpec(source_sha256=plan.source_sha256,source_bytes=accepted.total_bytes,
+        schema_version='excerpt-auto-1' if payload.automatic_draft else 'excerpt-1',
         source_duration_ms=plan.source_duration_ms,source_extension=Path(parent.source_path).suffix.lower(),
         source_start_ms=candidate.source_start_ms,source_end_ms=candidate.source_end_ms,
         output_frames=candidate.output_frames,requested_seconds=parent.desired_seconds,
         review_sha256=plan.review_sha256,transcript_sha256=plan.transcript_sha256,
-        review_revision=row.revision,candidate_number=payload.candidate_number,
+        review_revision=current_revision,candidate_number=payload.candidate_number,
         caption_style=payload.caption_style,captions=captions,framing=payload.framing,
         polish=payload.polish or PolishSettings(),caption_edits_applied=payload.caption_edits is not None)
     settings=get_settings()
@@ -245,25 +256,42 @@ class SaveReview(ClosedModel):
 @router.get('/{job_id}/analysis/captions')
 def get_caption_draft(job_id:str,revision:Digest,response:Response,
                       candidate_number:int=Query(ge=1,le=5),
+                      automatic:bool=False,
                       user:User=Depends(current_user),db:Session=Depends(session_dep)):
     response.headers['Cache-Control']='private, no-store'
     parent=owned_project(db,user.id,job_id)
     row=db.get(ProjectAnalysis,job_id)
     if row is None:raise HTTPException(404,'No English review is ready',headers=PRIVATE)
     data=document(row)
-    if row.revision!=revision:raise HTTPException(409,'Review changed. Refresh before editing captions.',headers=PRIVATE)
-    if data['review'] is None:raise HTTPException(409,'Save the transcript review first',headers=PRIVATE)
-    plan=Proposal.model_validate_json(row.proposal_json)
+    if automatic:
+        from .automatic_clips import for_project
+        plan=for_project(row,parent);current_revision=fingerprint(plan)
+    else:
+        plan=Proposal.model_validate_json(row.proposal_json);current_revision=row.revision
+    if current_revision!=revision:raise HTTPException(409,'Review changed. Refresh before editing captions.',headers=PRIVATE)
+    if data['review'] is None and not automatic:raise HTTPException(409,'Save the transcript review first',headers=PRIVATE)
     if candidate_number>len(plan.candidates):raise HTTPException(422,'Choose an available clip',headers=PRIVATE)
     candidate=plan.candidates[candidate_number-1]
     try:
         cues=captions_for(Transcript.model_validate_json(row.transcript_json),candidate)
     except ValueError:
         raise HTTPException(422,'This clip exceeds caption layout limits. Use a plain preview.',headers=PRIVATE) from None
-    result={'job_id':parent.id,'revision':row.revision,'candidate_number':candidate_number,
+    result={'job_id':parent.id,'revision':current_revision,'candidate_number':candidate_number,
             'duration_ms':candidate.output_frames*1000//30,
             'cues':[cue.model_dump(mode='json') for cue in cues]}
     db.commit();return result
+
+
+@router.get('/{job_id}/analysis/automatic-clips')
+def automatic_clips(job_id:str,response:Response,user:User=Depends(current_user),db:Session=Depends(session_dep)):
+    from .automatic_clips import for_project
+    parent=owned_project(db,user.id,job_id)
+    row=db.get(ProjectAnalysis,job_id)
+    if row is None:raise HTTPException(404,'No English transcript is ready for this project',headers=PRIVATE)
+    document(row)
+    plan=for_project(row,parent)
+    result={**plan.model_dump(mode='json'),'revision':fingerprint(plan),'job_id':parent.id}
+    response.headers.update(PRIVATE);db.commit();return result
 
 
 @router.get('/{job_id}/analysis')

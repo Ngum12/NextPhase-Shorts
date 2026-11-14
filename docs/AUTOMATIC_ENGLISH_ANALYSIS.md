@@ -14,15 +14,18 @@ next functional milestone; the current screens remain a prototype.
    processing, failure/retry or a ready transcript. You may leave the screen after
    server acceptance. For an existing accepted upload, **Find English clips** asks
    for server-analysis consent first. Cancel stops analysis, not the baseline job.
-3. Open **Review English clips**, compare words and sentence boundaries with the
-   recording, confirm uncertain words and save the review. Then choose an option,
-   polish, render and play/save/share it through the existing private workflow.
+3. Tap **Create suggested Short** and confirm **Render draft**. The server selects
+   the range automatically; sentence marks and individual word confirmations are
+   not prerequisites. Watch the finished clip before Save/Share. **Other clip
+   suggestions** and **Review or adjust transcript (optional)** remain available.
+   See [automatic clip drafts](AUTOMATIC_CLIP_DRAFTS.md) for selection and bounds.
 
 English only, local accepted uploads, at most three minutes, 1,000 words and
 256 KiB of canonical transcript. Longer videos still get the baseline render;
 transcription is skipped. No audio/invalid recognition fails without deleting
-video. A transcript may initially have no complete suggestions: human sentence
-boundaries and low-confidence review can still be required. No semantic ranking,
+video. The automatic selector can use sparse-punctuation transcripts without
+mandatory human sentence marks; some recordings may still have no usable window.
+No verified semantic ranking,
 verified meaning, viral-quality guarantee, automatic publication, French rollout,
 intelligent subject tracking or final UI redesign is claimed.
 

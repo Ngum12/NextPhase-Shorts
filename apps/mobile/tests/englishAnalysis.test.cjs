@@ -16,7 +16,7 @@ function harness(){
   useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return[h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
   useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
   useEffect(effect,deps){const i=h.cursor++,old=h.slots[i];if(!old||deps.some((v,n)=>v!==old.deps[n]))h.effects.push(()=>{old?.cleanup?.();h.slots[i]={deps,cleanup:effect()};});}};react.default=react;
- const actions={englishCapability:async()=>({available:true}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
+ const actions={englishCapability:async()=>({available:true,automatic_clips:!!h.automatic}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
  startEnglish:async(id,token,state)=>{h.calls.push({start:id,token,state});return {...h.value,task:{id:'attempt',status:'queued'}};},
  cancelEnglish:async(id,token)=>{h.calls.push({cancel:id,token});return {...h.value,task:{id:'attempt',status:'cancelled'}};}};
  const quickDraft={
@@ -37,6 +37,30 @@ test('transcription requires consent and queued work exposes cancellation',async
  await h.alerts[0][2][1].onPress();await h.flush();assert(h.calls.some(c=>c.start));
  await h.button('Cancel English analysis').props.onPress();await h.flush();assert(h.calls.some(c=>c.cancel));assert(h.button('Retry English analysis'));
 });
+test('automatic mode creates the best draft without sentence marks or choosing among alternatives',async()=>{
+ const h=harness();h.automatic=true;h.value.ready=true;
+ h.choices.choices=[1,2,3].map(candidate=>({automatic:true,candidate,revision:'a'.repeat(64),title:'Option '+candidate}));
+ h.quick.plan.automatic=true;
+ await h.flush();assert(h.button('Create suggested Short'));
+ assert(h.button('Review or adjust transcript (optional)'));
+ await h.button('Create suggested Short').props.onPress();await h.flush();
+ assert.equal(h.calls.filter(c=>c.prepare).length,1);
+ assert.equal(h.calls.find(c=>c.prepare).candidate,1);
+ assert.equal(h.calls.filter(c=>c.renderDraft).length,0);
+ assert.equal(h.alerts.at(-1)[0],'Prepare a private Short draft?');
+ await h.alerts.at(-1)[2][1].onPress();await h.flush();
+ assert.equal(h.calls.filter(c=>c.renderDraft).length,1);
+ assert(!h.calls.some(c=>c.push?.pathname==='/review/[id]'));
+});
+
+test('automatic alternatives remain optional and never batch-render',async()=>{
+ const h=harness();h.automatic=true;h.value.ready=true;
+ h.choices.choices=[1,2,3].map(candidate=>({automatic:true,candidate,revision:'a'.repeat(64),title:'Auto '+candidate}));
+ await h.flush();await h.button('Other clip suggestions').props.onPress();await h.flush();
+ assert(h.button('Auto 1')&&h.button('Auto 2')&&h.button('Auto 3'));
+ assert(!h.calls.some(c=>c.prepare||c.renderDraft));
+});
+
 test('ready transcript opens human review without automatic preview render',async()=>{
  const h=harness();h.value.ready=true;await h.flush();h.button('Review English clips').props.onPress();
  assert(h.calls.some(c=>c.push?.pathname==='/review/[id]'));assert(!h.calls.some(c=>c.start));

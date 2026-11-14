@@ -61,10 +61,10 @@ export function captionMilliseconds(text:string):number{
   if(ms>60000)throw Error('Caption times must stay inside the clip.');
   return ms;
 }
-export async function getCaptionDraft(id:string,token:string,revision:string,candidate:number){
+export async function getCaptionDraft(id:string,token:string,revision:string,candidate:number,automatic=false){
   if(!uuid.test(id)||!hash.test(revision)||!Number.isInteger(candidate)||candidate<1||candidate>5)
     throw Error('Refresh and select a clip.');
-  const result=await api<any>(`/api/v1/jobs/${id}/analysis/captions?revision=${revision}&candidate_number=${candidate}`,token);
+  const result=await api<any>(`/api/v1/jobs/${id}/analysis/captions?revision=${revision}&candidate_number=${candidate}${automatic?'&automatic=true':''}`,token);
   if(result.job_id!==id||result.revision!==revision||result.candidate_number!==candidate)
     throw Error('This caption draft belongs to another clip.');
   return {duration_ms:result.duration_ms,cues:validateCues(result.cues,result.duration_ms)};
@@ -89,12 +89,13 @@ async function intents(name:string):Promise<Intent[]>{
   }catch{return [];}
 }
 export async function requestPolishedPreview(id:string,token:string,revision:string,candidate:number,
-  options:PolishOptions,edits:Cue[]|null,duration:number,acknowledgedEdits:boolean):Promise<Job>{
+  options:PolishOptions,edits:Cue[]|null,duration:number,acknowledgedEdits:boolean,automatic=false):Promise<Job>{
   if(!uuid.test(id)||!hash.test(revision)||!Number.isInteger(candidate)||candidate<1||candidate>5)
     throw Error('Refresh the review before rendering.');
   const chosen=validateOptions(options);
   if(edits!==null&&(!chosen.captions||acknowledgedEdits!==true))throw Error('Compare caption edits with the recording and confirm them.');
   const body={revision,candidate_number:candidate,acknowledged_preview:true,
+    ...(automatic?{automatic_draft:true}:{}),
     caption_style:chosen.captions?'clean-1':'none',framing:chosen.framing,
     polish:{caption_size:chosen.caption_size,caption_color:chosen.caption_color,
       caption_position:chosen.caption_position,voice:chosen.voice,

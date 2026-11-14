@@ -17,6 +17,16 @@ function fixture(){
   vm.runInNewContext(code,{exports,require:name=>{assert(adapters[name],name);return adapters[name];}});return exports;}
  const actions=load();return {actions,reload:load,storage,calls,state,options:{...actions.defaultPolish}};
 }
+test('automatic and reviewed render intents stay distinct without persisting transcript text',async()=>{
+ const f=fixture();
+ await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true);
+ await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false);
+ assert.equal(f.calls[0].body.automatic_draft,true);
+ assert.equal(f.calls[1].body.automatic_draft,undefined);
+ assert.notEqual(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
+ assert([...f.storage.values()].every(raw=>!raw.includes('token')&&!raw.includes('Original')));
+});
+
 test('seconds and caption wrapping enforce closed bounded times/text',()=>{
  const {actions:a}=fixture();assert.equal(a.captionMilliseconds('1,250'),1250);assert.equal(a.captionMilliseconds('.5'),500);
  for(const value of ['','-1','1e3','60.001','1.0001','NaN'])assert.throws(()=>a.captionMilliseconds(value));

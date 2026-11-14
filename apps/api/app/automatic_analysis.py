@@ -138,7 +138,8 @@ def reconcile_requested(limit=10):
 @router.get('/capabilities')
 def capabilities(response:Response,user:User=Depends(current_user)):
     response.headers.update(PRIVATE)
-    return {'available':bool(enabled(user.id)),'language':'en','max_source_seconds':MAX_SECONDS,'human_review_required':True}
+    return {'available':bool(enabled(user.id)),'language':'en','max_source_seconds':MAX_SECONDS,
+        'human_review_required':True,'automatic_clips':True}
 
 
 class StartAnalysis(ClosedModel):

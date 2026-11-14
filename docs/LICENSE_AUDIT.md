@@ -1,5 +1,13 @@
 # License provenance and integration gates
 
+## Automatic English clip drafts
+
+The bounded automatic selector, private API mode and mobile preparation flow are
+independently authored using existing Python/Expo/FFmpeg dependencies and original
+synthetic test fixtures. No package, model, provider, third-party asset or reference
+kit code was added. Existing notices and full native/transitive/legal gates remain;
+automatic selection does not confer recognition, rights or semantic-quality approval.
+
 ## Combined polished-video package — 2026-11-12
 
 Independently authored editor, closed caption/audio settings, preset/retry helpers,
