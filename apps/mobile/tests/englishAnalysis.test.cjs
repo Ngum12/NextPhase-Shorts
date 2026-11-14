@@ -139,3 +139,29 @@ test('a changed review revision aborts rendering stale draft choices',async()=>{
  assert(!h.calls.some(x=>x.renderDraft));
  assert(!h.button('Option 2'));
 });
+
+
+test('proposed Short cards show spoken boundaries and technical evidence without creating previews',async()=>{
+ const h=harness();h.value.ready=true;
+ h.choices={needsReview:false,choices:[
+  {revision:'a'.repeat(64),candidate:1,duration_ms:10000,source_start_ms:0,source_end_ms:10000,
+    title:'Option 1 · 10.0s',opening:'But here is the point',ending:'This is what we learned',
+    context_warning:'The opening may depend on earlier speech.',
+    boundary_cues:['Low-volume audio near ending cut — verify playback.']},
+  {revision:'a'.repeat(64),candidate:2,duration_ms:12000,source_start_ms:11000,source_end_ms:23000,
+    title:'Option 2 · 12.0s',opening:'Today we learned something',ending:'And that is the conclusion',
+    context_warning:null,boundary_cues:[]},
+ ]};
+ await h.flush();
+ await h.button('Prepare a Short draft').props.onPress();await h.flush();
+ const text=h.nodes().flatMap(n=>n.children).filter(x=>typeof x==='string').join(' ');
+ assert.match(text,/But here is the point/);
+ assert.match(text,/This is what we learned/);
+ assert.match(text,/opening may depend/);
+ assert.match(text,/Low-volume audio near ending cut/);
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+ assert.equal(h.calls.filter(x=>x.prepare).length,0);
+ h.button('Hide draft choices').props.onPress();await h.flush();
+ assert(!h.button('Option 1 · 10.0s'));
+ assert.equal(h.calls.filter(x=>x.renderDraft).length,0);
+});
