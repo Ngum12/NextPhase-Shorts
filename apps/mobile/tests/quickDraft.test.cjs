@@ -4,7 +4,7 @@ const id='11111111-1111-4111-8111-111111111111',revision='a'.repeat(64);
 function harness(){
   class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
   const state={review:{},supported:true,layout:true,clean:true,soft:true,manual:true,portrait:true,
-    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null,words:[]};
+    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null,words:[],audioTiming:null,sceneAnalysis:null};
   const defaults={framing:'fit',captions:true,caption_size:'standard',caption_color:'white',
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
@@ -13,7 +13,7 @@ function harness(){
       job_id:p,revision,review:state.review,polished_preview_supported:state.supported,
       clean_captions_supported:state.clean,portrait_framing_supported:state.portrait,
       soft_audio_edges_supported:state.soft,manual_crop_focus_supported:state.manual,
-      proposal:{candidates:state.candidates},transcript:{words:state.words},
+      proposal:{candidates:state.candidates},transcript:{words:state.words},audio_timing:state.audioTiming,scene_analysis:state.sceneAnalysis,
     };}},
     './polish':{defaultPolish:defaults,loadPolishPreset:async()=>state.save,
       getCaptionDraft:async(p,t,rev,n)=>{state.captionCalls++;assert.equal(p,id);assert.equal(rev,revision);assert.equal(n,state.captionCandidate);
@@ -170,4 +170,32 @@ test('preview preparation uses newly fetched candidate words and preserves singl
  assert(!h.state.calls.some(x=>x.render));
  await h.actions.renderQuickDraft(id,'token',prepared.plan);
  assert.equal(h.state.calls.filter(x=>x.render).length,1);
+});
+
+
+test('read-only choices show sampled quiet audio and scene-boundary cues without rendering',async()=>{
+ const h=harness();
+ h.state.words=['We','are','testing','shorts','from','a','reviewed','speech','clip'].map(text=>({text}));
+ h.state.candidates=[
+  {first_word:0,last_word:8,source_start_ms:10000,source_end_ms:20000,output_frames:300},
+ ];
+ h.state.audioTiming={quiet_intervals:[
+  {start_ms:9700,end_ms:10500},{start_ms:19500,end_ms:20100},
+ ]};
+ h.state.sceneAnalysis={status:'available',analyzed_duration_ms:18000,
+  changes:[{at_ms:10000,delta_milli:200},{at_ms:19500,delta_milli:280}]};
+ const choice=(await h.actions.listQuickDrafts(id,'token')).choices[0];
+ assert(choice.boundary_cues.some(x=>x.includes('Low-volume audio near opening')));
+ assert(choice.boundary_cues.some(x=>x.includes('Low-volume audio near ending')));
+ assert(choice.boundary_cues.some(x=>x.includes('visual change near opening')));
+ assert(choice.boundary_cues.some(x=>x.includes('Visual samples do not cover')));
+ assert.equal(choice.boundary_cues.length,4);
+ assert.equal(h.state.captionCalls,0);assert(!h.state.calls.some(x=>x.render));
+});
+test('unavailable scene evidence is not mistaken for no changes',async()=>{
+ const h=harness();
+ h.state.audioTiming=null;h.state.sceneAnalysis={status:'unavailable',changes:[],analyzed_duration_ms:0};
+ const choice=(await h.actions.listQuickDrafts(id,'token')).choices[0];
+ assert.equal(choice.boundary_cues.length,0);
+ assert(!h.state.calls.some(x=>x.render));
 });
