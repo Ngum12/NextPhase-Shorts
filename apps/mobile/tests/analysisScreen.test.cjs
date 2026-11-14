@@ -161,7 +161,9 @@ test('saved selected clips open the combined polish workspace with bound revisio
 
 test('adjusted model timing is disclosed before transcript review',async()=>{
  const h=harness();h.value.proposal.warnings=['estimated_timestamps','adjusted_word_timestamps'];
- await h.flush();assert(h.text().includes('Some estimated word times were adjusted slightly'));
+ await h.flush();assert(h.text().includes('Some estimated word times were adjusted to stay within the recording'));
+ assert(h.text().includes('Check the word timings, clip cuts and captions against playback'));
+ assert(!h.text().includes('because the speech engine gave them no duration'));
  assert.equal(h.button('Save review and find clips').props.disabled,true);
 });
 

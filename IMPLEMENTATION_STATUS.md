@@ -1,5 +1,51 @@
 # Implementation Status — 2026-11-10
 
+## Bounded terminal ASR overrun correction — 2026-11-14
+
+Fetched current `origin/main` at `1e347a1` before starting a new fix branch;
+the earlier unmerged boundary-diagnostic branch is preserved separately. Owner
+diagnostics establish a token at 29,880–30,040 ms in a 29,905-ms recording:
+strict source-offset validation rejects a 135-ms end overrun before word
+assembly. Basic rendering and earlier analysis stages succeed. The existing
+Word/Transcript contracts accept the remaining positive 25-ms interval; this
+does not establish its true spoken boundary or speech-recognition quality.
+
+Added a final-word-only cap with a fixed 200-ms total budget across original
+token-end reductions, including multiple pieces of the same word. Negative
+starts, starts at/after the source end in a corrected word, nonterminal overruns,
+invalid/reversed endpoints and excessive totals still fail. The existing 20-ms
+overlap/zero-width repair then runs unchanged, followed by strict canonical
+validation. Text/order/confidence, real source duration/media and valid transcript
+identities are preserved. No token is dropped and no words/audio are fabricated.
+Unrepairable source timings retain `ASR_OFFSETS_OUT_OF_SOURCE`.
+
+Reuse `model_token_estimate_adjusted` / `adjusted_word_timestamps`; the review
+warning now covers adjusted estimates generally and explicitly requires playback
+comparison of words, cuts and captions. No review is automatically approved.
+Native containment/resources/deadlines, source integrity, cancellation, ownership,
+claims/leases/deletion/restore fences and private logging are unchanged. No new
+dependency, key, model download, infrastructure or schema change is needed.
+
+Validation: full backend suites passed 743 tests on SQLite (209.55 s) and
+743 on disposable PostgreSQL 16 (233.99 s); both had one existing Starlette/httpx
+deprecation warning. The 148 focused backend tests, all 227 mobile tests,
+TypeScript and Android export (1,403 modules) passed. The isolated real HTTP/API-worker
+upload/render/download/restart/deletion/monitoring smoke passed. Tests cover the
+exact reported interval, 200/201-ms bounds, cumulative piece budgets, invalid
+starts/types/order/overlap, repeat parsing, valid fingerprint compatibility,
+native protocol fixture → adjusted transcript/private publication/review warning,
+stale-claim/expired-lease/deadline/cancellation/deletion refusal, retained-upload
+retry and preservation of existing reviewed analysis. Sanitized local validation
+evidence is retained in ignored `.data/terminal-asr-fix/`.
+
+The supported explicit retry creates a new analysis task from the retained
+completed upload without re-uploading or deleting the original project; repeated
+requests recover that new task and keep the old failure. Saved successful
+analyses/reviews are never silently overwritten. Owner deployment and phone
+retry/playback acceptance remain pending; no VPS operation or real model/recording
+transcription was performed here. See AUTOMATIC_ENGLISH_ANALYSIS.md for the exact
+policy and backup-first deployment/recovery steps. Backup retention is separate.
+
 ## Private ASR timing diagnostics — 2026-11-14
 
 Checked fetched `main` at `4de6001`; the checkout had no tracked/untracked source
