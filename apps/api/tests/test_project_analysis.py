@@ -121,7 +121,7 @@ def test_review_uses_boundaries_without_rewriting_words_or_scores(client,prepare
     response=client.put(prepared['url']+'/review',headers=prepared['owner'],json=body)
     assert response.status_code==200,response.text
     data=response.json()
-    assert data['proposal']['algorithm']=='sentence-window-v4-diverse-reviewed'
+    assert data['proposal']['algorithm']=='sentence-window-v5-discourse-reviewed'
     assert data['proposal']['candidates'] and data['review']==body['review']
     assert data['transcript']==prepared['transcript'].model_dump(mode='json')
     assert all(c['output_frames']<=450 for c in data['proposal']['candidates'])
@@ -343,7 +343,7 @@ def test_legacy_review_upgrades_only_on_save_and_old_preview_replays_are_preserv
     saved=client.put(prepared['url']+'/review',headers=prepared['owner'],json=dict(revision=old_revision,review=body['review']))
     assert saved.status_code==200,saved.text
     updated=saved.json();assert updated['revision']!=old_revision
-    assert updated['proposal']['algorithm']=='sentence-window-v4-diverse-reviewed'
+    assert updated['proposal']['algorithm']=='sentence-window-v5-discourse-reviewed'
     assert request(client,prepared,legacy).status_code==409
     replay=request(client,prepared,legacy,key=key)
     assert replay.status_code==202 and replay.json()['id']==old_preview.json()['id']

@@ -4,7 +4,7 @@ const id='11111111-1111-4111-8111-111111111111',revision='a'.repeat(64);
 function harness(){
   class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
   const state={review:{},supported:true,layout:true,clean:true,soft:true,manual:true,portrait:true,
-    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null,words:[],audioTiming:null,sceneAnalysis:null};
+    candidates:[{output_frames:900,source_start_ms:5000,source_end_ms:35000}],save:null,captionCalls:0,captionCandidate:1,calls:[],error:null,words:[],audioTiming:null,sceneAnalysis:null,algorithm:null};
   const defaults={framing:'fit',captions:true,caption_size:'standard',caption_color:'white',
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
@@ -13,7 +13,7 @@ function harness(){
       job_id:p,revision,review:state.review,polished_preview_supported:state.supported,
       clean_captions_supported:state.clean,portrait_framing_supported:state.portrait,
       soft_audio_edges_supported:state.soft,manual_crop_focus_supported:state.manual,
-      proposal:{candidates:state.candidates},transcript:{words:state.words},audio_timing:state.audioTiming,scene_analysis:state.sceneAnalysis,
+      proposal:{candidates:state.candidates,algorithm:state.algorithm},transcript:{words:state.words},audio_timing:state.audioTiming,scene_analysis:state.sceneAnalysis,
     };}},
     './polish':{defaultPolish:defaults,loadPolishPreset:async()=>state.save,
       getCaptionDraft:async(p,t,rev,n)=>{state.captionCalls++;assert.equal(p,id);assert.equal(rev,revision);assert.equal(n,state.captionCandidate);
@@ -198,4 +198,20 @@ test('unavailable scene evidence is not mistaken for no changes',async()=>{
  const choice=(await h.actions.listQuickDrafts(id,'token')).choices[0];
  assert.equal(choice.boundary_cues.length,0);
  assert(!h.state.calls.some(x=>x.render));
+});
+
+
+test('v5 review advertises heuristic discourse cues without claiming semantic verification',async()=>{
+ const h=harness();h.state.algorithm='sentence-window-v5-discourse-reviewed';
+ const choices=await h.actions.listQuickDrafts(id,'token');
+ assert.equal(choices.needsReview,false);
+ assert.match(choices.choices[0].ranking_note,/simple English opening and ending cues/);
+ assert.match(choices.choices[0].ranking_note,/not verified story meaning/);
+ assert.equal(h.state.calls.filter(x=>x.render).length,0);
+ const selected=await h.actions.prepareQuickDraft(id,'token',1);
+ assert.equal(selected.plan.ranking_note,choices.choices[0].ranking_note);
+ h.state.algorithm='sentence-window-v4-diverse-reviewed';
+ const old=await h.actions.listQuickDrafts(id,'token');
+ assert.match(old.choices[0].ranking_note,/technical signals, not story meaning/);
+ assert.equal(h.state.calls.filter(x=>x.render).length,0);
 });

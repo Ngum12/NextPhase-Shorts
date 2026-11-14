@@ -1,6 +1,6 @@
 /** Owner-confirmed preview from one of up to three already-reviewed ranked clips.
  *
- * Candidate order is technical, not semantic. Listing options never queues
+ * Candidate order is technically scored, with simple lexical hints on v5 reviewed plans, never verified semantic quality. Listing options never queues
  * renders or stores transcript text. Preflight only the user's selected option
  * to conserve mobile requests, storage and cloud compute.
  */
@@ -18,6 +18,7 @@ export type QuickDraftChoice={
   opening:string|null;
   ending:string|null;
   context_warning:string|null;
+  ranking_note:string;
   boundary_cues:string[];
 };
 export type QuickDraftPlan=QuickDraftChoice & {
@@ -78,6 +79,9 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
     ending:complete&&last-first>=8?phrase(words,Math.max(first+8,last-7),last+1):null,
     context_warning:contextWarning?
       'The opening may depend on earlier speech. Listen to the source before choosing.':null,
+    ranking_note:analysis.proposal.algorithm==='sentence-window-v5-discourse-reviewed'?
+      'Technical scoring plus simple English opening and ending cues; not verified story meaning or quality.':
+      'Ranked by technical signals, not story meaning.',
     boundary_cues:technicalBoundaryCues(analysis,best.source_start_ms,best.source_end_ms),
   };
 }
