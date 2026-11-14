@@ -30,3 +30,20 @@ def test_unsafe_targets_and_keys_are_refused(tmp_path,issue):
     if issue=='hardlink':(directory/'second').hardlink_to(target)
     if issue=='public':target.chmod(0o644)
     with pytest.raises(ValueError):module.configure(tmp_path,'invalid\nKEY=value' if issue=='invalid' else 'synthetic-key-12345')
+
+
+@pytest.mark.parametrize('key',['AQ.'+'synthetic_auth_key_'*3,'AIza'+'synthetic_legacy_key_'*2])
+def test_google_auth_and_legacy_formats_are_accepted_without_prefix_assumptions(tmp_path,capsys,key):
+    directory=tmp_path/'.data/vps-trial';directory.mkdir(parents=True,mode=0o700)
+    target=directory/'server.env';target.write_text('JWT_SECRET=preserve-me\n');target.chmod(0o600)
+    module.configure(tmp_path,key)
+    assert 'GEMINI_API_KEY='+key+'\n' in target.read_text()
+    assert target.read_text().startswith('JWT_SECRET=preserve-me\n')
+    assert stat.S_IMODE(target.stat().st_mode)==0o600
+    assert not capsys.readouterr().out
+
+
+@pytest.mark.parametrize('key',['x'*257,'synthetic key value','synthetic\nKEY=value',
+    'synthetic${INJECTION}',"synthetic'quoted'value",'synthetic#comment-value'])
+def test_dot_support_keeps_unsafe_env_values_rejected(tmp_path,key):
+    with pytest.raises(ValueError,match='format'):module.configure(tmp_path,key)
