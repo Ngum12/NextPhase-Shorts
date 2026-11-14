@@ -368,3 +368,14 @@ stb_vorbis offers MIT/public-domain alternatives. This uses permissive upstream
 code, no user skill-pack assets. See the updated analysis-pilot-dependencies.json
 for scope. Broader system/transitive/model/patent/security/legal review remains
 necessary before commercial release; this is an owner-restricted prototype.
+
+
+## Optional Gemini selection — 2026-11-14
+
+The independently authored HTTP adapter reuses the existing httpx dependency and
+sends consented development transcript text to Google's hosted Gemini API. No
+SDK, model weights, external media/font or reference-kit code was added. Provider
+terms and free-tier text-use policies apply separately; explicit app disclosure
+and owner billing-disabled attestation are required. This does not establish
+commercial legal/privacy clearance or semantic/rights approval. No new paid
+service or billing was activated by the change.

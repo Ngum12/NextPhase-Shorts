@@ -292,3 +292,19 @@ billing/idle resources. CA signing/backup keys stay offline from runtime service
 See CONSOLIDATED_ACCEPTANCE.md: private PKI is not phone/public trust, local media
 bundles exclude remote S3 objects/versions, and external hosting/IAM/cost/privacy/
 license/provider approvals remain open. No local acceptance is a release waiver.
+
+
+## Optional Google transcript-sharing pilot
+
+[Gemini clip selection](GEMINI_CLIP_SELECTION.md) adds an explicit consent-gated
+external text boundary. Disabled by default; the existing private owner allowlist,
+server-only key and free-tier attestation are mandatory. No audio/video is sent.
+Full recognized transcript and candidate excerpts are sent only after app consent;
+Google free-tier terms may permit product-improvement use. Avoid sensitive data.
+Strict integer-only selection cannot add timestamps or execute transcript text.
+Cache metadata and fixed errors contain no provider text or duplicate transcript.
+SQL daily budgets, single claims, bounded network output/time and no retries limit
+requests. Render sandbox, source verification and all publication fences persist.
+Own deletion clears cache and fences late writes; it cannot recall provider data.
+The server cannot verify Google's billing settings from an API key; owner must
+keep billing disabled. API request caps do not enforce provider billing policy.

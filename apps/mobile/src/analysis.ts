@@ -1,3 +1,4 @@
+import {randomUUID} from 'expo-crypto';
 import {validSceneAnalysis,type SceneAnalysis} from './sceneAnalysis';
 import {validAudioTiming,type AudioTiming} from './audioTiming';
 import {api, authenticatedFetch, BASE, extract} from './api';
@@ -16,6 +17,8 @@ export type ClipCandidate = {
 export type EnglishAnalysis = {
   automatic_clips_supported?:boolean;
   automatic_draft?:boolean;
+  gemini_draft?:boolean;
+  gemini_status?:'selected'|'fallback';
   job_id:string; revision:string; transcript_sha256:string; render_enabled:false;
   queued_preview_supported?:boolean;
   clean_captions_supported?:boolean;
@@ -81,8 +84,12 @@ function validated(value:any):EnglishAnalysis {
   return value as EnglishAnalysis;
 }
 
-export async function getAutomaticClips(id:string,token:string,analysis:EnglishAnalysis):Promise<EnglishAnalysis>{
-  const plan=await api<any>(`/api/v1/jobs/${encodeURIComponent(id)}/analysis/automatic-clips`,token);
+export async function getAutomaticClips(id:string,token:string,analysis:EnglishAnalysis,gemini=false):Promise<EnglishAnalysis>{
+  const plan=await api<any>(`/api/v1/jobs/${encodeURIComponent(id)}/analysis/automatic-clips${gemini?'?gemini=true':''}`,token);
+  return automaticPlan(id,analysis,plan,gemini);
+}
+
+function automaticPlan(id:string,analysis:EnglishAnalysis,plan:any,gemini=false):EnglishAnalysis{
   const hash=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{64}$/.test(v);
   if(plan.job_id!==id||plan.algorithm!=='automatic-speech-clips-v1'||plan.automatic!==true||
     plan.base_revision!==analysis.revision||!hash(plan.revision)||
@@ -92,7 +99,10 @@ export async function getAutomaticClips(id:string,token:string,analysis:EnglishA
     plan.requested_seconds!==analysis.proposal.requested_seconds||
     plan.human_review_required!==true||plan.semantic_quality_verified!==false)
     throw Error('Automatic clip choices changed. Refresh and try again.');
-  return validated({...analysis,revision:plan.revision,review:null,automatic_draft:true,proposal:plan});
+  if(gemini&&(!['selected','fallback'].includes(plan.gemini_status)||plan.gemini_model!=='gemini-3.1-flash-lite'))
+    throw Error('Gemini selection could not be verified. Use standard suggestions.');
+  return validated({...analysis,revision:plan.revision,review:null,automatic_draft:true,
+    ...(gemini?{gemini_draft:true,gemini_status:plan.gemini_status}:{}),proposal:plan});
 }
 
 export async function getEnglishAnalysis(id:string,token:string):Promise<EnglishAnalysis> {
@@ -108,4 +118,20 @@ export async function saveEnglishReview(id:string,token:string,revision:string,r
   const value=validated(await extract(result));
   if(value.job_id!==id)throw new Error('This review belongs to a different project.');
   return value;
+}
+
+/** Called only after the owner accepts the Google transcript-sharing prompt. */
+export async function requestGeminiSelection(id:string,token:string,analysis:EnglishAnalysis):Promise<EnglishAnalysis>{
+  const base=await getAutomaticClips(id,token,analysis);
+  let plan:any=await extract(await authenticatedFetch(token,`${BASE}/api/v1/jobs/${encodeURIComponent(id)}/analysis/gemini-selection`,{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      revision:base.revision,idempotency_key:randomUUID(),consent_version:'gemini-transcript-v1',
+      acknowledged_google_transcript_sharing:true}),
+  }));
+  for(let attempt=0;plan.gemini_status==='pending'&&attempt<20;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,1000));
+    plan=await api(`/api/v1/jobs/${encodeURIComponent(id)}/analysis/gemini-selection`,token);
+  }
+  if(plan.gemini_status==='pending')throw Error('Gemini is still selecting. Try again shortly or use Create suggested Short.');
+  return automaticPlan(id,analysis,plan,true);
 }

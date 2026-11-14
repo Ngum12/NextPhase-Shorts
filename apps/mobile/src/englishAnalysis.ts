@@ -1,6 +1,6 @@
 import {api,ApiError,authenticatedFetch,BASE,extract,Job} from './api';
 export type EnglishState={source_id:string;ready:boolean;eligible:boolean;requested:boolean;task:Job|null};
-export async function englishCapability(token:string):Promise<{available:boolean;automatic_clips?:boolean}> {
+export async function englishCapability(token:string):Promise<{available:boolean;automatic_clips?:boolean;gemini_planning_available?:boolean}> {
   try{return await api('/api/v1/english-analysis/capabilities',token);}
   catch(e){if(e instanceof ApiError&&e.status===404)return {available:false};throw e;}
 }

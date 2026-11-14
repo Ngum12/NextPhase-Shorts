@@ -95,3 +95,12 @@ Optional alternatives should render only the chosen option. Existing saved
 reviews should remain available unchanged. Actual VPS/phone cut quality and
 semantic suitability remain owner acceptance; synthetic fixtures do not prove
 recognition accuracy or close the remaining Phase 3 creative-director work.
+
+
+## Optional content-aware choice
+
+[Create with Gemini](GEMINI_CLIP_SELECTION.md) can select a candidate from this
+same bounded shortlist after explicit transcript-sharing consent. The standard
+endpoint/selector remains read-only and local; Gemini selection is a separate
+explicit POST and cached GET. The model never supplies word timings, native
+commands or media. Watch the result; its choice is not semantic-quality proof.

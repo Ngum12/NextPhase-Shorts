@@ -9,7 +9,7 @@ function harness(){
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
     './api':{ApiError,api:async(p,t)=>{assert.equal(p,'/api/v1/me');state.calls.push({me:t});return {id:'22222222-2222-4222-8222-222222222222'};}},
-    './analysis':{getAutomaticClips:async(p,t,analysis)=>({...analysis,automatic_draft:true,review:null}),getEnglishAnalysis:async(p,t)=>{state.calls.push({analysis:p,token:t});return {
+    './analysis':{requestGeminiSelection:async(p,t,analysis)=>{state.geminiCalls=(state.geminiCalls||0)+1;return {...analysis,automatic_draft:true,gemini_draft:true,gemini_status:state.geminiStatus||'selected',review:null};},getAutomaticClips:async(p,t,analysis,gemini)=>({...analysis,automatic_draft:true,...(gemini?{gemini_draft:true,gemini_status:state.geminiStatus||'selected'}:{}),review:null}),getEnglishAnalysis:async(p,t)=>{state.calls.push({analysis:p,token:t});return {
       job_id:p,revision,review:state.review,polished_preview_supported:state.supported,automatic_clips_supported:state.automatic,
       clean_captions_supported:state.clean,portrait_framing_supported:state.portrait,
       soft_audio_edges_supported:state.soft,manual_crop_focus_supported:state.manual,
@@ -228,4 +228,28 @@ test('v5 review advertises heuristic discourse cues without claiming semantic ve
  const old=await h.actions.listQuickDrafts(id,'token');
  assert.match(old.choices[0].ranking_note,/technical signals, not story meaning/);
  assert.equal(h.state.calls.filter(x=>x.render).length,0);
+});
+
+test('Gemini preflight and rendering reuse one model selection without manual marks',async()=>{
+ const h=harness();h.state.review=null;h.state.automatic=true;
+ const list=await h.actions.listQuickDrafts(id,'token',true);
+ assert.equal(list.choices[0].gemini,true);assert.match(list.choices[0].ranking_note,/Gemini selected/);
+ const draft=await h.actions.prepareQuickDraft(id,'token',1,true);
+ assert.equal(h.state.geminiCalls,1);assert.equal(draft.plan.gemini,true);
+ await h.actions.renderQuickDraft(id,'token',draft.plan);
+ assert.equal(h.state.calls.find(c=>c.render).render[9],true);
+});
+test('provider failure keeps usable clips and explains standard selection',async()=>{
+ const h=harness();h.state.geminiStatus='fallback';h.state.review=null;
+ const list=await h.actions.listQuickDrafts(id,'token',true);
+ assert.equal(list.needsReview,false);assert.match(list.choices[0].ranking_note,/standard automatic selection/);
+ assert(!h.state.calls.some(c=>c.render));
+});
+
+test('only the first Gemini-ranked option is described as the model choice',async()=>{
+ const h=harness();h.state.candidates=[1,2].map(n=>({output_frames:300,source_start_ms:n*5000,source_end_ms:n*5000+10000}));
+ const list=await h.actions.listQuickDrafts(id,'token',true);
+ assert.match(list.choices[0].ranking_note,/Gemini selected/);
+ assert.match(list.choices[1].ranking_note,/Alternative automatic excerpt/);
+ assert(!list.choices[1].ranking_note.includes('Gemini selected'));
 });

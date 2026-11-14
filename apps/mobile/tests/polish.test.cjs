@@ -105,3 +105,14 @@ test('caption drafts are checked against project, revision, timing and count',as
  f.state.draft={job_id:child,revision,candidate_number:1,duration_ms:5000,cues:[]};
  await assert.rejects(f.actions.getCaptionDraft(parent,'token',revision,1));
 });
+
+test('Gemini render intent is distinct and stable after restart',async()=>{
+ const f=fixture();
+ await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true,true);
+ await f.reload().requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true,true);
+ await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true);
+ assert.equal(f.calls[0].body.gemini_draft,true);assert.equal(f.calls[1].body.gemini_draft,true);
+ assert.equal(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
+ assert.notEqual(f.calls[0].body.idempotency_key,f.calls[2].body.idempotency_key);
+ assert.equal(f.calls[2].body.gemini_draft,undefined);
+});

@@ -13,13 +13,13 @@ function review(){return {schema_version:'transcript-review-1',source_sha256:'c'
  sentence_end_words:[2],confirmed_low_confidence_words:[1]};}
 function fixture(){
  const calls=[],state={value:document(),error:null};
-  const api={BASE:'https://example.invalid',api:async(route,token)=>{calls.push({route,token});if(state.error)throw state.error;return structuredClone(route.endsWith('/automatic-clips')?state.automatic:state.value);},
-  authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});if(state.error)throw state.error;return structuredClone(state.value);},extract:async response=>response};
+  const api={BASE:'https://example.invalid',api:async(route,token)=>{calls.push({route,token});if(state.error)throw state.error;return structuredClone(route.includes('/automatic-clips')?state.automatic:route.endsWith('/gemini-selection')?state.gemini:state.value);},
+  authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});if(state.error)throw state.error;return structuredClone(state.gemini||state.value);},extract:async response=>response};
  const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/analysis.ts'),'utf8'),
   {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  const visual={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/sceneAnalysis.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:visual});
  const timing={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/audioTiming.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:timing});
- const exports={};vm.runInNewContext(code,{exports,require:name=>name==='./sceneAnalysis'?visual:name==='./audioTiming'?timing:api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
+ const exports={};vm.runInNewContext(code,{exports,require:name=>name==='expo-crypto'?{randomUUID:()=> '11111111-1111-4111-8111-111111111111'}:name==='./sceneAnalysis'?visual:name==='./audioTiming'?timing:api,process:{env:{EXPO_PUBLIC_ENGLISH_REVIEW:'true'}}});
  return {actions:exports,state,calls};
 }
 
@@ -143,4 +143,27 @@ for(const [name,mutate] of Object.entries({
 }))test('visual metadata rejects '+name,async()=>{
  const f=fixture();f.state.value.scene_analysis=scenes();mutate(f.state.value.scene_analysis);
  await assert.rejects(f.actions.getEnglishAnalysis('project-1','token'),/Visual change guidance could not be verified/);
+});
+
+test('explicit Gemini request sends consent and hashes only; preflight reads cache without another POST',async()=>{
+ const f=fixture();f.state.automatic=autoPlan(f.state.value);
+ f.state.gemini={...f.state.automatic,revision:'e'.repeat(64),gemini_status:'selected',gemini_model:'gemini-3.1-flash-lite'};
+ const selected=await f.actions.requestGeminiSelection('project-1','token',f.state.value);
+ assert.equal(selected.gemini_draft,true);assert.equal(selected.gemini_status,'selected');
+ const posts=f.calls.filter(c=>c.init);assert.equal(posts.length,1);
+ const body=JSON.parse(posts[0].init.body);
+ assert.equal(body.acknowledged_google_transcript_sharing,true);
+ assert.equal(body.consent_version,'gemini-transcript-v1');assert.equal(body.revision,'d'.repeat(64));
+ assert(!posts[0].init.body.includes('Original'));
+ f.state.automatic=f.state.gemini;
+ assert.equal((await f.actions.getAutomaticClips('project-1','token',f.state.value,true)).revision,selected.revision);
+ assert(f.calls.at(-1).route.endsWith('/automatic-clips?gemini=true'));
+ assert.equal(f.calls.filter(c=>c.init).length,1);
+});
+test('Gemini fallback stays marked and malformed metadata cannot become a draft',async()=>{
+ const f=fixture();f.state.automatic=autoPlan(f.state.value);
+ f.state.gemini={...f.state.automatic,gemini_status:'fallback',gemini_model:'gemini-3.1-flash-lite'};
+ assert.equal((await f.actions.requestGeminiSelection('project-1','token',f.state.value)).gemini_status,'fallback');
+ f.state.gemini.gemini_model='untrusted';
+ await assert.rejects(f.actions.requestGeminiSelection('project-1','token',f.state.value),/could not be verified/);
 });
