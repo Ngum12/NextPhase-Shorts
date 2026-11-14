@@ -47,7 +47,8 @@ def owned_project(db, owner, job_id):
 
 def revision_for(transcript, review, proposal=None):
     content = fingerprint(transcript) + ':' + (fingerprint(review) if review else 'unreviewed')
-    if proposal is not None and proposal.algorithm=='sentence-window-v4-diverse-reviewed':
+    if proposal is not None and proposal.algorithm in ('sentence-window-v4-diverse-reviewed',
+                                                      'sentence-window-v5-discourse-reviewed'):
         content += ':plan:'+fingerprint(proposal)
     return hashlib.sha256(content.encode()).hexdigest()
 
