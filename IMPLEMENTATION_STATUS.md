@@ -1,5 +1,23 @@
 # Implementation Status — 2026-11-10
 
+## Owner acceptance of English workflow and timing recovery — 2026-11-14
+
+Owner supplied a successful backup-first VPS update report for merged main
+`7b7bb00` (PR #70): verified offsite backup, required worker host check, matching
+service restart, schema/font checks and timer restoration all completed with
+`ok: true`. After updating, the owner reported that English analysis worked and
+then confirmed the app workflow through transcript review, polished rendering
+and saving worked. This closes the previously pending owner acceptance for this
+recording/workflow, including recovery from the reported terminal offset error.
+
+This is owner-reported evidence, not an independently executed VPS/device test
+or representative speech/cut/quality benchmark. Device model/OS and final saved
+output metadata were not captured for this check. French rollout, autonomous
+semantic editing, distinct style engines, public production/security/legal gates
+and separately pending backup-retention work are not approved by this result.
+The agent performed no deployment or new application change for this acceptance
+record; existing local regression results remain in the timing-fix entry below.
+
 ## Bounded terminal ASR overrun correction — 2026-11-14
 
 Fetched current `origin/main` at `1e347a1` before starting a new fix branch;

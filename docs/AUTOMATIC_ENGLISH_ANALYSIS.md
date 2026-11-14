@@ -235,3 +235,9 @@ preserved and are not silently re-transcribed by a retry. Other invalid offsets
 or conflicting word estimates can still fail safely. Real protected-VPS inference
 on the owner's recording and physical-phone acceptance remain owner checks;
 synthetic executable fixtures are not speech-recognition quality evidence.
+
+Owner acceptance update (2026-11-14): the owner supplied an `ok: true` VPS
+updater result for `7b7bb00`, reported successful analysis recovery, then
+confirmed transcript review, polished rendering and phone saving worked. This
+verifies that owner-reported private workflow on the tested recording; it is not
+an independent ASR-quality benchmark, device matrix or public-release approval.
