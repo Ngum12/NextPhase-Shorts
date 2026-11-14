@@ -12,7 +12,10 @@ def overlap(left,right):
     return intersection/union if intersection else 0.0
 
 
-def diverse(candidates):
+def diverse(candidates, *, adjustments=None):
+    # Optional nonsemantic bonus applies only to new reviewed editorial ranking.
+    # The old v4 ranker remains byte-for-byte equivalent when omitted.
+    adjustments = adjustments or {}
     remaining=list(candidates)
     selected=[]
     while remaining and len(selected)<5:
@@ -22,7 +25,8 @@ def diverse(candidates):
             similarity=max((overlap(candidate,old) for old in selected),default=0.0)
             # Keep the strongest technical option first, then give other source
             # regions a chance. Stable time/word tie-breaks make replay exact.
-            return (-(candidate.score-.35*similarity),candidate.source_start_ms,
+            bonus=adjustments.get((candidate.first_word,candidate.last_word),0.0)
+            return (-(candidate.score+bonus-.35*similarity),candidate.source_start_ms,
                     candidate.source_end_ms,candidate.first_word,candidate.last_word)
         best=min(eligible,key=order);selected.append(best);remaining.remove(best)
     return selected
