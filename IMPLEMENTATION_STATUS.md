@@ -1,5 +1,29 @@
 # Implementation Status — 2026-11-10
 
+## ASR source-boundary direction — 2026-11-14
+
+Owner phone evidence after PR #68 shows the basic 14.9-second render succeeded
+while English analysis returned the generic out-of-source timing failure. The
+screenshot does not distinguish negative offsets from estimates past the source
+end, or establish their cause. Follow-up uses three fixed codes for an interval
+before the start, after the end, or extending beyond both bounds. Legacy generic
+statuses retain their explanation. New mobile copy preserves explicit retry,
+video preservation and basic Save/Share guidance.
+
+No numeric offsets, word positions, transcript text or raw ASR output enter
+diagnostic logs/statuses. No timing is clamped/dropped, no source duration is
+extended, and no repair limit, decoder sandbox or resource/deadline control is
+changed. Exact source endpoints remain accepted; even a 1-ms overrun fails.
+
+Validation: 129 focused backend tests, all 230 mobile tests (including 25
+panel tests), TypeScript and Android export (1,403 modules) passed. Backend cases cover both bounds, negative-only intervals,
+intervals entirely after the source, huge integers, invalid-before-bounds
+precedence and exact endpoints; native fixtures verify fixed-code propagation,
+discarded stdout/stderr and private intermediate cleanup. Owner-only durable
+statuses cover the new and legacy timing codes. Actual protected-VPS/phone retry
+is still needed to identify the rejected boundary on the owner's recording;
+the existing generic failure is not rewritten.
+
 ## Private ASR timing diagnostics — 2026-11-14
 
 Checked fetched `main` at `4de6001`; the checkout had no tracked/untracked source

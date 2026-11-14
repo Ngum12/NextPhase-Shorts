@@ -87,7 +87,9 @@ def _engine_result(inference, result):
     ('exit','ASR_PROCESS_FAILED'),
     ('malformed','ASR_OUTPUT_INVALID'),
     ('protocol','ASR_TRANSCRIPT_REJECTED'),
-    ('timing','ASR_OFFSETS_OUT_OF_SOURCE'),
+    ('timing','ASR_OFFSETS_AFTER_SOURCE'),
+    ('before','ASR_OFFSETS_BEFORE_SOURCE'),
+    ('both','ASR_OFFSETS_BEYOND_BOTH_BOUNDS'),
     ('missing','ASR_OFFSETS_MISSING'),
     ('invalid','ASR_OFFSETS_INVALID'),
     ('backward','ASR_WORD_ORDER_BACKWARD'),
@@ -113,6 +115,8 @@ def test_private_whisper_failure_category_is_closed_and_non_content(inference,mo
         tokens=data['transcription'][0]['tokens']
         if mode=='protocol':data['result']['language']='fr'
         elif mode=='timing':tokens[0]['offsets']['to']=2001
+        elif mode=='before':tokens[0]['offsets']['from']=-1
+        elif mode=='both':tokens[0]['offsets']={'from':-1,'to':2001}
         elif mode=='missing':del tokens[0]['offsets']
         elif mode=='invalid':tokens[0]['offsets']=['Private raw ASR output']
         elif mode=='backward':
