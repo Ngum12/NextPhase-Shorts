@@ -379,3 +379,12 @@ terms and free-tier text-use policies apply separately; explicit app disclosure
 and owner billing-disabled attestation are required. This does not establish
 commercial legal/privacy clearance or semantic/rights approval. No new paid
 service or billing was activated by the change.
+
+
+## Full-transcript Gemini passages — 2026-11-15
+
+Independently authored source-unit planning, range validation and consent/cache
+compatibility reuse existing httpx, Pydantic and Expo code. No SDK, model weights,
+asset, font, reference-kit source or paid service was added. Hosted provider terms
+and free-tier text-use disclosures continue to apply. No commercial legal/privacy
+clearance, content-rights or semantic-quality approval is implied.

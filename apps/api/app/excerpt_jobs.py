@@ -34,6 +34,7 @@ class ExcerptSpec(ClosedModel):
     candidate_number: Annotated[int,Field(strict=True,ge=1,le=5)]
     gemini_model: Literal['gemini-3.1-flash-lite'] | None=None
     gemini_status: Literal['selected','fallback'] | None=None
+    gemini_strategy: Literal['shortlist','passages'] | None=None
     caption_style: Literal['none','clean-1']='none'
     captions: tuple[CaptionCue,...] = Field(default=(), max_length=80)
     framing: Framing='fit'
@@ -42,6 +43,7 @@ class ExcerptSpec(ClosedModel):
 
     @model_validator(mode='after')
     def valid(self):
+        if self.gemini_strategy is not None and self.gemini_model is None:raise ValueError('Missing Gemini provenance')
         if ((self.gemini_model is None)!=(self.gemini_status is None) or
                 (self.gemini_model is not None and self.schema_version!='excerpt-auto-1')):
             raise ValueError("Gemini provenance requires an automatic excerpt")

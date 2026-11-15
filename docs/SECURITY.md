@@ -324,3 +324,18 @@ raw bytes are discarded, with 128-byte partial-line state and bounded reads.
 No extra Landlock file grants or network access are added. The CPU-oriented
 preview preset and timestamp-preserving coarse seek keep the same deadline,
 size/frame/source checks, process limits, isolation and publication fences.
+
+
+## Full-transcript passage proposals
+
+New passage mode requires explicit `gemini-passages-v1` consent before sharing the
+complete validated transcript as bounded units with speech timing boundaries.
+Models return only offered unit IDs. The server maps and revalidates original word
+ranges, duration/frame bounds, silence/confidence constraints and distinctness.
+No model timestamps, rewritten speech, commands, media URLs or caption edits are
+accepted. Complete source coverage is required; oversize prompts fall back rather
+than silently dropping context. All existing provider byte/token/time/free-tier
+limits, shared SQL budgets and native sandbox/file/publication controls remain.
+Closed cache v2 proofs contain word indices, not raw output or transcript copies;
+legacy records remain compatible. An explicit upgrade cannot replace an active
+claim. Deletion/review changes fence late model writes and new render requests.

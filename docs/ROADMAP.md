@@ -79,3 +79,13 @@ Local recovery foundation: migration 0014 one-use expiring proofs, private file-
 test delivery and mobile request/confirmation screens. Real email delivery, verified
 channel enforcement, durable outbox, refresh/MFA and privacy/security acceptance
 remain open; local_file state is not production email authority. See AUTH_RECOVERY.md.
+
+
+### Private content-aware passage milestone — 2026-11-15
+
+Gemini can propose contiguous passages across complete transcript units rather
+than only choosing from the heuristic top five. Original word-boundary mapping,
+consent/budget/cached-proof validation and native rendering remain bounded. This
+is a partial planning milestone; live quality acceptance, stronger ASR/timing,
+visual/speaker-aware framing, multi-scene composition and genre style engines
+remain further work. No manual sentence-marking gate was reintroduced.

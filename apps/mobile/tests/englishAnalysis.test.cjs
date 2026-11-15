@@ -236,6 +236,7 @@ test('Gemini action requires sharing consent and keeps standard creation availab
  await h.flush();assert(h.button('Create suggested Short'));
  h.button('Create with Gemini').props.onPress();assert(!h.calls.some(c=>c.list));
  assert.match(h.alerts.at(-1)[1],/No video or audio is sent/);assert.match(h.alerts.at(-1)[1],/free-tier terms/);
+ assert.match(h.alerts.at(-1)[1],/complete recognized transcript, speech timing boundaries/);
  h.alerts.at(-1)[2][0].onPress?.();await h.flush();assert(!h.calls.some(c=>c.list));
  h.button('Create with Gemini').props.onPress();await h.alerts.at(-1)[2][1].onPress();await h.flush();
  assert.equal(h.calls.find(c=>c.list).gemini,true);assert.equal(h.calls.find(c=>c.prepare).gemini,true);
