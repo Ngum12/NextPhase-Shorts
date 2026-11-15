@@ -1,5 +1,41 @@
 # Implementation Status — 2026-11-10
 
+## Preview deadline diagnosis and bounded preroll work — 2026-11-15
+
+Owner-supplied privacy-safe observations confirm that Gemini selected a valid
+885-frame (29.5-second), 19-caption, fill-center draft, source preparation succeeded
+in 18.28s, and encoding failed at the existing 300s deadline (476.99 sampled CPU
+seconds lower bound). This is a preview encode failure, not Gemini selection.
+
+Preview filters now sample at 30fps before fixed geometry transforms and discard
+unneeded preroll before scaling/caption drawing. Two preroll frames and original
+source PTS are retained; output-side seek, absolute caption/fade clocks, original
+ranges, output frames, codec/preset/CRF, native thread/resource limits, 300s preview
+cap, sandbox, storage admission and publication/deletion fences remain unchanged.
+Deadline exceptions now publish fixed `RENDER_DEADLINE_EXCEEDED`, with a mobile
+explanation, instead of losing the classification inside `RENDER_FAILED`.
+
+A fresh explicit Render confirmation can replace a cached failed/cancelled draft
+with a new durable intent, at most once per confirmation; a lost replacement
+reply recovers the same new key. This does not retry jobs in the background or
+call Gemini again. A failed draft links back to its original project directly.
+
+Synthetic 60fps regression with 885 output frames, 19 captions and center crop
+matches the legacy frame count and sampled decoded pixels without changing source
+bytes. Existing nonzero-source-offset audio, captions and framing checks pass.
+A separate late-clip benchmark measured 3.12s/6.29 sampled CPU-seconds before and
+2.22s/4.05 after; the full 29.5s fixture did not show a reliable wall-time gain on
+this shared host. These are synthetic measurements, not proof of VPS performance.
+The owner's actual recording must be retried after deployment; it was not copied
+into this workspace, re-rendered here, or sent to any provider for this change.
+
+Validation: **826 backend tests passed on SQLite and 826 on disposable PostgreSQL**;
+**251 mobile tests**, TypeScript, offline Android export and real HTTP/FFmpeg smoke
+passed. Gemini was not called, no production data was used, and no VPS deployment
+was performed. Existing failed drafts retain their historical error code; retry
+creates a separately admitted draft after the owner's explicit confirmation.
+
+
 ## Gemini auth-key format correction — 2026-11-14
 
 The VPS setup helper incorrectly rejected dots in newer Google auth keys before

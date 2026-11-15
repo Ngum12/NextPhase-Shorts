@@ -9,8 +9,8 @@ function fixture(){
   'expo-crypto':{randomUUID:crypto.randomUUID,CryptoDigestAlgorithm:{SHA256:'SHA-256'},
     digestStringAsync:async(_,text)=>crypto.createHash('sha256').update(text).digest('hex')},
   './api':{ApiError,BASE:'https://private.example.invalid',api:async()=>state.draft||{job_id:parent,revision,candidate_number:1,duration_ms:5000,cues:[{text:'Original words.',start_ms:0,end_ms:2000}]},
-   authenticatedFetch:async(token,url,init)=>{calls.push({token,url,body:JSON.parse(init.body)});if(state.offline)throw Error('offline');if(state.wait)await state.wait;return {status:state.status};},
-   extract:async response=>{if(response.status>=400)throw new ApiError(response.status,'fixed error');return {id:child,preview_parent_id:parent,status:'queued'};}}
+   authenticatedFetch:async(token,url,init)=>{calls.push({token,url,body:JSON.parse(init.body)});if(state.offline||state.failPostNumber===calls.length)throw Error('offline');if(state.storageFailureAfterPost)state.storageFailure=true;if(state.wait)await state.wait;return {status:state.status};},
+   extract:async response=>{if(response.status>=400)throw new ApiError(response.status,'fixed error');return {id:child,preview_parent_id:parent,status:state.jobStatuses?.shift()||'queued'};}}
  };
  function load(){const exports={};const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/polish.ts'),'utf8'),
    {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
@@ -115,4 +115,32 @@ test('Gemini render intent is distinct and stable after restart',async()=>{
  assert.equal(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
  assert.notEqual(f.calls[0].body.idempotency_key,f.calls[2].body.idempotency_key);
  assert.equal(f.calls[2].body.gemini_draft,undefined);
+});
+
+test('a new confirmed render replaces a failed cached draft once and keeps the replacement key after restart',async()=>{
+ const f=fixture();f.state.jobStatuses=['failed','queued'];
+ const job=await f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true,true);
+ assert.equal(job.status,'queued');assert.equal(f.calls.length,2);
+ assert.notEqual(f.calls[0].body.idempotency_key,f.calls[1].body.idempotency_key);
+ await f.reload().requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true,true);
+ assert.equal(f.calls[2].body.idempotency_key,f.calls[1].body.idempotency_key);
+});
+test('replacement draft storage failure prevents another POST and terminal replies cannot loop indefinitely',async()=>{
+ const f=fixture();f.state.jobStatuses=['failed','failed','queued'];
+ await assert.rejects(f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true),/did not finish/);
+ assert.equal(f.calls.length,2);
+ const g=fixture();g.state.jobStatuses=['cancelled'];g.state.storageFailureAfterPost=true;
+ const next=g.actions.requestPolishedPreview;
+ // Retiring the old key must succeed before any replacement can be queued.
+ await assert.rejects(next(parent,'token',revision,1,g.options,null,5000,false,true),/storage unavailable/);
+ assert.equal(g.calls.length,1);
+});
+
+test('lost replacement reply reuses its persisted key instead of creating another render',async()=>{
+ const f=fixture();f.state.jobStatuses=['failed'];f.state.failPostNumber=2;
+ await assert.rejects(f.actions.requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true),/offline/);
+ assert.equal(f.calls.length,2);const replacement=f.calls[1].body.idempotency_key;
+ f.state.failPostNumber=null;
+ await f.reload().requestPolishedPreview(parent,'token',revision,1,f.options,null,5000,false,true);
+ assert.equal(f.calls[2].body.idempotency_key,replacement);
 });

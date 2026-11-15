@@ -16,6 +16,9 @@ from .media_policy import CODEC_THREADS, input_args, validate_metadata
 class MediaError(Exception):
     pass
 
+class RenderDeadlineExceeded(MediaError):
+    pass
+
 class OutputLimitExceeded(MediaError):
     pass
 
