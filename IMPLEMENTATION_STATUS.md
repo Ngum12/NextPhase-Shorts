@@ -1,5 +1,45 @@
 # Implementation Status — 2026-11-10
 
+## Documentary engine connected to the private app pilot — 2026-11-15
+
+Added one consented **Create documentary (experimental)** action to prepared
+English projects. The authenticated API selects the best standard automatic
+excerpt, reserves the existing queue/storage budgets and two shared free-tier
+Gemini calls, and queues a private preview. The worker obtains a public research
+topic and exact quoted headings, retrieves Commons photographs and Wikipedia
+context, asks Gemini to choose relevant offered images, then composes source
+footage, animated photographs and one continuous original voice track. The app
+opens the resulting project for playback/save/share and exposes creator/license
+source records. No transcript marking, manual asset selection or storyboard
+approval is required. The globally advertised style catalog remains unchanged.
+
+One durable job per accepted source prevents duplicate spending after lost replies
+or app restarts. Provider claims/results are fenced against deletion, cancellation,
+lease expiry and takeover; in-flight calls are not automatically repeated on
+recovery. Pipeline time is capped at 300 seconds (or a lower configured timeout),
+including research/planning, with remaining time passed to the compositor. Native
+limits/sandbox controls and output caps remain in force. Source/asset copies,
+voice/scenes/output and metadata are reserved conservatively for both attempts.
+Private manifests follow existing project/account deletion and retention.
+
+This first integration uses photographs, not automatic external video selection,
+music or full claim verification. Headings quote source words; relevance screening
+is not fact verification. A completed Documentary style, richer creative plans,
+qualitative benchmarks and protected VPS/phone acceptance remain outstanding.
+The existing configured free-tier Gemini/English owner pilot is required; no paid
+services, secrets changes, environment publication or VPS deployment were made.
+See docs/AUTOMATIC_DOCUMENTARY.md for exact app/update steps and controls.
+
+Validation: 909 backend tests passed on SQLite and 909 on disposable PostgreSQL;
+all 258 mobile tests and TypeScript typechecking passed; the real HTTP/FFmpeg
+smoke passed. The new API/worker integration test uses real synthetic video and
+real FFmpeg output with mocked research/Gemini providers; no new live Gemini call
+was made. The broader suite exposed a cleanup-test assumption that one global
+100-record maintenance batch must reach the current fixture. That test now runs
+bounded subsequent maintenance passes while preserving its reservation assertions;
+production cleanup and capacity controls were not changed.
+
+
 ## Documentary research/composition direction and working engine proof — 2026-11-15
 
 Owner clarified that the product is an automatic research-and-production editor:

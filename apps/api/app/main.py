@@ -74,6 +74,8 @@ app.include_router(auth_router)
 app.include_router(auth_actions_router)
 app.include_router(deletion_router)
 app.include_router(project_analysis_router)
+from .documentary_jobs import router as documentary_router
+app.include_router(documentary_router)
 from .automatic_analysis import router as english_analysis_router
 app.include_router(english_analysis_router)
 
@@ -81,7 +83,7 @@ app.include_router(english_analysis_router)
 async def safe_auth_validation(request,error):
     if request.url.path.startswith('/api/v1/auth/'):
         return JSONResponse({'detail':'Invalid authentication request'},status_code=422,headers={'Cache-Control':'no-store'})
-    if request.url.path.startswith('/api/v1/jobs/') and request.url.path.endswith(('/analysis/review','/analysis/previews')):
+    if request.url.path.startswith('/api/v1/jobs/') and request.url.path.endswith(('/analysis/review','/analysis/previews','/analysis/documentary')):
         return JSONResponse({'detail':'Invalid review request'},status_code=422,headers={'Cache-Control':'no-store'})
     return await request_validation_exception_handler(request,error)
 

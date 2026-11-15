@@ -353,6 +353,15 @@ failures fall back to the standard selector. See [setup and app test steps](docs
 
 A separate [documentary engine prototype](docs/DOCUMENTARY_ENGINE_PROTOTYPE.md)
 now demonstrates researched-asset receipts, multi-scene composition, moving photos,
-video inserts and editorial graphics over a continuous voice track. It is an
-operator/development proof, not a newly enabled app style or a finished automatic
-creative director. Existing clip selection is one component of the larger product.
+video inserts and editorial graphics over a continuous voice track. The separate operator demonstration remains available; the app
+pilot described below is the initial integration, not a finished style engine. Existing clip selection is one component of the larger product.
+
+
+The private [automatic documentary pilot](docs/AUTOMATIC_DOCUMENTARY.md) connects
+that engine to **Create documentary (experimental)** on an analyzed English
+project. After explicit sharing/research consent, the server directs research,
+chooses public-domain/CC0 photographs, animates them between original-footage
+scenes, preserves source voice and returns a private video with visual sources.
+It reuses the configured free-tier Gemini/English owner pilot; no new phone keys.
+No manual sentence marking or asset selection is required. This is an experimental
+photo-based flow, not a completed six-style editor or factual-verification service.

@@ -360,3 +360,26 @@ Before any app enablement, existing authenticated admission, storage reservation
 consent, rate/cost budgets, ownership/deletion/publication fences and asset lifecycle
 must be wired through the job flow. The development demo cannot prove strict
 Landlock behavior on this unsupported cloud host or production suitability.
+
+
+### Private documentary app admission
+
+The authenticated documentary action accepts only two explicit sharing/research
+acknowledgements and a fixed consent version. It derives the accepted source,
+excerpt, paths and provider from server records. Owner locking, queue/global/
+account capacity and operator budget gates precede admission; two Gemini calls
+are atomically reserved in the existing daily ledger. A source has one durable
+job, including failures; replays never add calls. In-flight call markers survive
+worker interruption and prevent automatic reissue. Every provider checkpoint
+requires the current owner/job/claim/lease/deadline; deleting source/account wins.
+
+Google receives only the selected spoken excerpt. Wikimedia receives the derived
+public-topic query, with explicit disclosure that this leaves the private server.
+The topic/asset selection is untrusted and not factual verification. Render
+headings must be bounded exact quotes. Only source-declared CC0/public-domain
+images from the fixed Commons adapter may enter the app pipeline. API validation
+responses suppress rejected input; no transcripts, raw ASR/provider responses,
+keys or native stderr are logged. Source receipts/manifests remain private and
+bounded, with no-store owner-only access and existing descendant cleanup. Native
+children receive no network privilege. The pipeline spends at most the existing
+300-second preview budget; it does not enlarge worker/native deadlines.

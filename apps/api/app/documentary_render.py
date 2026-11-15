@@ -1,4 +1,4 @@
-"""Bounded independent documentary compositor; currently operator/demo only.
+"""Bounded independent documentary compositor for the consented private pilot.
 
 Each scene is encoded in its existing native sandbox. Final composition grants
 read access to exact verified intermediates, never a directory or remote URL.
@@ -85,15 +85,16 @@ def image_probe(path,timeout=30):
     except (ValueError,KeyError,IndexError,TypeError):raise DocumentaryFailure('ASSET_UNSUPPORTED') from None
 
 
-def render_documentary(source,destination,plan,assets,*,should_cancel=lambda:False,timeout=300):
+def render_documentary(source,destination,plan,assets,*,should_cancel=lambda:False,timeout=300,max_output_bytes=MAX_OUTPUT):
     """assets maps content SHA IDs to (receipt, local file); no network during render."""
     plan=DocumentaryPlan.model_validate(plan)
     if type(timeout) is not int or not 1<=timeout<=300:raise DocumentaryFailure('PLAN_INVALID')
+    if type(max_output_bytes) is not int or not 1<=max_output_bytes<=MAX_OUTPUT:raise DocumentaryFailure('PLAN_INVALID')
     started=time.monotonic()
     if should_cancel():raise MediaCancelled('Documentary cancelled')
     source=regular(source,314572800);destination=Path(destination)
     if any(p.is_symlink() for p in (destination,*destination.parents)) or destination.exists():raise DocumentaryFailure('SOURCE_INVALID')
-    info=probe_video(source)
+    info=probe_video(source,timeout=min(30,timeout))
     if plan.source_end_ms>math.ceil(info['duration']*1000):raise DocumentaryFailure('PLAN_INVALID')
     if len(assets)>3:raise DocumentaryFailure('PLAN_INVALID')
     bound={};total=0
@@ -188,13 +189,13 @@ def render_documentary(source,destination,plan,assets,*,should_cancel=lambda:Fal
                 '-protocol_whitelist','file','-format_whitelist','wav','-codec_whitelist','pcm_s16le','-threads','2','-i',str(voice),
                 '-map','0:v:0','-map','1:a:0','-c:v','copy','-c:a','aac','-b:a','128k','-ar','48000','-ac','2',
                 '-t',f'{seconds:.6f}','-frames:v',str(plan.output_frames),'-map_metadata','-1','-map_chapters','-1',
-                '-movflags','+faststart',str(output)],MAX_OUTPUT,stage='mux',media_files=[*scenes,voice])
+                '-movflags','+faststart',str(output)],max_output_bytes,stage='mux',media_files=[*scenes,voice])
             metadata=probe_video(output,timeout=min(30,remaining()))
             if ((metadata['width'],metadata['height'])!=(1080,1920) or metadata['duration']>min(60,plan.requested_seconds)
                     or abs(metadata['duration']-seconds)>1/30 or output_frames(output,timeout=remaining())!=plan.output_frames):
                 raise DocumentaryFailure('RENDER_FAILED')
             remaining();os.link(output,destination,follow_symlinks=False)
-            return {'frames':plan.output_frames,'scene_count':len(scenes),'wall_seconds':round(time.monotonic()-began,3),
+            return {'duration':metadata['duration'],'frames':plan.output_frames,'scene_count':len(scenes),'wall_seconds':round(time.monotonic()-began,3),
                 'output_bytes':destination.stat().st_size,'measurements':measurements}
     except (MediaCancelled,OutputLimitExceeded,DocumentaryFailure):raise
     except subprocess.TimeoutExpired:raise DocumentaryFailure('DEADLINE_EXCEEDED') from None

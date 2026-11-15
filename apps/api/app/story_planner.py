@@ -111,13 +111,14 @@ def select(transcript,plan,*,api_key,model='gemini-3.1-flash-lite',client=None):
     return StorySelection(value,model,fingerprint(plan),wall,input_tokens,output_tokens)
 
 
-def _generate(text,*,api_key,model,client,system,schema,decode):
+def _generate(text,*,api_key,model,client,system,schema,decode,max_output_tokens=128):
+    if type(max_output_tokens) is not int or not 1<=max_output_tokens<=512:raise StoryPlannerUnavailable('INPUT_INVALID')
     if model not in MODELS:raise StoryPlannerUnavailable('MODEL_UNSUPPORTED')
     if not isinstance(api_key,str) or not api_key or len(api_key)>512 or any(c.isspace() for c in api_key):
         raise StoryPlannerUnavailable('NOT_CONFIGURED')
     body={'systemInstruction':{'parts':[{'text':system}]},
         'contents':[{'role':'user','parts':[{'text':text}]}],
-        'generationConfig':{'temperature':0,'candidateCount':1,'maxOutputTokens':128,
+        'generationConfig':{'temperature':0,'candidateCount':1,'maxOutputTokens':max_output_tokens,
             'thinkingConfig':{'thinkingLevel':'minimal'} if model.startswith('gemini-3.') else {'thinkingBudget':0},
             'responseMimeType':'application/json','responseSchema':schema}}
     owned=client is None
