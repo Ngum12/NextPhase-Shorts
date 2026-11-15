@@ -1,5 +1,45 @@
 # Implementation Status — 2026-11-10
 
+## Gemini passages across the complete transcript — 2026-11-15
+
+Added opt-in passage mode to **Create with Gemini**: instead of ranking only five
+heuristic ranges, the model receives bounded ordered units covering every word
+of the complete recognized transcript. It may propose up to three contiguous unit
+spans, best first. Server mapping uses only original validated word endpoints;
+unknown/backward/duplicate/under-five-second/over-cap/long-gap/unreliable ranges
+are rejected rather than repaired, padded or rewritten. Distinct local options
+can fill remaining slots; the first proposal is prepared automatically without
+sentence marking or per-word confirmation. This is still one contiguous private
+Short, not multi-scene composition, visual understanding or finished style engines.
+Semantic-quality verification remains false and playback checks remain necessary.
+
+A new explicit `gemini-passages-v1` consent covers complete transcript text and
+speech timing boundaries. Requests retain all existing free-tier/owner gates,
+5-per-owner/20-global daily budgets, byte/token/time bounds, fixed failure codes
+and fallback/no-retry behavior. A completed legacy selection can upgrade once on
+a new explicit mode request; active claims are not overwritten. Closed v2 cache
+proofs store only source-bound word indices and metadata in the existing nullable
+column. Old cache revision hashes and old app/server shortlist behavior remain
+compatible; no schema migration or key/flag change is needed. Model alternatives
+are labeled separately, and caption/render preparation reuses the cached choice.
+Source/review/deletion fences and all native timing, file, CPU/sandbox controls
+remain; the accepted encoder profile is untouched.
+
+Targeted tests exercise a passage outside the old five options, full source
+coverage, malformed/duplicate output, strict unit IDs, duration/gap/confidence
+limits, consent/version compatibility, single-call cache upgrade/reuse, quotas,
+in-flight legacy claims, stale/deleted sources, corrupt proofs, caption/render
+admission/provenance and a real synthetic render/download with unchanged source
+hash. Provider transport was mocked; no live Gemini request, private-media upload
+or VPS deployment was performed. Actual semantic quality needs phone acceptance.
+
+Validation: **865 backend tests passed on SQLite and 865 on isolated PostgreSQL**;
+**254 mobile tests**, TypeScript, offline Android export and real HTTP/FFmpeg smoke
+passed. Existing provider/range/ownership/privacy/native regressions are included.
+All provider transport in this change was mocked; live passage quality is not
+claimed. Deploy through the usual owner-run merged-main updater and mobile pull.
+
+
 ## CPU-aware preview profile and bounded frame progress — 2026-11-15
 
 The deployed preroll optimization was insufficient for the owner's actual

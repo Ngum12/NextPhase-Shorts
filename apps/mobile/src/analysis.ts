@@ -16,9 +16,12 @@ export type ClipCandidate = {
 };
 export type EnglishAnalysis = {
   automatic_clips_supported?:boolean;
+  gemini_passages_supported?:boolean;
   automatic_draft?:boolean;
   gemini_draft?:boolean;
   gemini_status?:'selected'|'fallback';
+  gemini_strategy?:'shortlist'|'passages';
+  gemini_candidate_count?:number;
   job_id:string; revision:string; transcript_sha256:string; render_enabled:false;
   queued_preview_supported?:boolean;
   clean_captions_supported?:boolean;
@@ -43,6 +46,7 @@ function validated(value:any):EnglishAnalysis {
       !Number.isInteger(cap) || cap<5 || cap>60 ||
       value?.render_enabled!==false || !Array.isArray(words) || !words.length || words.length>1000 ||
       (value.automatic_clips_supported!==undefined && typeof value.automatic_clips_supported!=='boolean') ||
+      (value.gemini_passages_supported!==undefined && typeof value.gemini_passages_supported!=='boolean') ||
       (value.queued_preview_supported!==undefined && typeof value.queued_preview_supported!=='boolean') ||
       (value.clean_captions_supported!==undefined && typeof value.clean_captions_supported!=='boolean') ||
       (value.portrait_framing_supported!==undefined && typeof value.portrait_framing_supported!=='boolean') ||
@@ -101,8 +105,15 @@ function automaticPlan(id:string,analysis:EnglishAnalysis,plan:any,gemini=false)
     throw Error('Automatic clip choices changed. Refresh and try again.');
   if(gemini&&(!['selected','fallback'].includes(plan.gemini_status)||plan.gemini_model!=='gemini-3.1-flash-lite'))
     throw Error('Gemini selection could not be verified. Use standard suggestions.');
+  if(gemini&&plan.gemini_strategy!==undefined&&(!['shortlist','passages'].includes(plan.gemini_strategy)||
+    !Number.isInteger(plan.gemini_candidate_count)||plan.gemini_candidate_count<0||
+    plan.gemini_candidate_count>Math.min(3,plan.candidates?.length??0)||
+    (plan.gemini_status==='selected'&&plan.gemini_candidate_count<1)||
+    (plan.gemini_status==='fallback'&&plan.gemini_candidate_count!==0)))
+    throw Error('Gemini passage choices could not be verified. Use standard suggestions.');
   return validated({...analysis,revision:plan.revision,review:null,automatic_draft:true,
-    ...(gemini?{gemini_draft:true,gemini_status:plan.gemini_status}:{}),proposal:plan});
+    ...(gemini?{gemini_draft:true,gemini_status:plan.gemini_status,gemini_strategy:plan.gemini_strategy,
+      gemini_candidate_count:plan.gemini_candidate_count}:{}),proposal:plan});
 }
 
 export async function getEnglishAnalysis(id:string,token:string):Promise<EnglishAnalysis> {
@@ -125,7 +136,9 @@ export async function requestGeminiSelection(id:string,token:string,analysis:Eng
   const base=await getAutomaticClips(id,token,analysis);
   let plan:any=await extract(await authenticatedFetch(token,`${BASE}/api/v1/jobs/${encodeURIComponent(id)}/analysis/gemini-selection`,{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      revision:base.revision,idempotency_key:randomUUID(),consent_version:'gemini-transcript-v1',
+      revision:base.revision,idempotency_key:randomUUID(),
+      ...(analysis.gemini_passages_supported?{mode:'passages',consent_version:'gemini-passages-v1'}:
+        {consent_version:'gemini-transcript-v1'}),
       acknowledged_google_transcript_sharing:true}),
   }));
   for(let attempt=0;plan.gemini_status==='pending'&&attempt<20;attempt++){

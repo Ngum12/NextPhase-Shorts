@@ -167,3 +167,20 @@ test('Gemini fallback stays marked and malformed metadata cannot become a draft'
  f.state.gemini.gemini_model='untrusted';
  await assert.rejects(f.actions.requestGeminiSelection('project-1','token',f.state.value),/could not be verified/);
 });
+
+test('capable server uses explicit passage consent and mode without sending transcript from the phone',async()=>{
+ const f=fixture();f.state.value.gemini_passages_supported=true;f.state.automatic=autoPlan(f.state.value);
+ f.state.gemini={...f.state.automatic,gemini_status:'selected',gemini_model:'gemini-3.1-flash-lite',gemini_strategy:'passages',gemini_candidate_count:1};
+ const value=await f.actions.requestGeminiSelection('project-1','token',f.state.value);
+ const request=f.calls.find(c=>c.init),body=JSON.parse(request.init.body);
+ assert.equal(body.mode,'passages');assert.equal(body.consent_version,'gemini-passages-v1');
+ assert.equal(value.gemini_strategy,'passages');assert.equal(value.gemini_candidate_count,1);
+ assert(!request.init.body.includes('Original'));assert.equal(f.calls.filter(c=>c.init).length,1);
+});
+test('unknown passage strategy and inconsistent model count cannot become a renderable plan',async()=>{
+ const f=fixture();f.state.automatic=autoPlan(f.state.value);
+ f.state.gemini={...f.state.automatic,gemini_status:'selected',gemini_model:'gemini-3.1-flash-lite',gemini_strategy:'passages',gemini_candidate_count:99};
+ await assert.rejects(f.actions.requestGeminiSelection('project-1','token',f.state.value),/could not be verified/);
+ f.state.gemini.gemini_candidate_count=1;f.state.gemini.gemini_strategy='invented';
+ await assert.rejects(f.actions.requestGeminiSelection('project-1','token',f.state.value),/could not be verified/);
+});

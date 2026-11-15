@@ -130,7 +130,7 @@ def document(row):
         if visual.source_sha256!=transcript.source_sha256 or visual.source_duration_ms!=transcript.source_duration_ms:
             raise RuntimeError('Stored visual analysis identity differs')
     return {'job_id': row.job_id, 'revision': row.revision,
-        'automatic_clips_supported':True,
+        'automatic_clips_supported':True,'gemini_passages_supported':True,
         'audio_timing':timing.model_dump(mode='json') if timing is not None else None,
         'scene_analysis':visual.model_dump(mode='json') if visual is not None else None,
         'transcript_sha256': fingerprint(transcript),
@@ -239,6 +239,7 @@ def queue_preview(job_id: str,payload: PreviewRequest,response: Response,
         review_revision=current_revision,candidate_number=payload.candidate_number,
         gemini_model=selection.model if selection is not None else None,
         gemini_status=selection.status if selection is not None else None,
+        gemini_strategy=selection.planning_mode if selection is not None else None,
         caption_style=payload.caption_style,captions=captions,framing=payload.framing,
         polish=payload.polish or PolishSettings(),caption_edits_applied=payload.caption_edits is not None)
     settings=get_settings()

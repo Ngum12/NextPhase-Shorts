@@ -9,7 +9,7 @@ function harness(){
     caption_position:'lower',voice:'original',audio_edges:'original'};
   const deps={
     './api':{ApiError,api:async(p,t)=>{assert.equal(p,'/api/v1/me');state.calls.push({me:t});return {id:'22222222-2222-4222-8222-222222222222'};}},
-    './analysis':{requestGeminiSelection:async(p,t,analysis)=>{state.geminiCalls=(state.geminiCalls||0)+1;return {...analysis,automatic_draft:true,gemini_draft:true,gemini_status:state.geminiStatus||'selected',review:null};},getAutomaticClips:async(p,t,analysis,gemini)=>({...analysis,automatic_draft:true,...(gemini?{gemini_draft:true,gemini_status:state.geminiStatus||'selected'}:{}),review:null}),getEnglishAnalysis:async(p,t)=>{state.calls.push({analysis:p,token:t});return {
+    './analysis':{requestGeminiSelection:async(p,t,analysis)=>{state.geminiCalls=(state.geminiCalls||0)+1;return {...analysis,automatic_draft:true,gemini_draft:true,gemini_status:state.geminiStatus||'selected',gemini_strategy:state.geminiStrategy,gemini_candidate_count:state.geminiCount,review:null};},getAutomaticClips:async(p,t,analysis,gemini)=>({...analysis,automatic_draft:true,...(gemini?{gemini_draft:true,gemini_status:state.geminiStatus||'selected',gemini_strategy:state.geminiStrategy,gemini_candidate_count:state.geminiCount}:{}),review:null}),getEnglishAnalysis:async(p,t)=>{state.calls.push({analysis:p,token:t});return {
       job_id:p,revision,review:state.review,polished_preview_supported:state.supported,automatic_clips_supported:state.automatic,
       clean_captions_supported:state.clean,portrait_framing_supported:state.portrait,
       soft_audio_edges_supported:state.soft,manual_crop_focus_supported:state.manual,
@@ -252,4 +252,15 @@ test('only the first Gemini-ranked option is described as the model choice',asyn
  assert.match(list.choices[0].ranking_note,/Gemini selected/);
  assert.match(list.choices[1].ranking_note,/Alternative automatic excerpt/);
  assert(!list.choices[1].ranking_note.includes('Gemini selected'));
+});
+
+test('full-transcript choices distinguish model alternatives from appended local alternatives',async()=>{
+ const h=harness();h.state.geminiStrategy='passages';h.state.geminiCount=2;
+ h.state.candidates=[1,2,3].map(n=>({output_frames:300,source_start_ms:n*5000,source_end_ms:n*5000+10000}));
+ const result=await h.actions.listQuickDrafts(id,'token',true);
+ assert.match(result.choices[0].ranking_note,/across your transcript/);
+ assert.match(result.choices[1].ranking_note,/Alternative passage proposed by Gemini/);
+ assert.match(result.choices[2].ranking_note,/Alternative automatic excerpt/);
+ const plan=await h.actions.prepareQuickDraft(id,'token',1,true);
+ assert.equal(h.state.geminiCalls,1);assert.equal(plan.plan.gemini,true);
 });

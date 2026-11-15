@@ -1,20 +1,29 @@
 # Optional Gemini clip selection — private development pilot
 
-After English analysis, **Create with Gemini** lets Google choose a coherent
-excerpt from the existing source-validated shortlist (at most five ranges).
-This adds a content-aware selection step; it does not yet compose multiple scenes,
-rewrite speech, create new timings, generate B-roll or certify story quality.
-**Create suggested Short** still uses the existing local heuristic selector.
+After English analysis, **Create with Gemini** can ask Google to find up to three
+promising contiguous passages across the complete recognized transcript. This
+removes the previous five-candidate shortlist restriction: a later passage can
+be proposed even when the local heuristic did not offer it. The first model
+proposal is prepared automatically; alternatives are optional. **Create suggested
+Short** still uses the local heuristic selector.
+
+The source is partitioned into bounded speech units that cover every recognized
+word exactly once, in order. Google returns only unit IDs, never words or timing
+edits. The server maps them to original word endpoints and rejects unknown,
+backward, near-duplicate, too-short, over-duration, long-silence or broadly
+unreliable ranges. This does not compose separate scenes, rewrite speech, generate
+B-roll, interpret the video visually or certify semantic quality. Watch the result.
 
 The owner must accept the transcript-sharing prompt for each action. The server
-sends the complete recognized transcript and proposed excerpt text to Google,
-with their candidate IDs and durations. No audio/video, account IDs, project IDs,
+sends the complete recognized transcript as speech units with their validated
+timing boundaries to Google. The older shortlist mode sends the full transcript
+and candidate excerpts with IDs and durations. No audio/video, account IDs, project IDs,
 filenames or signed media URLs are sent. Google's free-tier terms may permit using
 submitted text to improve its products; use non-sensitive development recordings
 and only material you are authorized to share. ASR estimates can contain errors.
 Do not treat the model's choice as verified meaning or accurate captions.
 
-## Activate on the existing VPS
+## Activate on the existing VPS (first setup)
 
 The key saved in the Codex cloud environment is **not installed on your VPS**.
 The live API needs its own private server configuration. Do not put this key in
@@ -61,6 +70,25 @@ Expo variables, source files, a GitHub comment, shell command arguments or chat.
 
    Keep your existing HTTPS API and English-pilot app settings.
 
+## Update an already-working Gemini installation
+
+Keep the existing key, free-tier gates and owner allowlist. After merging this
+feature, close the app and finish active jobs, pull main on the VPS and run the
+usual backup-first updater. Pull main on Windows and restart Expo with the existing
+API/English-pilot settings. No new key, flag, migration, upload or ASR run is needed.
+
+On an existing analyzed original, tap **Create with Gemini**, accept the updated
+transcript/timing-sharing explanation and confirm **Render draft**. The first
+explicit passage-mode request can replace a completed legacy shortlist cache
+with one new budgeted call. Subsequent openings, caption checks and renders reuse
+that result. The chosen start/end may differ from the previous clip and its length
+can be shorter than the requested maximum to preserve a complete thought.
+
+Older apps/servers retain the existing shortlist protocol. An in-flight old
+request is never overwritten or automatically duplicated by a new mode request.
+Both modes share the same daily request budgets. A completed passage cache is
+also readable by an older app without another provider call.
+
 ## Test in the app
 
 1. Open an original English project whose analysis is already ready, or upload a
@@ -75,7 +103,8 @@ Expo variables, source files, a GitHub comment, shell command arguments or chat.
    are separate render intents. Comparing choices creates no extra render jobs;
    only confirmed renders consume render/storage capacity.
 
-When Gemini succeeds, the confirmation says **Gemini selected this excerpt**.
+When passage mode succeeds, the confirmation says **Gemini selected this passage
+from across your transcript**. Older shortlist mode says **Gemini selected this excerpt**.
 When it fails, declines or reaches a limit, the confirmation explains that the
 standard selector is being used. Missing configuration hides the Gemini button;
 old analyzed projects do not need another ASR run. A pending interrupted request
@@ -102,13 +131,15 @@ transcript review changes the analysis revision and invalidates the cache.
   decoded response bytes. Connect timeout 5s, individual I/O timeout 10s, streaming
   elapsed check 30s (a final blocked read can add up to 10s). The 90s pending
   claim prevents duplicate calls if a process or client disappears.
-- Provider output is a strict one-field JSON integer ID of an offered candidate,
-  or zero to decline. Duplicate keys, unknown IDs, tool calls, generated ranges,
+- Passage output is strict JSON containing at most three offered speech-unit
+  start/end ID pairs, or an empty array to decline. Older shortlist output remains
+  a single integer candidate ID or zero to decline. Duplicate keys, unknown IDs,
+  tool calls, generated timestamps,
   explanations and extra fields are rejected. Opaque provider signatures are
   ignored and discarded. Transcript instructions remain quoted untrusted data.
 - Stored metadata contains only plan hash, request UUID, consent version/time,
-  model, chosen ID/status, fixed failure code and bounded token/time usage when
-  available. No raw provider output, signatures or transcript copies. HTTP errors
+  model, strategy, chosen ID or original word-index ranges/status, fixed failure
+  code and bounded token/time usage when available. No raw provider output, signatures or transcript copies. HTTP errors
   are replaced with fixed codes, never logged with their response bodies.
 - Failure codes: `INPUT_INVALID`, `NOT_CONFIGURED`, `MODEL_UNSUPPORTED`,
   `PROMPT_TOO_LARGE`, `PROVIDER_AUTH_FAILED`, `PROVIDER_RATE_LIMITED`,
@@ -116,7 +147,7 @@ transcript review changes the analysis revision and invalidates the cache.
   `PENDING_EXPIRED`. They never contain recognized speech or raw provider text.
 - Selected and fallback plans bind source/transcript, candidate order and current
   revision. Preview intents additionally distinguish Gemini from standard mode;
-  immutable excerpt specs retain model/status provenance. Rendering accepts only
+  immutable excerpt specs retain model/status/strategy provenance. Rendering accepts only
   existing original word endpoints, 5–60 seconds / 150–1,800 frames, inside both
   source and requested duration. Same checksum, caption/layout, sandbox, leases,
   cancellation, storage admission and deletion/publication fences still apply.
@@ -179,3 +210,35 @@ The latest privacy-safe encode observations include numeric `frames` and
 stdout/stderr, captions, transcripts and source paths are not logged. If a retry
 still times out, these counters distinguish slow progress from failing before
 frames are produced. Local synthetic benchmarks do not guarantee VPS throughput.
+
+
+## Passage-mode contract and limitations
+
+The complete source is represented by at most 128 ordered units, initially split
+at punctuation, pauses, duration-aware boundaries and bounded word counts. Excess
+adjacent short units are merged without dropping source words. Units are proposal
+boundaries, not verified sentence endings. If the complete unit JSON exceeds the
+existing 24,000-byte input bound, the request falls back; context is not silently
+truncated. English/1,000-word bounds, 128 output tokens, 65,536 response bytes,
+provider timeouts, request counts, free-tier/owner gates and no-retry policy remain.
+
+A new `mode: passages` request requires `gemini-passages-v1` consent. Old requests
+keep `gemini-transcript-v1` and shortlist mode. The nullable existing cache column
+accepts a closed v2 proof containing original word-index ranges; old v1 records
+and their render revision hashes remain compatible. Mode and mapped candidate
+order bind the new revision, even when the chosen source range is unchanged.
+No provider text, signatures or duplicate transcript is stored. Source/review
+changes and deletion still fence late results, captions and new render admission.
+
+One to three model proposals are ordered first; distinct local alternatives may
+fill the remaining five slots. The phone identifies model alternatives separately
+and preflights/renders only the chosen option. Semantic-quality verification stays
+false: ASR estimates, speech-unit boundaries and the model's judgment can be wrong.
+The native renderer, including its tested CPU profile and sandbox, is unchanged.
+
+Development validation uses authored fixtures and mocked provider transport,
+including a passage outside the old shortlist and a real rendered/downloaded
+synthetic video. It proves the protocol and source constraints, not live semantic
+quality. No live Gemini request or private-media evaluation was made for this
+change. Phone/VPS acceptance should check whether the new chosen idea makes sense
+and retains qualifications, answers and a complete ending before sharing.

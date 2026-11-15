@@ -89,7 +89,11 @@ function choiceFrom(analysis:EnglishAnalysis,index:number):QuickDraftChoice{
     ending:complete&&last-first>=8?phrase(words,Math.max(first+8,last-7),last+1):null,
     context_warning:contextWarning?
       'The opening may depend on earlier speech. Listen to the source before choosing.':null,
-    ranking_note:analysis.gemini_status==='selected'&&index===0?
+    ranking_note:analysis.gemini_status==='selected'&&analysis.gemini_strategy==='passages'&&index===0?
+      'Gemini selected this passage from across your transcript. Watch the finished clip and check captions before sharing.':
+      analysis.gemini_status==='selected'&&analysis.gemini_strategy==='passages'&&index<(analysis.gemini_candidate_count||0)?
+      'Alternative passage proposed by Gemini from your transcript. Watch before sharing.':
+      analysis.gemini_status==='selected'&&index===0?
       'Gemini selected this excerpt for its meaning and context. Watch the result and check captions before sharing.':analysis.gemini_status==='selected'?
       'Alternative automatic excerpt. Gemini chose option 1; this alternative keeps the standard ranking. Watch before sharing.':analysis.gemini_status==='fallback'?
       'Gemini was unavailable or declined these choices. Using the standard automatic selection.':analysis.automatic_draft?

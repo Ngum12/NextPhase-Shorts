@@ -132,7 +132,7 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       {automatic&&gemini&&<Button title="Create with Gemini" disabled={disabled||busy} onPress={()=>{
         const current=generation.current;
         Alert.alert('Share transcript with Google?',
-          'Gemini will receive the recognized transcript and proposed excerpts to choose a coherent clip. No video or audio is sent. Google’s free-tier terms may allow this text to be used to improve its products. Use only recordings you have permission to share and avoid sensitive content. The server limits requests; if Gemini cannot choose, the standard selector is used. This does not publish your video.',[
+          'Gemini will receive the complete recognized transcript, speech timing boundaries and any proposed excerpts to find a coherent passage. No video or audio is sent. Google’s free-tier terms may allow this text to be used to improve its products. Use only recordings you have permission to share and avoid sensitive content. The server limits requests; if Gemini cannot choose, the standard selector is used. This does not publish your video.',[
           {text:'Not now',style:'cancel'},
           {text:'Agree and create',onPress:()=>{if(current===generation.current)quickDraft(true,true);}},
         ]);
