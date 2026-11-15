@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from .config import get_settings
 from .db import SessionLocal, engine
 from .migrate import require_current_schema
-from .media import MediaCancelled, MediaError, OutputLimitExceeded, render_baseline
+from .media import MediaCancelled, MediaError, OutputLimitExceeded, RenderDeadlineExceeded, render_baseline
 from .asr_failures import AsrFailure
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner,dead_letter
@@ -226,6 +226,9 @@ def _process(job,supervisor):
         # Only fixed, non-content diagnostic codes leave the protected worker.
         emit('render_failed',job_id=job['id'])
         mark_done(job['id'], token, error_code=failure.code, wall_seconds=time.monotonic()-began)
+    except RenderDeadlineExceeded:
+        emit('render_failed',job_id=job['id'])
+        mark_done(job['id'], token, error_code='RENDER_DEADLINE_EXCEEDED', wall_seconds=time.monotonic()-began)
     except MediaError:
         emit('render_failed',job_id=job['id'])
         mark_done(job['id'], token, error_code='ANALYSIS_FAILED' if job.get('operation')=='analysis' else 'RENDER_FAILED', wall_seconds=time.monotonic()-began)

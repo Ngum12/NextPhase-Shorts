@@ -13,7 +13,7 @@ from .worker_events import PHASES
 
 JOB_STATES={'queued','processing','succeeded','failed','cancelled'}
 ATTEMPT_STATES={'running','succeeded','failed','cancelled','lease_lost'}
-ERROR_CODES={'MAX_RETRIES','RENDER_FAILED','STORAGE_UNAVAILABLE','OUTPUT_LIMIT_EXCEEDED','INTERNAL_ERROR'}
+ERROR_CODES={'RENDER_DEADLINE_EXCEEDED','MAX_RETRIES','RENDER_FAILED','STORAGE_UNAVAILABLE','OUTPUT_LIMIT_EXCEEDED','INTERNAL_ERROR'}
 
 
 def aware(value):return value if value.tzinfo else value.replace(tzinfo=timezone.utc)

@@ -142,3 +142,25 @@ transactional limits, cache reuse, pending expiry, stale/deleted sources,
 caption/render intent separation, migration preservation, and a real synthetic
 FFmpeg render/download. The live provider smoke used authored synthetic text
 only; it is connectivity evidence, not a benchmark of editing quality.
+
+
+## Gemini selected successfully, but the draft render failed
+
+Selection and native video rendering are separate stages. A valid Gemini-selected
+range can still hit the preview's 300-second render deadline. Updated workers
+report `RENDER_DEADLINE_EXCEEDED` and preserve the original; older workers report
+only `RENDER_FAILED`. Timeout classification does not raise any deadline or relax
+resource/sandbox controls.
+
+Preview rendering samples at 30fps and drops preroll before costly scaling and
+caption drawing, preserving the original source clock and validated range.
+After updating the VPS and mobile app, open the failed draft and tap **Back to
+original project**, then **Create with Gemini** and **Render draft**. The cached
+selection is reused without another provider call. The new explicit confirmation
+replaces a terminal cached draft with one fresh render intent. A lost response
+reuses that replacement key; repeated background renders are not introduced.
+
+If the fresh job still reaches its deadline, retain it for privacy-safe stage
+and source-profile investigation. Do not collect native stderr, transcript text,
+caption contents, secret values or private media in general logs. Synthetic local
+benchmarks do not establish speed on the owner's VPS or source recording.

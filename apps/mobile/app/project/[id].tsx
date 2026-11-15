@@ -93,13 +93,14 @@ export default function Project() {
     {!job?(unavailable?<Button title="Back to My Shorts" onPress={()=>router.replace('/(tabs)/projects')}/>:<Loading/>):<>
       <View style={s.card}><Text style={s.cardTitle}>Cloud render status</Text>
         <Text style={{fontSize:23,fontWeight:'800',color:job.status==='succeeded'?c.accent:c.warning}}>{job.status.toUpperCase()}</Text>
-        <Body>{job.status==='queued'?'Waiting for a server worker.':job.status==='processing'?'Processing on the server — your phone is not rendering.':job.status==='succeeded'?'Your 9:16 short is ready.':job.status==='cancelled'?'This render was cancelled. You can create a new Short.':'Rendering failed; support and retry controls are planned.'}</Body>
+        <Body>{job.status==='queued'?'Waiting for a server worker.':job.status==='processing'?'Processing on the server — your phone is not rendering.':job.status==='succeeded'?'Your 9:16 short is ready.':job.status==='cancelled'?'This render was cancelled. You can create a new Short.':job.preview_parent_id?'This draft did not finish. Your original recording is preserved.':'Rendering failed; support and retry controls are planned.'}</Body>
         <Body>Requested {job.desired_seconds}s · {job.style} · actual {job.output_duration_seconds?.toFixed(1)||'—'}s</Body>
-        {job.error_code&&<Body>{job.error_code==='OUTPUT_LIMIT_EXCEEDED'?'This export exceeded its server file limit. Try a shorter output.':`Error code: ${job.error_code}`}</Body>}
+        {job.error_code&&<Body>{job.error_code==='RENDER_DEADLINE_EXCEEDED'?'The server reached its rendering time limit. Your original recording is preserved.':job.error_code==='OUTPUT_LIMIT_EXCEEDED'?'This export exceeded its server file limit. Try a shorter output.':`Error code: ${job.error_code}`}</Body>}
       </View>
       {['queued','processing'].includes(job.status)&&<Button title={cancelling?'Cancelling…':'Cancel render'} onPress={cancel} disabled={cancelling||deleting||downloading} secondary/>}
       <Button title="Refresh status" onPress={refresh} disabled={deleting} secondary />
       {englishReviewVisible&&!job.preview_parent_id&&token&&<EnglishAnalysisPanel key={`${id}:${token}`} id={id} token={token} disabled={deleting||downloading||cancelling}/>}
+      {job.preview_parent_id&&['failed','cancelled'].includes(job.status)&&<Button title="Back to original project" onPress={()=>router.push({pathname:'/project/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling}/>}
       {job.preview_parent_id&&<Button title="Back to source review" onPress={()=>router.push({pathname:'/review/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling} secondary/>}
       {job.status==='succeeded'&&job.operation!=='analysis'&&<>
         {job.preview_parent_id&&token&&<ClipPlayer key={`${job.id}:${token}`} id={job.id} token={token}/>}

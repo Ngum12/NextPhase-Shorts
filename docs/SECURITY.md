@@ -308,3 +308,11 @@ requests. Render sandbox, source verification and all publication fences persist
 Own deletion clears cache and fences late writes; it cannot recall provider data.
 The server cannot verify Google's billing settings from an API key; owner must
 keep billing disabled. API request caps do not enforce provider billing policy.
+
+
+Preview encode deadline failures use fixed `RENDER_DEADLINE_EXCEEDED`; no native
+stderr or exception payload is exposed. Early 30fps sampling/preroll discard keep
+source PTS, clip limits, all native controls and the 300s preview cap intact.
+A new owner-confirmed render can replace a cached failed/cancelled draft using
+one persisted new intent key; it does not introduce background retries, provider
+calls, or bypass admission/deletion/lease fences.

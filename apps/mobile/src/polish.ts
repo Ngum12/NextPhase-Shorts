@@ -106,20 +106,32 @@ export async function requestPolishedPreview(id:string,token:string,revision:str
   const scope=`${token}:${id}:${fingerprint}`,name=`nextphase.polish.intent.${id}`;
   const existing=pending.get(scope);if(existing)return existing;
   const task=(async()=>{
-    const key=await serial(name,async()=>{
-      const old=await intents(name);const known=old.find(i=>i.fingerprint===fingerprint);
-      if(known)return known.key;
-      const key=randomUUID();await SecureStore.setItemAsync(name,JSON.stringify([...old,{fingerprint,key}].slice(-5)));return key;
-    });
-    const response=await authenticatedFetch(token,`${BASE}/api/v1/jobs/${id}/analysis/previews`,{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,idempotency_key:key})});
-    if(response.status===410){await serial(name,async()=>{
-      await SecureStore.setItemAsync(name,JSON.stringify((await intents(name)).filter(i=>i.key!==key)));});
-      throw new ApiError(410,'That preview was deleted. Tap Render again for a new one.');}
-    const result=await extract(response);
-    if(!uuid.test(result.id)||result.preview_parent_id!==id||!['queued','processing','succeeded','failed','cancelled'].includes(result.status))
-      throw Error('Preview confirmation was invalid. Retry the same settings.');
-    return result;
+    // One explicit render confirmation may replace a previously terminal draft.
+    // Persist its new key before POST so a lost response still recovers one job.
+    for(let attempt=0;attempt<2;attempt++){
+      const key=await serial(name,async()=>{
+        const old=await intents(name);const known=old.find(i=>i.fingerprint===fingerprint);
+        if(known)return known.key;
+        const key=randomUUID();await SecureStore.setItemAsync(name,JSON.stringify([...old,{fingerprint,key}].slice(-5)));return key;
+      });
+      const response=await authenticatedFetch(token,`${BASE}/api/v1/jobs/${id}/analysis/previews`,{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,idempotency_key:key})});
+      if(response.status===410){await serial(name,async()=>{
+        await SecureStore.setItemAsync(name,JSON.stringify((await intents(name)).filter(i=>i.key!==key)));});
+        throw new ApiError(410,'That preview was deleted. Tap Render again for a new one.');}
+      const result=await extract(response);
+      if(!uuid.test(result.id)||result.preview_parent_id!==id||!['queued','processing','succeeded','failed','cancelled'].includes(result.status))
+        throw Error('Preview confirmation was invalid. Retry the same settings.');
+      if(['failed','cancelled'].includes(result.status)){
+        await serial(name,async()=>{
+          await SecureStore.setItemAsync(name,JSON.stringify((await intents(name)).filter(i=>i.key!==key)));
+        });
+        if(attempt===0)continue;
+        throw new ApiError(409,'The new draft did not finish. Check its project status before trying again.');
+      }
+      return result;
+    }
+    throw Error('Could not prepare a new draft.');
   })();
   pending.set(scope,task);try{return await task;}finally{if(pending.get(scope)===task)pending.delete(scope);}
 }

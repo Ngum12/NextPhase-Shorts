@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from .media import (MediaCancelled, MediaError, OutputLimitExceeded, decoder_invocation,
+from .media import (MediaCancelled, MediaError, OutputLimitExceeded, RenderDeadlineExceeded, decoder_invocation,
                     probe_video, run_render, teardown_decoder)
 from .media_policy import CODEC_THREADS, input_args
 from .observability import stage
@@ -66,7 +66,7 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
                    max_output_bytes, should_cancel=lambda:False, timeout=300, captions=(), framing='fit', polish=None):
     polish=PolishSettings.model_validate(polish or {})
     try:
-        video_filter=framing_filter(framing)
+        geometry=framing_filter(framing).replace('fps=30,','')
     except ValueError:
         raise MediaError('Unsupported preview framing') from None
     captions=validate_cues(captions,frames)
@@ -76,6 +76,11 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
             or not 150<=frames<=requested_seconds*30
             or frames!=(end_ms-start_ms)*30//1000):
         raise MediaError('Invalid preview interval')
+    # Sample before fixed per-frame transforms, then drop preroll before scaling
+    # and captions. Keep source PTS and two preroll frames: output-side -ss,
+    # caption timing and audio fades keep their absolute source-clock behavior.
+    preroll=max(0,start_ms*30//1000-2)/30
+    video_filter=f'fps=30,trim=start={preroll:.9f},'+geometry
     if should_cancel():raise MediaCancelled('Preview cancelled')
     source=Path(source);destination=Path(destination)
     destination.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
@@ -117,6 +122,8 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
         if should_cancel():raise MediaCancelled('Preview cancelled before publication')
         temporary.replace(destination)
         return info
+    except subprocess.TimeoutExpired:
+        raise RenderDeadlineExceeded('Preview render exceeded its deadline') from None
     except subprocess.SubprocessError:
         raise MediaError('Preview rendering failed') from None
     finally:
