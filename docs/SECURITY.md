@@ -339,3 +339,24 @@ limits, shared SQL budgets and native sandbox/file/publication controls remain.
 Closed cache v2 proofs contain word indices, not raw output or transcript copies;
 legacy records remain compatible. An explicit upgrade cannot replace an active
 claim. Deletion/review changes fence late model writes and new render requests.
+
+
+## Documentary prototype boundaries
+
+The new documentary engine is operator-only, with no public API or application
+activation. Public-source research requires explicit consent, fixed Wikimedia
+origins, bounded POST search bodies and bounded uncompressed downloads. Redirects
+and unapproved/ambiguous licenses are rejected; only session-issued unchanged
+metadata can authorize a download. Metadata is a provider rights assertion, not
+universal copyright clearance or factual verification. No transcript/ASR text,
+provider response bodies or native stderr are logged.
+
+Composition resolves hash IDs to verified private files. Its sandbox extension
+allows only exact same-attempt scene MP4s and one voice WAV for a fixed concat
+manifest, at most nine files; it adds no directory/network/write permission.
+Source/asset copies check hashes and cancellation, native stages retain all limits,
+scene aggregate/final outputs are capped, and private intermediates are removed.
+Before any app enablement, existing authenticated admission, storage reservations,
+consent, rate/cost budgets, ownership/deletion/publication fences and asset lifecycle
+must be wired through the job flow. The development demo cannot prove strict
+Landlock behavior on this unsupported cloud host or production suitability.

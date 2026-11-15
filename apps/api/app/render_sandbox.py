@@ -78,9 +78,29 @@ def caption_read_paths(source, paths):
     return result
 
 
-def apply(source,output=None,read_files=()):
+def composition_read_paths(source,paths):
+    """Exact bounded intermediates in one private scene-composition attempt."""
+    import re
+    if not isinstance(paths,(list,tuple)) or len(paths)>9:raise RuntimeError('Invalid composition media list')
+    source=Path(source).resolve(strict=True)
+    # This extra grant is usable only for a fixed generated concat manifest.
+    if paths and (source.name!='scene-list.ffconcat' or not source.is_file() or source.stat().st_nlink!=1 or source.stat().st_size>1024):
+        raise RuntimeError('Invalid composition source')
+    result=[]
+    for name in paths:
+        path=Path(name)
+        if (path.is_symlink() or path.resolve(strict=True).parent!=source.parent or
+                not (re.fullmatch(r'scene-0[0-7]\.mp4',path.name) or path.name=='voice.wav') or
+                not path.is_file() or path.stat().st_nlink!=1 or path.stat().st_size>(16777216 if path.name=='voice.wav' else 67108864)):
+            raise RuntimeError('Invalid composition media file')
+        result.append(path.resolve(strict=True))
+    return result
+
+
+def apply(source,output=None,read_files=(),media_files=()):
     caption_paths=caption_read_paths(source,read_files)
-    return apply_files(source,output,{path:4 for path in caption_paths})
+    media_paths=composition_read_paths(source,media_files) if media_files else ()
+    return apply_files(source,output,{path:4 for path in (*caption_paths,*media_paths)})
 
 
 def apply_files(source,output=None,additional=None):

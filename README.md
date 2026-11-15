@@ -349,3 +349,10 @@ across the complete English transcript, then map them to validated original word
 boundaries. Older clients retain shortlist selection. Explicit transcript/timing
 sharing consent, a server-only key and free-tier development gates are required;
 failures fall back to the standard selector. See [setup and app test steps](docs/GEMINI_CLIP_SELECTION.md).
+
+
+A separate [documentary engine prototype](docs/DOCUMENTARY_ENGINE_PROTOTYPE.md)
+now demonstrates researched-asset receipts, multi-scene composition, moving photos,
+video inserts and editorial graphics over a continuous voice track. It is an
+operator/development proof, not a newly enabled app style or a finished automatic
+creative director. Existing clip selection is one component of the larger product.

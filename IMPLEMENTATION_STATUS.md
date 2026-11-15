@@ -1,5 +1,55 @@
 # Implementation Status — 2026-11-10
 
+## Documentary research/composition direction and working engine proof — 2026-11-15
+
+Owner clarified that the product is an automatic research-and-production editor:
+web research, relevant images/video, scene cuts, animation and documentary polish.
+Clip selection/captions alone do not satisfy that product. The generated UI concept
+and earlier explanation narrowed the goal incorrectly. Subsequent core work must
+prioritize the creative director, rights-aware asset retrieval and composition.
+
+Added an independent operator-only documentary engine: closed contiguous
+frame-based storyboards; explicit-consent public Wikipedia/Commons research;
+CC0/public-domain metadata filtering; bounded JPEG/WebM download receipts; moving
+photos, source/video inserts, animated headlines and original editorial cards;
+one continuous source voice; per-scene encode and stream-copy final composition.
+A model cannot provide executable code, arbitrary URLs or renderer file paths.
+Exact source/asset hashes, duration/fps/dimensions and final frames are checked.
+The same native restrictions remain; scene composition adds only exact read-only
+intermediate-file grants, not directory/network/write permissions. Existing clip
+flows remain intact and Documentary remains unavailable as an app style.
+
+Rendered and visually inspected a local 15.5s / 465-frame / four-scene
+1080×1920 proof. It uses original procedural illustrations and authored synthetic
+CMU Flite narration, clearly declared as a demo; this is not private footage or
+live web-asset research. Production composition preserves its supplied source
+voice and discards all external insert audio. Stage CPU/RSS/time and source/license
+receipts accompany the artifact. No paid provider, key change or VPS deployment
+was made. No restricted Editor V1/carousel-kit code or assets were copied.
+
+Live public-source testing initially hit the cloud host allowlist. The owner
+approved the three required Wikimedia hosts; their additions were saved in the
+environment draft without changing scripts, credentials or existing domains.
+The owner published the domain grants; the assistant did not publish. Live
+Wikipedia/Commons queries and bounded public-domain image downloads now succeed.
+A live 15.5s / 465-frame / four-scene portrait demo rendered successfully
+using two Commons public-domain Apollo photographs, attributed Wikipedia
+research and synthetic demonstration narration. A rendered frame was inspected.
+Actual original-image sizes/dimensions are filtered before download; tracking
+parameters are removed only for the exact Commons analytics tuple. Unapproved
+thumbnail hosts and arbitrary query strings remain rejected.
+This host lacks strict Landlock support, so local rendering is development proof,
+not protected-host or production acceptance. App admission, web-search privacy
+consent, per-job budgets, asset lifecycle/deletion, Gemini storyboarding, relevance
+and factual QA, visual/speaker tracking and finished style quality remain further
+integration gates. See docs/DOCUMENTARY_ENGINE_PROTOTYPE.md.
+
+
+Validation: full backend suites passed with 892 tests on SQLite and 892 on
+PostgreSQL, plus the HTTP/FFmpeg smoke test. After live-provider compatibility
+adjustments, the focused documentary/research suite passed with 30 tests.
+No private transcript or raw ASR/provider output was logged.
+
 ## Gemini passages across the complete transcript — 2026-11-15
 
 Added opt-in passage mode to **Create with Gemini**: instead of ranking only five

@@ -388,3 +388,27 @@ compatibility reuse existing httpx, Pydantic and Expo code. No SDK, model weight
 asset, font, reference-kit source or paid service was added. Hosted provider terms
 and free-tier text-use disclosures continue to apply. No commercial legal/privacy
 clearance, content-rights or semantic-quality approval is implied.
+
+
+## Documentary compositor/research prototype — 2026-11-15
+
+The scene compiler, storyboard contracts and procedural demo illustrations are
+independently authored, using existing Python/Pydantic/httpx/FFmpeg/DejaVu. No
+Editor V1/carousel-kit source, artwork, font or motion code was copied. No package
+or paid service was added. Live Commons retrieval accepts source-declared CC0 or
+public-domain JPEG/WebM assets only, with URL/creator/license/time/content-hash
+receipts; it rejects unsupported/ambiguous rights. Provider metadata is not legal
+clearance, and third-party assets must not be bundled into the repository.
+
+Local demo input narration uses the already-installed FFmpeg flite filter / CMU
+Flite `slt` voice (host package libflite1 2.2-7). Its local copyright notice at
+/usr/share/doc/libflite1/copyright records the CMU permission to use/distribute the
+software with notice/attribution conditions and other file-specific notices.
+Source: http://cmuflite.org; package source copyright notice is the verification
+basis, not a new redistributed dependency. Only authored synthetic demo speech is
+generated; user voice synthesis/cloning is not enabled. Existing FFmpeg/native,
+codec/patent, font, dependency and commercial release/legal gates remain.
+
+The default demo images are original code-generated illustrations declared CC0;
+they are visibly labeled illustrations, not archival evidence. Any live research
+artifact must carry its actual provider manifest and source assertions separately.
