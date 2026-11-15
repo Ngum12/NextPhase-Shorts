@@ -164,3 +164,18 @@ If the fresh job still reaches its deadline, retain it for privacy-safe stage
 and source-profile investigation. Do not collect native stderr, transcript text,
 caption contents, secret values or private media in general logs. Synthetic local
 benchmarks do not establish speed on the owner's VPS or source recording.
+
+
+### CPU-bound preview profile
+
+Preview output uses the existing H.264/CRF 24 target with the `superfast` preset.
+This reduces CPU work at the cost of larger files; the same 64 MiB file cap and
+300s render deadline apply. No output resolution, duration, caption setting or
+sandbox control is relaxed. Source seeking retains keyframe preroll and original
+timestamps before the precise clip cut; leveling keeps full gain history.
+
+The latest privacy-safe encode observations include numeric `frames` and
+`frames_per_second`, alongside elapsed time, CPU and sampled RSS. Raw native
+stdout/stderr, captions, transcripts and source paths are not logged. If a retry
+still times out, these counters distinguish slow progress from failing before
+frames are produced. Local synthetic benchmarks do not guarantee VPS throughput.

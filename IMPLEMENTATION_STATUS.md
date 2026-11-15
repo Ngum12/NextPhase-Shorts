@@ -1,5 +1,52 @@
 # Implementation Status — 2026-11-10
 
+## CPU-aware preview profile and bounded frame progress — 2026-11-15
+
+The deployed preroll optimization was insufficient for the owner's actual
+1920×1080, 57.488s source: its valid 15.160–44.680s range (885 output frames),
+19 captions, large/yellow/middle appearance and original voice still exhausted
+300s with 480.05 sampled CPU-seconds. The timeout is confirmed; exact completion
+progress was previously unavailable. No customer media or transcript was copied.
+
+Preview H.264 encoding now uses fixed `superfast` at the existing CRF 24, trading
+compression efficiency for CPU. Dimensions, frame count, requested/source ranges,
+300s deadline, 64 MiB maximum preview size, codec/native threads, sandbox grants,
+leases, cancellation and admission/publication fences are unchanged. Larger files
+remain subject to the same size guard and kernel bound; no silent resolution,
+quality-target, caption or duration downgrade is introduced.
+
+For original voice, a bounded coarse input seek avoids decoding unnecessary early
+source GOPs. `copyts`, `start_at_zero`, retained keyframe preroll (`noaccurate_seek`)
+and the existing precise output-side seek preserve the normalized source clock.
+Voice leveling retains full decode history so its gain state is unchanged. Tests
+compare original versus seek paths at fractional rates, nonzero container PTS and
+large variable-rate gaps, including decoded pixel samples and audio bytes.
+
+An optional preview-only progress pipe is drained nonblocking in bounded reads.
+Only finite numeric frame/fps counters survive, including on failure; stderr and
+raw stdout are never logged or persisted. Partial-line state is capped at 128
+bytes, reads at 4×4096 bytes per poll, frame counts at 1800. No filesystem/network
+sandbox grants are added. Existing CPU/RSS observations now also show how many
+frames completed before a timeout, instead of requiring another blind retry.
+
+An authored synthetic 1920×1080/30fps, 57.488s fixture using the owner's range,
+885 frames, 19 captions and appearance measured encode CPU 22.29→17.08s and wall
+7.319→5.481s (about 23%/25% reductions). Output grew 8,423,881→17,083,156 bytes;
+full-video SSIM against the previous compressed profile was 0.997155. This is
+local benchmark evidence, not a VPS speed or perceptual-quality guarantee. The
+nested cloud host does not support Landlock, so this synthetic benchmark used
+normal local development isolation; required production sandbox settings and
+all runtime limits were not changed. VPS acceptance is still necessary.
+
+Validation: **832 tests passed on SQLite and 832 on isolated PostgreSQL**; real
+HTTP/FFmpeg smoke passed. New coverage verifies fractional frame rates, nonzero
+PTS, long variable-rate gaps, audio/pixel equality between seek/decode paths,
+leveling history, and bounded numeric progress without private/unknown output.
+No mobile code changed, no provider request was made, and no VPS deployment was
+performed. Owner action is the normal merged-main backup-first update, then a
+fresh confirmed draft from the existing cached selection.
+
+
 ## Preview deadline diagnosis and bounded preroll work — 2026-11-15
 
 Owner-supplied privacy-safe observations confirm that Gemini selected a valid

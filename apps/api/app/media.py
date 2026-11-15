@@ -10,7 +10,7 @@ from typing import Callable
 from pathlib import Path
 from .config import get_settings
 from .observability import stage,active_attributes
-from .resource_measure import DecoderSamples
+from .resource_measure import DecoderSamples, EncodeProgress
 from .media_policy import CODEC_THREADS, input_args, validate_metadata
 
 class MediaError(Exception):
@@ -68,19 +68,32 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=(),address_lim
     return child_cmd,child_env,kwargs
 
 
-def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),address_limit_bytes=None):
+def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),address_limit_bytes=None,capture_progress=False):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
-    samples=DecoderSamples()
+    samples=DecoderSamples();progress=EncodeProgress() if capture_progress else None
+    if capture_progress and (cmd[0]!='ffmpeg' or '-progress' not in cmd or cmd[cmd.index('-progress')+1]!='pipe:1'):
+        raise MediaError('Invalid render progress configuration')
     child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes,read_files,
         **({'address_limit_bytes':address_limit_bytes} if address_limit_bytes is not None else {}))
-    # Diagnostics are deliberately discarded: malformed media cannot grow a
-    # PIPE buffer without bound or put private source paths into general logs.
-    with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:
+    # Stderr is always discarded. Optional fixed progress counters use a bounded,
+    # nonblocking stdout pipe; raw native output never enters logs or storage.
+    with subprocess.Popen(child_cmd, stdin=subprocess.DEVNULL,stdout=subprocess.PIPE if capture_progress else subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=child_env,close_fds=True, **kwargs) as process:
+        def drain_progress():
+            if not capture_progress:return
+            # Limit work and retained partial lines even if a damaged decoder
+            # floods stdout. Pipe backpressure is bounded; raw bytes are discarded.
+            for _ in range(4):
+                try:chunk=os.read(process.stdout.fileno(),4096)
+                except BlockingIOError:break
+                if not chunk:break
+                progress.feed(chunk)
         try:
+            if capture_progress:os.set_blocking(process.stdout.fileno(),False)
             while True:
                 samples.sample(process.pid)
+                drain_progress()
                 if should_cancel():
                     raise MediaCancelled('Render cancelled or lease lost')
                 remaining = timeout - (time.monotonic() - started)
@@ -90,13 +103,16 @@ def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),a
                     process.wait(timeout=min(0.25, remaining))
                     if process.returncode:
                         raise subprocess.CalledProcessError(process.returncode, cmd)
-                    return samples.attributes()
+                    drain_progress()
+                    return {**samples.attributes(),**(progress.attributes() if progress else {})}
                 except subprocess.TimeoutExpired:
                     if time.monotonic() - started >= timeout:
                         raise
         finally:
             teardown_decoder(process)
-            if active_attributes.get() is not None:active_attributes.get().update(samples.attributes())
+            drain_progress()
+            if active_attributes.get() is not None:
+                active_attributes.get().update({**samples.attributes(),**(progress.attributes() if progress else {})})
 
 
 def probe_video(path: Path) -> dict:

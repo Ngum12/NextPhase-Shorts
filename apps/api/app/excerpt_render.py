@@ -14,6 +14,8 @@ from .caption_plan import validate_cues
 from .preview_framing import framing_filter
 from .polish import PolishSettings, caption_appearance, clip_audio_filter
 
+PREVIEW_ENCODER_PRESET='superfast'
+
 CAPTION_FONT=Path('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf')
 
 
@@ -89,12 +91,16 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
     with temporary.open('xb'):
         os.chmod(temporary,0o600)
     seconds=frames/30
-    command=['ffmpeg','-nostdin','-v','error','-y','-max_alloc','67108864',
-        '-filter_threads',str(CODEC_THREADS),*input_args(),'-i',str(source),
+    # Keep decoded keyframe preroll and original PTS; final output-side seeking
+    # still owns the exact cut. Leveling retains full history for its gain state.
+    input_seek=max(0,start_ms//1000-2) if polish.voice=='original' else 0
+    command=['ffmpeg','-progress','pipe:1','-nostats','-nostdin','-v','error','-y','-max_alloc','67108864',
+        '-filter_threads',str(CODEC_THREADS),'-copyts','-start_at_zero','-noaccurate_seek',
+        '-ss',f'{input_seek:.3f}',*input_args(),'-i',str(source),
         '-ss',f'{start_ms/1000:.3f}','-t',f'{seconds:.6f}',
         '-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-map_chapters','-1',
         '-vf',video_filter,
-        '-c:v','libx264','-threads',str(CODEC_THREADS),'-preset','veryfast','-crf','24',
+        '-c:v','libx264','-threads',str(CODEC_THREADS),'-preset',PREVIEW_ENCODER_PRESET,'-crf','24',
         '-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ar','48000','-ac','2',
         '-movflags','+faststart','-max_muxing_queue_size','1024',str(temporary)]
     caption_paths=[]
@@ -111,7 +117,7 @@ def render_excerpt(source, destination, *, start_ms, end_ms, frames, requested_s
             return should_cancel()
         with stage('encode') as observed:
             caption_options={'read_files':caption_paths} if caption_paths else {}
-            observed.update(run_render(command,timeout,guard,max_file_bytes=max_output_bytes,**caption_options) or {})
+            observed.update(run_render(command,timeout,guard,max_file_bytes=max_output_bytes,capture_progress=True,**caption_options) or {})
         if guard():raise MediaCancelled('Preview cancelled')
         with stage('output_probe'):
             info=probe_video(temporary)
