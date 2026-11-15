@@ -3,8 +3,10 @@
 This is the first independent engine increment toward the actual product: an
 uploaded voice/story driving researched visuals, scene cuts, motion and editorial
 graphics. Clip discovery/captions are supporting components, not the final editor.
-The engine is currently operator/demo only. **It is not wired into the app, does
-not make Documentary an available style, and must not be advertised as finished.**
+The engine now also powers the [automatic documentary app pilot](AUTOMATIC_DOCUMENTARY.md).
+That consented, allowlisted action uses photographs and source footage/voice.
+The full Documentary style remains unfinished; this document describes the
+lower-level engine and separate operator demonstration.
 
 ## Working components
 

@@ -6,6 +6,7 @@ import { api, ApiError, cancelJob, deleteJob, Job } from '../../src/api';
 import { exportVideo } from '../../src/videoExports';
 import {saveAndFinish, SavedButCleanupPending} from '../../src/saveAndFinish';
 import {englishReviewVisible} from '../../src/analysis';
+import {documentaryFailure} from '../../src/englishAnalysis';
 import {EnglishAnalysisPanel} from '../../src/EnglishAnalysisPanel';
 import {ClipPlayer} from '../../src/ClipPlayer';
 import {forgetPreviewIntents} from '../../src/clipPreviews';
@@ -19,6 +20,14 @@ export default function Project() {
   const [cancelling,setCancelling]=useState(false);
   const [deleting,setDeleting]=useState(false);const [unavailable,setUnavailable]=useState(false);
   const revision=useRef(0);
+  const [sources,setSources]=useState<{title:string;creator:string;license:string;source_url:string}[]|null>(null);
+  useEffect(()=>{setSources(null);},[id,token]);
+  const showSources=async()=>{
+    if(!token)return;const current=revision.current;
+    try{const value=await api<{assets:{title:string;creator:string;license:string;source_url:string}[]}>(`/api/v1/jobs/${encodeURIComponent(id)}/documentary-sources`,token);
+      if(current===revision.current)setSources(value.assets);
+    }catch{if(current===revision.current)setError('Could not load documentary sources. Please retry.');}
+  };
   const refresh=async()=>{
     if(!token||!id)return;
     const request=++revision.current;
@@ -93,23 +102,28 @@ export default function Project() {
     {!job?(unavailable?<Button title="Back to My Shorts" onPress={()=>router.replace('/(tabs)/projects')}/>:<Loading/>):<>
       <View style={s.card}><Text style={s.cardTitle}>Cloud render status</Text>
         <Text style={{fontSize:23,fontWeight:'800',color:job.status==='succeeded'?c.accent:c.warning}}>{job.status.toUpperCase()}</Text>
-        <Body>{job.status==='queued'?'Waiting for a server worker.':job.status==='processing'?'Processing on the server — your phone is not rendering.':job.status==='succeeded'?'Your 9:16 short is ready.':job.status==='cancelled'?'This render was cancelled. You can create a new Short.':job.preview_parent_id?'This draft did not finish. Your original recording is preserved.':'Rendering failed; support and retry controls are planned.'}</Body>
+        <Body>{job.status==='queued'?'Waiting for a server worker.':job.status==='processing'?(job.documentary?'Planning, researching and rendering your documentary on the server. Your phone is not rendering.':'Processing on the server — your phone is not rendering.'):job.status==='succeeded'?'Your 9:16 short is ready.':job.status==='cancelled'?'This render was cancelled. You can create a new Short.':job.preview_parent_id?'This draft did not finish. Your original recording is preserved.':'Rendering failed; support and retry controls are planned.'}</Body>
         <Body>Requested {job.desired_seconds}s · {job.style} · actual {job.output_duration_seconds?.toFixed(1)||'—'}s</Body>
-        {job.error_code&&<Body>{job.error_code==='RENDER_DEADLINE_EXCEEDED'?'The server reached its rendering time limit. Your original recording is preserved.':job.error_code==='OUTPUT_LIMIT_EXCEEDED'?'This export exceeded its server file limit. Try a shorter output.':`Error code: ${job.error_code}`}</Body>}
+        {job.error_code&&<Body>{documentaryFailure(job.error_code)?documentaryFailure(job.error_code)+' Reopening this project will not repeat provider calls.':job.error_code==='RENDER_DEADLINE_EXCEEDED'?'The server reached its rendering time limit. Your original recording is preserved.':job.error_code==='OUTPUT_LIMIT_EXCEEDED'?'This export exceeded its server file limit. Try a shorter output.':`Error code: ${job.error_code}`}</Body>}
       </View>
       {['queued','processing'].includes(job.status)&&<Button title={cancelling?'Cancelling…':'Cancel render'} onPress={cancel} disabled={cancelling||deleting||downloading} secondary/>}
       <Button title="Refresh status" onPress={refresh} disabled={deleting} secondary />
       {englishReviewVisible&&!job.preview_parent_id&&token&&<EnglishAnalysisPanel key={`${id}:${token}`} id={id} token={token} disabled={deleting||downloading||cancelling}/>}
       {job.preview_parent_id&&['failed','cancelled'].includes(job.status)&&<Button title="Back to original project" onPress={()=>router.push({pathname:'/project/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling}/>}
-      {job.preview_parent_id&&<Button title="Back to source review" onPress={()=>router.push({pathname:'/review/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling} secondary/>}
+      {job.preview_parent_id&&!job.documentary&&<Button title="Back to source review" onPress={()=>router.push({pathname:'/review/[id]',params:{id:job.preview_parent_id!}})} disabled={deleting||downloading||cancelling} secondary/>}
       {job.status==='succeeded'&&job.operation!=='analysis'&&<>
         {job.preview_parent_id&&token&&<ClipPlayer key={`${job.id}:${token}`} id={job.id} token={token}/>}
+        {job.documentary&&<View style={s.card}>
+          <Body>Experimental documentary: original voice, source footage, researched photographs and motion. Check that the images match your story. Research does not verify spoken claims.</Body>
+          <Button title="View visual sources" secondary onPress={showSources}/>
+          {sources?.map((source,i)=><Body key={i}>{source.title} · {source.creator} · {source.license}{'\n'}{source.source_url}</Body>)}
+        </View>}
         <Button title={downloading?'Please wait…':'Save & finish (delete project)'} onPress={finish} disabled={downloading||deleting||cancelling}/>
         <Button title="Save without deleting" onPress={()=>download('save')} disabled={downloading||deleting||cancelling} secondary/>
         <Button title="Share video" onPress={()=>download('share')} disabled={downloading||deleting||cancelling} secondary/>
       </>}
       <Button title={deleting?'Deleting…':'Delete project'} onPress={remove} disabled={deleting||downloading||cancelling} secondary/>
-      <Body>{job.preview_parent_id?'Reviewed clip preview. Framing, captions and voice settings follow your chosen options.':'The baseline short trims the start of your recording. English suggestions use a separate transcript review; advanced editing styles are still planned.'}</Body>
+      <Body>{job.documentary?'Automatically assembled documentary preview. Your original voice is preserved. Verify context and visual relevance before sharing.':job.preview_parent_id?'Reviewed clip preview. Framing, captions and voice settings follow your chosen options.':'The baseline short trims the start of your recording. English suggestions use a separate transcript review; advanced editing styles are still planned.'}</Body>
     </>}
   </ScrollView></Page>;
 }

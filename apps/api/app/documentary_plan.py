@@ -1,7 +1,7 @@
 """Independent, frame-exact documentary composition contract; never executable AI code.
 
 Research and rendering are separate boundaries. Scene asset IDs resolve only to
-verified local receipts; URLs cannot become renderer inputs. Not yet an app mode.
+verified local receipts; URLs cannot become renderer inputs. Used by the consented pilot.
 """
 import re
 from typing import Literal

@@ -16,7 +16,7 @@ function harness(){
   useState(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={value:initial};return[h.slots[i].value,next=>{h.slots[i].value=typeof next==='function'?next(h.slots[i].value):next;h.pending=true;}];},
   useRef(initial){const i=h.cursor++;if(!h.slots[i])h.slots[i]={current:initial};return h.slots[i];},
   useEffect(effect,deps){const i=h.cursor++,old=h.slots[i];if(!old||deps.some((v,n)=>v!==old.deps[n]))h.effects.push(()=>{old?.cleanup?.();h.slots[i]={deps,cleanup:effect()};});}};react.default=react;
- const actions={englishCapability:async()=>({available:true,automatic_clips:!!h.automatic,gemini_planning_available:!!h.gemini}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
+ const actions={createDocumentary:async(id,token,approved)=>{h.calls.push({documentary:id,token,approved});return h.documentaryWait||{id:'documentary-1'};},englishCapability:async()=>({available:true,automatic_clips:!!h.automatic,gemini_planning_available:!!h.gemini,documentary_available:!!h.documentary}),englishState:async(id,token)=>{h.calls.push({get:id,token});return h.delay||structuredClone(h.value);},
  startEnglish:async(id,token,state)=>{h.calls.push({start:id,token,state});return {...h.value,task:{id:'attempt',status:'queued'}};},
  cancelEnglish:async(id,token)=>{h.calls.push({cancel:id,token});return {...h.value,task:{id:'attempt',status:'cancelled'}};}};
  const quickDraft={
@@ -247,4 +247,43 @@ test('unconfigured server hides Gemini and stale consent cannot send requests',a
  h.gemini=true;h.pending=true;h.props={id:'source2',token:'session'};await h.flush();h.button('Create with Gemini').props.onPress();
  const accept=h.alerts.at(-1)[2][1].onPress;h.pending=true;h.props={id:'source3',token:'other-session'};await h.flush();accept();await h.flush();
  assert(!h.calls.some(c=>c.list));
+});
+
+
+test('documentary consent queues one complete automatic job without review or clip-choice steps',async()=>{
+ const h=harness();h.documentary=true;h.value.ready=true;await h.flush();
+ h.button('Create documentary (experimental)').props.onPress();
+ assert(!h.calls.some(c=>c.documentary));
+ const dialog=h.alerts.at(-1);assert.match(dialog[1],/Wikipedia and Wikimedia Commons/);
+ assert.match(dialog[1],/selected speech excerpt/);assert.match(dialog[1],/at most two planning calls/);
+ const accept=dialog[2][1].onPress;await Promise.all([accept(),accept()]);await h.flush();
+ assert.equal(h.calls.filter(c=>c.documentary).length,1);
+ assert(h.calls.find(c=>c.push?.params.id==='documentary-1'));
+ assert(!h.calls.some(c=>c.list||c.prepare||c.renderDraft));
+});
+test('documentary consent from an older account cannot queue a job',async()=>{
+ const h=harness();h.documentary=true;h.value.ready=true;await h.flush();
+ h.button('Create documentary (experimental)').props.onPress();const accept=h.alerts.at(-1)[2][1].onPress;
+ h.props={id:'other-source',token:'other-account'};h.pending=true;await h.flush();await accept();
+ assert(!h.calls.some(c=>c.documentary));
+});
+test('documentary API requires explicit approval and validates owner source response',async()=>{
+ const calls=[];
+ const adapters={'./api':{BASE:'https://api.example',api:async()=>({}),
+ authenticatedFetch:async(token,url,init)=>{calls.push({token,url,init});return {};},
+ extract:async()=>({id:'child',preview_parent_id:'source',documentary:true})}};
+ const mod=load('../src/englishAnalysis.ts',adapters);
+ await assert.rejects(()=>mod.createDocumentary('source','token',false));assert.equal(calls.length,0);
+ await mod.createDocumentary('source','token',true);const body=JSON.parse(calls[0].init.body);
+ assert.equal(body.consent_version,'documentary-research-v1');assert(body.acknowledged_google_transcript_sharing&&body.acknowledged_public_research);
+ assert.equal(calls[0].url,'https://api.example/api/v1/jobs/source/analysis/documentary');
+ adapters['./api'].extract=async()=>({id:'child',preview_parent_id:'other',documentary:true});
+ await assert.rejects(()=>mod.createDocumentary('source','token',true));
+});
+
+test('documentary failures explain fixed categories and never reflect arbitrary provider text',()=>{
+ const mod=load('../src/englishAnalysis.ts',{'./api':{}});
+ assert.match(mod.documentaryFailure('DOCUMENTARY_RESEARCH_UNAVAILABLE'),/research could not be reached/);
+ assert.match(mod.documentaryFailure('DOCUMENTARY_RIGHTS_UNCONFIRMED'),/No suitable public-domain/);
+ for(const code of ['__proto__','constructor','DOCUMENTARY_private transcript'])assert.equal(mod.documentaryFailure(code),null);
 });

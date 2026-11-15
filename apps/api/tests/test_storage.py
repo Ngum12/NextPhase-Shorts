@@ -64,7 +64,12 @@ def test_abort_and_expiry_keep_budget_until_staging_cleanup(client,context,monke
             with SessionLocal.begin() as db:db.get(UploadSession,sid).expires_at=utcnow()-timedelta(seconds=1)
         else:assert client.post(f'/api/v1/upload-sessions/{sid}/abort',headers=owner).status_code==200
         assert create(client,owner,total=24).status_code==409
-        cleanup_uploads()
+        # Cleanup is globally batched. Earlier fixtures may fill one batch;
+        # exercise bounded subsequent maintenance passes rather than assuming
+        # this owner's terminal upload is among the first 100 global records.
+        for _ in range(10):
+            cleanup_uploads()
+            if budget(client,owner)['available_bytes']==amount:break
         assert budget(client,owner)['available_bytes']==amount
 
 

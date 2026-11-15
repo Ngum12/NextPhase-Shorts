@@ -412,3 +412,15 @@ codec/patent, font, dependency and commercial release/legal gates remain.
 The default demo images are original code-generated illustrations declared CC0;
 they are visibly labeled illustrations, not archival evidence. Any live research
 artifact must carry its actual provider manifest and source assertions separately.
+
+## Documentary app integration — 2026-11-15
+
+The private app admission, two-call director, durable provider fencing, source
+receipt access and mobile controls are independently authored and reuse existing
+Python/Expo/FFmpeg dependencies. No reference-kit code, new dependency, downloaded
+media binary or credential is committed. Runtime Commons photos retain their
+source-declared public-domain/CC0 metadata and creator/source records; provider
+metadata and relevance selection do not confer universal commercial rights or
+verify the underlying story. Production legal/native/transitive gates remain.
+The app keeps original voice; synthetic Flite narration belongs only to the
+separate demonstration, not this app processing flow.

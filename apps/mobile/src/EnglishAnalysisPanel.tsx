@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Alert,View,Text} from 'react-native';
 import {router} from 'expo-router';
-import {englishCapability,englishState,startEnglish,cancelEnglish,EnglishState} from './englishAnalysis';
+import {englishCapability,englishState,startEnglish,cancelEnglish,createDocumentary,EnglishState} from './englishAnalysis';
 import {listQuickDrafts,prepareQuickDraft,renderQuickDraft,QuickDraftChoice} from './quickDraft';
 import {Body,Button,s} from './ui';
 
@@ -26,16 +26,16 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
   const [state,setState]=useState<EnglishState|null>(null),[available,setAvailable]=useState(false);
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
   const [choices,setChoices]=useState<QuickDraftChoice[]>([]);
-  const [automatic,setAutomatic]=useState(false),[gemini,setGemini]=useState(false);
+  const [automatic,setAutomatic]=useState(false),[gemini,setGemini]=useState(false),[documentary,setDocumentary]=useState(false);
   const generation=useRef(0),running=useRef(false);
   useEffect(()=>{
     const current=++generation.current;let timer:ReturnType<typeof setTimeout>|undefined;
-    setState(null);setAvailable(false);setAutomatic(false);setGemini(false);setError('');setBusy(false);setChoices([]);running.current=false;
+    setState(null);setAvailable(false);setAutomatic(false);setGemini(false);setDocumentary(false);setError('');setBusy(false);setChoices([]);running.current=false;
     const refresh=async()=>{
       try{
         const capability=await englishCapability(token);
         if(generation.current!==current)return;
-        setAvailable(capability.available);setAutomatic(capability.automatic_clips===true);setGemini(capability.gemini_planning_available===true);if(!capability.available)return;
+        setAvailable(capability.available);setAutomatic(capability.automatic_clips===true);setGemini(capability.gemini_planning_available===true);setDocumentary(capability.documentary_available===true);if(!capability.available)return;
         const next=await englishState(id,token);
         if(generation.current===current){setState(next);setError('');}
       }catch(e:any){if(generation.current===current)setError(e.message||'Could not check English analysis.');}
@@ -110,6 +110,15 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       release();
     }
   };
+  const documentaryDraft=async(current:number)=>{
+    if(current!==generation.current||running.current||disabled||!state?.ready)return;
+    running.current=true;setBusy(true);setError('');
+    try{
+      const job=await createDocumentary(id,token,true);
+      if(current===generation.current)router.push({pathname:'/project/[id]',params:{id:job.id}});
+    }catch(e:any){if(current===generation.current)setError(e.message||'Could not queue the documentary. Retry this project.');}
+    finally{if(current===generation.current){running.current=false;setBusy(false);}}
+  };
   const action=async(cancel=false)=>{
     if(running.current||disabled||!state)return;
     const current=generation.current;running.current=true;setBusy(true);
@@ -129,6 +138,17 @@ export function EnglishAnalysisPanel({id,token,disabled=false}:{id:string;token:
       <Body>{automatic?'Create a suggested Short directly from your recording. The server picks the clip; sentence marking is optional. Watch the result and check captions before sharing.':'Choose from up to three different reviewed clip options. Checking choices does not render anything: only the draft you confirm is rendered. No automatic transcript approval or publishing.'}</Body>
       <Button title={busy?'Preparing draft…':automatic?'Create suggested Short':'Prepare a Short draft'} disabled={disabled||busy}
         onPress={()=>quickDraft()}/>
+      {documentary&&<>
+        <Body>Documentary preview: your voice and footage, researched public-domain photographs, scene cuts and restrained animation. Visual relevance and claims still need your playback check.</Body>
+        <Button title="Create documentary (experimental)" disabled={disabled||busy} onPress={()=>{
+          const current=generation.current;
+          Alert.alert('Create a researched documentary?',
+            'Google Gemini receives the selected speech excerpt to plan visuals and choose relevant images. Public topic queries derived from that speech go to Wikipedia and Wikimedia Commons. No audio or video is sent. Google’s free-tier terms may allow submitted text to improve its products. Use non-sensitive recordings you have permission to share. The server makes at most two planning calls, preserves your voice, and does not publish anything. It stops if suitable licensed visuals are unavailable. One documentary per source project; retries reopen the same result.',[
+              {text:'Not now',style:'cancel'},
+              {text:'Agree and create',onPress:()=>documentaryDraft(current)},
+            ]);
+        }}/>
+      </>}
       {automatic&&gemini&&<Button title="Create with Gemini" disabled={disabled||busy} onPress={()=>{
         const current=generation.current;
         Alert.alert('Share transcript with Google?',

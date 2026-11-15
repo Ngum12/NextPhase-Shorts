@@ -102,3 +102,14 @@ creative storyboarding → public-source research/relevance/rights checks → bo
 composition → QA → the existing app job flow. Keep ordinary-user automation as the
 default; storyboard/manual editing remains optional. Native app style availability
 must stay false until the complete workflow is proved on the protected worker.
+
+
+### Documentary app pilot connected (2026-11-15)
+
+Prepared English projects can now request one automatic research/composition job
+with explicit Google/public-research consent. The pilot returns source footage,
+original voice, researched photographs, image motion, quoted headings and private
+source receipts. Review of sentences/assets is optional, not a prerequisite.
+Next creative work: richer storyboarding, relevant video inserts, caption/music
+composition and qualitative/factual QA; protected VPS/phone acceptance remains
+necessary. This is not a claim that every Documentary production feature is ready.

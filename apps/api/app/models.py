@@ -80,6 +80,13 @@ class RenderJob(StorageBudget, RightsRecord, Base):
     preview_spec_json: Mapped[str | None] = mapped_column(Text,nullable=True)
     operation: Mapped[str] = mapped_column(String(16),server_default='render')
 
+    @property
+    def documentary(self):
+        import json
+        try:
+            return self.operation=='preview' and json.loads(self.preview_spec_json or '{}').get('schema_version')=='documentary-job-1'
+        except (ValueError,TypeError,AttributeError):return False
+
 
 class ProjectAnalysis(Base):
     __tablename__ = 'project_analyses'

@@ -3,6 +3,7 @@
 Development can poll the DB; Valkey/Arq dispatch shares the same fenced scheduler.
 """
 import logging
+import json
 import signal
 import time
 import uuid
@@ -15,6 +16,7 @@ from .db import SessionLocal, engine
 from .migrate import require_current_schema
 from .media import MediaCancelled, MediaError, OutputLimitExceeded, RenderDeadlineExceeded, render_baseline
 from .asr_failures import AsrFailure
+from .documentary_plan import DocumentaryFailure
 from .models import RenderAttempt, RenderJob, User, utcnow
 from .queue import lock_owner,dead_letter
 from . import object_store
@@ -180,7 +182,12 @@ def _process(job,supervisor):
             if remote:raise MediaError('Analysis requires a local source')
             if process_analysis(job,source,should_cancel=cancelled):emit('analysis_completed',job_id=job['id'])
             return
-        if excerpt:
+        documentary=excerpt and json.loads(job['preview_spec_json']).get('schema_version')=='documentary-job-1'
+        if documentary:
+            if remote:raise MediaError('Unsupported documentary source profile')
+            from .documentary_work import process_documentary
+            info=process_documentary(job,source,output,should_cancel=cancelled)
+        elif excerpt:
             if remote:raise MediaError('Unsupported preview source profile')
             from .excerpt_jobs import snapshot_source
             from .excerpt_render import render_excerpt
@@ -226,6 +233,10 @@ def _process(job,supervisor):
         # Only fixed, non-content diagnostic codes leave the protected worker.
         emit('render_failed',job_id=job['id'])
         mark_done(job['id'], token, error_code=failure.code, wall_seconds=time.monotonic()-began)
+    except DocumentaryFailure as failure:
+        emit('render_failed',job_id=job['id'])
+        code='RENDER_DEADLINE_EXCEEDED' if failure.code=='DEADLINE_EXCEEDED' else 'DOCUMENTARY_'+failure.code
+        mark_done(job['id'],token,error_code=code,wall_seconds=time.monotonic()-began)
     except RenderDeadlineExceeded:
         emit('render_failed',job_id=job['id'])
         mark_done(job['id'], token, error_code='RENDER_DEADLINE_EXCEEDED', wall_seconds=time.monotonic()-began)

@@ -141,7 +141,7 @@ def capabilities(response:Response,user:User=Depends(current_user)):
     from .gemini_selection import available
     return {'available':bool(enabled(user.id)),'language':'en','max_source_seconds':MAX_SECONDS,
         'human_review_required':True,'automatic_clips':True,
-        'gemini_planning_available':available(user.id)}
+        'gemini_planning_available':available(user.id),'documentary_available':available(user.id) and enabled(user.id)}
 
 
 class StartAnalysis(ClosedModel):

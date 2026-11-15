@@ -35,6 +35,7 @@ class JobResponse(BaseModel):
     finished_at: datetime | None
     preview_parent_id: str | None = None
     operation: Literal['render','preview','analysis']='render'
+    documentary: bool=False
 
 class StyleInfo(BaseModel):
     id: str
