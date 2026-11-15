@@ -316,3 +316,11 @@ source PTS, clip limits, all native controls and the 300s preview cap intact.
 A new owner-confirmed render can replace a cached failed/cancelled draft using
 one persisted new intent key; it does not introduce background retries, provider
 calls, or bypass admission/deletion/lease fences.
+
+
+Optional preview progress uses a bounded nonblocking pipe, not a native log sink.
+Only validated numeric frame/fps counters enter observations; unknown lines and
+raw bytes are discarded, with 128-byte partial-line state and bounded reads.
+No extra Landlock file grants or network access are added. The CPU-oriented
+preview preset and timestamp-preserving coarse seek keep the same deadline,
+size/frame/source checks, process limits, isolation and publication fences.

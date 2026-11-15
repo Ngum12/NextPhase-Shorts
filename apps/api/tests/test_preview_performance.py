@@ -10,7 +10,8 @@ from app.media import RenderDeadlineExceeded
 from test_excerpt_jobs import actual,prepared
 
 
-def test_filter_order_avoids_scaling_unused_frames_without_changing_absolute_clock(tmp_path,monkeypatch):
+@pytest.mark.parametrize('voice',['original','level'])
+def test_filter_order_avoids_scaling_unused_frames_without_changing_absolute_clock(tmp_path,monkeypatch,voice):
     commands=[]
     def capture(command,timeout,*args,**kwargs):
         commands.append(command)
@@ -19,13 +20,15 @@ def test_filter_order_avoids_scaling_unused_frames_without_changing_absolute_clo
     source=tmp_path/'source.mp4';source.touch();out=tmp_path/'output.mp4'
     with pytest.raises(RenderDeadlineExceeded):
         render_excerpt(source,out,start_ms=45010,end_ms=74510,frames=885,
-            requested_seconds=30,max_output_bytes=64*1024**2,framing='fill-center',
+            requested_seconds=30,max_output_bytes=64*1024**2,framing='fill-center',polish={'voice':voice},
             captions=(CaptionCue(start_ms=100,end_ms=1000,text='Synthetic caption.'),))
     command=commands[0];vf=command[command.index('-vf')+1]
     assert vf.startswith('fps=30,trim=start=44.933333333,crop=')
     assert vf.count('fps=30')==1 and vf.index('trim=')<vf.index('scale=')<vf.index('drawtext=')
     assert 'gte(t,45.110)' in vf and 'lt(t,46.010)' in vf
-    assert command[command.index('-ss')+1]=='45.010'
+    assert command[command.index('-ss')+1]==('43.000' if voice=='original' else '0.000')
+    assert command[command.index('-ss',command.index('-i'))+1]=='45.010'
+    assert '-copyts' in command and '-start_at_zero' in command
     assert not out.exists() and not list(tmp_path.glob('*.partial.mp4'))
     assert not list(tmp_path.glob('caption-*.txt'))
 
@@ -55,7 +58,10 @@ def test_hfr_885_frame_crop_with_19_captions_matches_legacy_pixels_and_frame_cou
         '-c:v','libx264','-preset','ultrafast','-threads','2','-pix_fmt','yuv420p','-c:a','aac',str(source)],check=True,timeout=60)
     before=hashlib.sha256(source.read_bytes()).hexdigest();timings={}
     def compare(command,timeout,guard,**kwargs):
-        prior=list(command);index=prior.index('-vf')+1
+        prior=list(command)
+        for flag in ('-copyts','-start_at_zero','-noaccurate_seek'):prior.remove(flag)
+        seek=prior.index('-ss');del prior[seek:seek+2]
+        index=prior.index('-vf')+1
         captions=prior[index].split(',drawtext=',1)[1]
         prior[index]=framing_filter('fill-center')+',drawtext='+captions
         prior[-1]=str(legacy)
@@ -76,3 +82,33 @@ def test_hfr_885_frame_crop_with_19_captions_matches_legacy_pixels_and_frame_cou
     assert not list(tmp_path.glob('caption-*.txt'))
     # Evidence only: timing assertions would be flaky on shared CI hosts.
     (tmp_path/'benchmark.json').write_text(json.dumps(timings))
+
+
+@pytest.mark.parametrize('rate',['24000/1001','60000/1001','vfr'])
+def test_input_seek_preserves_nonzero_pts_fractional_rate_caption_and_audio_clock(tmp_path,monkeypatch,rate):
+    from app.excerpt_render import run_render as native_render
+    source=tmp_path/'offset.mp4';output=tmp_path/'seek.mp4';legacy=tmp_path/'decode.mp4'
+    subprocess.run(['ffmpeg','-nostdin','-v','error','-f','lavfi','-i',f'testsrc2=s=320x180:r={30 if rate=="vfr" else rate}',
+        '-f','lavfi','-i',r'aevalsrc=sin(2*PI*if(lt(t\,6)\,440\,880)*t):s=48000',
+        '-t','12',*(['-vf',r'select=lt(t\,1)+gte(t\,10)','-fps_mode','vfr'] if rate=='vfr' else []),'-c:v','libx264','-threads','2','-g','240','-pix_fmt','yuv420p','-c:a','aac',
+        '-output_ts_offset','7.25',str(source)],check=True,timeout=60)
+    def compare(command,timeout,guard,**kwargs):
+        prior=list(command)
+        for flag in ('-copyts','-start_at_zero','-noaccurate_seek'):prior.remove(flag)
+        seek=prior.index('-ss');del prior[seek:seek+2];prior[-1]=str(legacy)
+        native_render(prior,timeout,guard,**kwargs)
+        result=native_render(command,timeout,guard,**kwargs)
+        assert result['frames']==150 and result['frames_per_second']>=0
+        return result
+    monkeypatch.setattr('app.excerpt_render.run_render',compare)
+    render_excerpt(source,output,start_ms=6010,end_ms=11010,frames=150,requested_seconds=15,
+        max_output_bytes=64*1024**2,captions=(CaptionCue(start_ms=100,end_ms=1000,text='Synthetic timing.'),))
+    assert output_frames(output)==output_frames(legacy)==150
+    for second in (.2,2.2,4.8):
+        def frame(path):
+            return subprocess.check_output(['ffmpeg','-v','error','-ss',str(second),'-i',str(path),
+                '-frames:v','1','-pix_fmt','rgb24','-f','rawvideo','pipe:1'],timeout=30)
+        assert frame(output)==frame(legacy)
+    def audio(path):
+        return subprocess.check_output(['ffmpeg','-v','error','-i',str(path),'-vn','-ac','1','-ar','48000','-f','s16le','pipe:1'],timeout=30)
+    assert audio(output)==audio(legacy)
