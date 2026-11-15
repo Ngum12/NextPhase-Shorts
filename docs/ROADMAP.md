@@ -89,3 +89,16 @@ consent/budget/cached-proof validation and native rendering remain bounded. This
 is a partial planning milestone; live quality acceptance, stronger ASR/timing,
 visual/speaker-aware framing, multi-scene composition and genre style engines
 remain further work. No manual sentence-marking gate was reintroduced.
+
+
+### Product correction: research-driven documentary production
+
+The end product must research the topic, gather relevant rights-cleared images
+and video, plan a story, animate/composite scenes and finish a compelling Short.
+Clip selection and caption/crop controls are components, not that product.
+The first documentary engine proof now renders independent typed scenes with
+source/asset provenance and continuous original voice. Priority integration is
+creative storyboarding → public-source research/relevance/rights checks → bounded
+composition → QA → the existing app job flow. Keep ordinary-user automation as the
+default; storyboard/manual editing remains optional. Native app style availability
+must stay false until the complete workflow is proved on the protected worker.

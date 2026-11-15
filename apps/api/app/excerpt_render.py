@@ -1,5 +1,6 @@
 """Fixed, frame-checked excerpt renderer shared by operator and queued previews."""
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -45,15 +46,17 @@ def caption_filters(cues, source, start_ms, polish=None):
         raise
 
 
-def output_frames(path):
+def output_frames(path, *, timeout=60):
+    if type(timeout) not in (int,float) or not math.isfinite(timeout) or not 0<timeout<=60:
+        raise MediaError("Invalid frame inspection deadline")
     command, env, kwargs = decoder_invocation([
         'ffprobe', '-v', 'error', *input_args(), '-select_streams', 'v:0',
         '-count_frames', '-show_entries', 'stream=nb_read_frames,avg_frame_rate',
-        '-of', 'json', str(path)], 60)
+        '-of', 'json', str(path)], timeout)
     with subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                           stderr=subprocess.DEVNULL, env=env, close_fds=True, **kwargs) as child:
         try:
-            raw, _ = child.communicate(timeout=60)
+            raw, _ = child.communicate(timeout=timeout)
             if child.returncode:raise MediaError('Preview frame inspection failed')
         finally:teardown_decoder(child)
     try:

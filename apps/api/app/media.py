@@ -34,7 +34,7 @@ def teardown_decoder(process):
     process.wait(timeout=5)
 
 
-def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=(),address_limit_bytes=None):
+def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=(),address_limit_bytes=None,media_files=()):
     # Read only the explicit guard flag here; decoder-launch tests and tools do
     # not need to initialize server credentials just to construct a subprocess.
     sandbox_required=os.getenv('WORKER_REQUIRE_SANDBOX','false').lower()=='true'
@@ -57,7 +57,8 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=(),address_lim
             output=str(Path(cmd[-1]).resolve()) if cmd[0]=='ffmpeg' else None
             if cmd[0]=='ffmpeg' and max_file_bytes is None:raise MediaError('Strict renderer needs a fixed output file bound')
             sandbox=['--sandbox',json.dumps({'source':str(Path(source).resolve()),'output':output,
-                'read_files':[str(Path(path).resolve(strict=True)) for path in read_files]},separators=(',',':'))]
+                'read_files':[str(Path(path).resolve(strict=True)) for path in read_files],
+                'media_files':[str(Path(path).absolute()) for path in media_files]},separators=(',',':'))]
         child_cmd=[sys.executable,'-I',str(Path(__file__).with_name('render_child.py')),
                    str(os.getpid()),str(math.ceil(timeout*CODEC_THREADS+30)),
                    *(['--file-limit',str(max_file_bytes if cmd[0]=='ffmpeg' else 0)] if sandbox_required or address_limit_bytes is not None else []),
@@ -68,7 +69,7 @@ def decoder_invocation(cmd,timeout,max_file_bytes=None,read_files=(),address_lim
     return child_cmd,child_env,kwargs
 
 
-def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),address_limit_bytes=None,capture_progress=False):
+def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),address_limit_bytes=None,capture_progress=False,media_files=()):
     if should_cancel():
         raise MediaCancelled('Render cancelled')
     started = time.monotonic()
@@ -76,6 +77,7 @@ def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),a
     if capture_progress and (cmd[0]!='ffmpeg' or '-progress' not in cmd or cmd[cmd.index('-progress')+1]!='pipe:1'):
         raise MediaError('Invalid render progress configuration')
     child_cmd,child_env,kwargs=decoder_invocation(cmd,timeout,max_file_bytes,read_files,
+        **({'media_files':media_files} if media_files else {}),
         **({'address_limit_bytes':address_limit_bytes} if address_limit_bytes is not None else {}))
     # Stderr is always discarded. Optional fixed progress counters use a bounded,
     # nonblocking stdout pipe; raw native output never enters logs or storage.
@@ -115,15 +117,17 @@ def run_render(cmd, timeout, should_cancel, max_file_bytes=None, read_files=(),a
                 active_attributes.get().update({**samples.attributes(),**(progress.attributes() if progress else {})})
 
 
-def probe_video(path: Path) -> dict:
+def probe_video(path: Path, *, timeout=30) -> dict:
+    if type(timeout) not in (int,float) or not math.isfinite(timeout) or not 0<timeout<=30:
+        raise MediaError("Invalid media inspection deadline")
     try:
         cmd,env,kwargs=decoder_invocation(
             ["ffprobe", "-v", "error", "-max_alloc", "67108864", *input_args(), "-show_entries", "format=duration,format_name:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,sample_rate,channels:stream_disposition=attached_pic",
-             "-of", "json", str(path)],30)
+             "-of", "json", str(path)],timeout)
         with subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
                 text=True,env=env,close_fds=True,**kwargs) as process:
             try:
-                output,_=process.communicate(timeout=30)
+                output,_=process.communicate(timeout=timeout)
                 if process.returncode:raise subprocess.CalledProcessError(process.returncode,cmd)
             finally:teardown_decoder(process)
         data = json.loads(output)
